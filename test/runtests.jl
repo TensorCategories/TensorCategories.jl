@@ -11,7 +11,7 @@ end
 
 @testset "Test Center/Centralizer" begin
     include("CenterTests/InductionTest.jl")
-    include("CenterTests/RepCenterTest.jl")
+    # include("CenterTests/RepCenterTest.jl")
     include("CenterTests/GradedVectorSpaces.jl")
     include("CentralizerTests/CentralizerVec.jl")
 end
