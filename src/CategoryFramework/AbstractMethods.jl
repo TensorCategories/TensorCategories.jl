@@ -226,6 +226,8 @@ function decompose_by_endomorphism_ring(X::Object, E = End(X))
     # Check for matrix algebras
     images = if is_finite(base_ring(X))
         _images
+    elseif !is_semisimple(parent(X))
+        _images
     else
         hcat([simple_subobjects(i, End(i), true) for i ∈ _images]...)
     end
