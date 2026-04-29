@@ -1,14 +1,17 @@
 [deps]
+Artifacts = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 DocumenterCitations = "daee34ce-89f3-4625-b898-19384cb65244"
+Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
+LazyArtifacts = "4af54fe1-eca0-43a8-85a7-787d91b784e3"
 Oscar = "f1435218-dba5-11e9-1e4d-f1a5fab5fc13"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 TensorCategories = "258c694e-7338-4d4d-b524-4851272a75cf"
+
+[sources]
+TensorCategories = {path = ".."}
 
 [compat]
 Documenter = "1.15.0"
 DocumenterCitations = "1.4.1"
 Oscar = "1.5"
-
-[sources]
-TensorCategories = {path = ".."}

@@ -22,14 +22,12 @@ commutes for all ``Y,Z \in \mathcal C`` and ``\gamma_{\mathbb 1} = \mathrm{id}_X
 
 # Computing the Center
 
-The Drinfeld center can be computed explicitly for reasonably small
-fusion categories using the algorithm described in [maurer2024computing](@cite). Any fusion category implementing the corresponding 
-interface is supported. 
+The Drinfeld center can be computed explicitly for many fusion categories using the algorithm described in [maurer2024computing](@cite). Any fusion category implementing the corresponding interface is supported. 
 
 
 ## Example
 
-```jldoctest
+```jldoctest ising
 I = ising_category()
 C = center(I)
 simples(C)
@@ -43,9 +41,39 @@ simples(C)
  Central object: 4⋅X
 ```
 
+Who is familiar with the center of the Ising category will notice that this looks odd. In fact this is because we define the Ising category over the field ``\mathbb Q (\sqrt{2})``and not ``\mathbb C``. In this case the endomorphism spaces are division algebras of dimension greater than one. 
+
+```jldoctest ising
+base_ring(I)
+
+# output
+Number field with defining polynomial x^2 - 2
+  over rational field
+```
+
+```jldoctest ising 
+r = endomorphism_ring(C[4])
+
+# output
+Matrix algebra of dimension 2 over Number field of degree 2 over QQ
+```
+
+```jldoctest ising 
+is_simple(r) 
+
+# output 
+true
+```
+
+## Supported categories
+
+In general all split fusion categories implementing the fusion category interface are supported. As ground fields we support all numberfield types from Oscar, i.e. all subtypes of `NumField`, the algebraic numbers `QQBarField`, the complex numbers `CalciumField` and the arbitrary precision complex ball numbers `AcbField`.
+
+!!! warning If using `AcbField` as a grounf field, keep in mind to check the precision and increase it if the behaviour seems unexpected. Performing algebraic operations with numeric types is generally hard and multiple magnitudes of precision can be lost in single operations introducing error.  
+
 # Centers of the AnyonWiki
 
-Currently we are working at the task to compute all centers of multiplicity free fusion categories up to rank seven. At the moment all centers to rank 4 are available and some of rank five. Access them via 
+Currently we are working at the task to compute all centers of multiplicity free fusion categories up to rank seven. At the moment all centers to rank 5 are available and some of rank six. Access them via 
 
 ```@docs 
 anyonwiki_center
