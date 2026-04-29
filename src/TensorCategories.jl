@@ -10,7 +10,7 @@ import Oscar: +, @alias, @attributes, AbstractSet, AcbField, StructureConstantAl
     cyclotomic_field, Fac, Field, FieldElem, FinField, GF, GAP,QQ,AbsSimpleNumFieldEmbedding,
     GAPGroupHomomorphism, GL, GSet, GroupElem, Hecke.AbstractAssociativeAlgebra,
     Hecke.AbstractAssociativeAlgebraElem, Ideal, MPolyRingElem, MPolyIdeal, Map, MatElem, MatrixElem, conductor,
-    MatrixGroup, matrix_space, ModuleIsomorphism, number_field, PcGroup, PolyRingElem, FqMPolyRingElem, FqPolyRingElem,
+    matrix_space, ModuleIsomorphism, number_field, PcGroup, PolyRingElem, FqMPolyRingElem, FqPolyRingElem,
     polynomial_ring, QQ, QQBarField, QQField, QQFieldElem, QQMPolyRingElem, Ring, RingElem, ZZ, QQBarFieldElem,
     ZZRingElem, abelian_closure, abelian_group, absolute_simple_field, action, base_field, defining_polynomial,
     base_ring, basis, central_primitive_idempotents, change_base_ring, 

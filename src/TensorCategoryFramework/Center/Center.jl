@@ -1001,7 +1001,7 @@ end
 For a mutable category type sort the simple objects by Frobenius-Perron dimension. 
 """
 function sort_simples_by_dimension!(C::Category)  
-    !hasfield(C, :simples) && error("$(typeof(C)) does not support sorting simples.")
+    !hasfield(typeof(C), :simples) && error("$(typeof(C)) does not support sorting simples.")
 
     one_ind = findfirst(==(one(C)), C.simples)
 
