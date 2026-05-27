@@ -51,7 +51,7 @@ Application' of the German Research Foundation (DFG).
 [build-status-url]: https://ci.appveyor.com/project/FabianMaeurer/TensorCategories-jl
 
 [codecov_img]: https://codecov.io/gh/FabianMaeurer/TensorCategories.jl/branch/master/graph/badge.svg?token=axGHAcozx5
-[codecov_url]: https://codecov.io/gh/FabianMaeurer/TensorCategories.jl
+[codecov_url]: https://codecov.io/gh/TensorCategories/TensorCategories.jl
 
 [ga-img]: https://github.com/FabianMaeurer/TensorCategories.jl/actions/workflows/runtests.yml/badge.svg
 [ga-url]: https://github.com/FabianMaeurer/TensorCategories.jl/actions/workflows/runtests.yml
