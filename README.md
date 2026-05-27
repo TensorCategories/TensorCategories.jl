@@ -43,9 +43,9 @@ Application' of the German Research Foundation (DFG).
 
 
 [docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
-[docs-stable-url]: https://fabianmaeurer.github.io/TensorCategories.jl/stable/
+[docs-stable-url]: https://tensorcategories.github.io/TensorCategories.jl/stable/
 [docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
-[docs-dev-url]: https://fabianmaeurer.github.io/TensorCategories.jl/dev/
+[docs-dev-url]: https://tensorcategories.github.io/TensorCategories.jl/dev/
 
 [build-status-img]: https://ci.appveyor.com/api/projects/status/egtv4niuustg4kpc?svg=true
 [build-status-url]: https://ci.appveyor.com/project/FabianMaeurer/TensorCategories-jl
