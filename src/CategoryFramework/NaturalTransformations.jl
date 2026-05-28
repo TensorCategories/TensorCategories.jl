@@ -244,7 +244,7 @@ function horizontal_composition(η::AdditiveNaturalTransformation, ν::AdditiveN
     )
 end
 
-tensor_product(η::AdditiveNaturalTransformation, ν::AdditiveNaturalTransformation) = horizontal_composition(η,ν)
+tensor_product(η::AdditiveNaturalTransformation, ν::AdditiveNaturalTransformation) = horizontal_composition(ν, η)
 #=----------------------------------------------------------
     Pretty Printing 
 ----------------------------------------------------------=#

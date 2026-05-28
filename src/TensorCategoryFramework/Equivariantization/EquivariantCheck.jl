@@ -27,8 +27,8 @@ function is_equivariant(X::Object, T::GTensorAction, structure::Vector{<:Morphis
 
         uv = structure[i]
         γ = monoidal_structure(T,g,h)(X)
-        @show u ∘ T(g)(v)
-        @show uv ∘ γ
+        #@show u ∘ T(g)(v)
+        #@show uv ∘ γ
         (u ∘ T(g)(v) != uv ∘ γ) && return false        
     end
 

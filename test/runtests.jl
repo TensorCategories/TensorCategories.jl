@@ -27,6 +27,10 @@ end
     include("ModuleCategoryTests/Non-semisimpleModules.jl")
 end
 
+include("GroupActionsTests/TensorActionTests.jl")
+include("GroupActionsTests/EquivariantizationTests.jl")
+include("GroupActionsTests/GCrossedTests.jl")
+
 include("Anyonwiki/AnyonwikiTest.jl")
 
 #include("CoherentSheaves/ConvolutionCategoryTests.jl")

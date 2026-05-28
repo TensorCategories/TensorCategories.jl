@@ -19,7 +19,7 @@ function equivariant_induction(X::Object, T::GTensorAction, parent::Equivarianti
 
         matched_incl = incl[permutation]
 
-        @show [monoidal_structure(T,g,h)(X) == monoidal_structure(T,h,g)(X) for h in elems]
+        #@show [monoidal_structure(T,g,h)(X) == monoidal_structure(T,h,g)(X) for h in elems]
 
         u = sum([i ∘ monoidal_structure(T,g,h)(X) ∘ T(g)(p) for (h,i,p) ∈ zip(elems, matched_incl, proj)])
 

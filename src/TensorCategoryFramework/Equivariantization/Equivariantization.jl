@@ -72,12 +72,12 @@ function direct_sum(X::EquivariantObject...)
 
     structure_maps = [
         sum([i ∘ x.structure_maps[l] ∘ T(g)(p) for (i,p,x) ∈ zip(incl,proj,X)])
-        for l ∈ 1:order(G)
+        for (l,g) ∈ zip(1:Int(order(G)),elements(G))
     ]
 
     sum_in_E = EquivariantObject(E, S, structure_maps)
-    incl_in_E = [morphism(x,E,i) for (x,i) ∈ zip(X,incl)]
-    proj_in_E = [morphism(E,x,p) for (x,p) ∈ zip(X,proj)]
+    incl_in_E = [morphism(x,sum_in_E,i) for (x,i) ∈ zip(X,incl)]
+    proj_in_E = [morphism(sum_in_E,x,p) for (x,p) ∈ zip(X,proj)]
 
     return sum_in_E, incl_in_E, proj_in_E
 end 
@@ -163,7 +163,7 @@ function cokernel(f::EquivariantMorphism)
     inv_c = right_inverse(c)
     T = gaction(parent(f))
     G = group(T)
-
+    
     structure_maps = [c ∘ u ∘ T(g)(inv_c) for (g,u) ∈ zip(elements(G), codomain(f).structure_maps)]
 
     EC = EquivariantObject(parent(f), C, structure_maps)
@@ -240,6 +240,18 @@ function simples(E::Equivariantization)
     simpls = unique_simples(simpls)
 
     E.simples = simpls 
+end
+
+function is_isomorphic_simples(X::EquivariantObject, Y::EquivariantObject)
+    !is_isomorphic(object(X), object(Y))[1] && return false
+
+    H = Hom(X,Y)
+
+    if length(H) == 1 && is_invertible(H[1])
+        return true, H[1]
+    end
+
+    return false, nothing
 end
 
 #=----------------------------------------------------------

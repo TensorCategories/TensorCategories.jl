@@ -10,7 +10,7 @@ struct SixJFunctor <: AbstractMonoidalFunctor
 end
 
 function (F::SixJFunctor)(X::SixJObject)
-    n = parent(X).simples
+    n = rank(parent(X))
     direct_sum([F.images[i]^X.components[i] for i ∈ 1:n]...)[1]
 end
 
@@ -30,9 +30,19 @@ function (F::SixJFunctor)(f::SixJMorphism)
     cod = codomain(f)
 
     C = domain(F)
+    D = codomain(F)
+    
+    if dom == zero(C) 
+        return zero_morphism(zero(C),F(cod))
+    end
+    if cod == zero(D) 
+        return zero_morphism(F(dom),zero(D))
+    end
 
-    dom_dec = vcat([[C[i] for _ ∈ 1:c] for (i,c) ∈ zip(1:C.simples, dom.components)]...)
-    cod_dec = vcat([[C[i] for _ ∈ 1:c] for (i,c) ∈ zip(1:C.simples, cod.components)]...)
+    dom_dec = vcat([typeof(dom)[C[i] for _ ∈ 1:c] for (i,c) ∈ zip(1:rank(C), dom.components)]...)
+    cod_dec = vcat([typeof(cod)[C[i] for _ ∈ 1:c] for (i,c) ∈ zip(1:rank(C), cod.components)]...)
+
+
 
     _, incl, _ = direct_sum(dom_dec)
     _, _, proj = direct_sum(cod_dec)

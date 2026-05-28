@@ -543,7 +543,9 @@ end
 # end
 
 function anyonwiki(K::Field, i,j,k,l,m,n,o)
-    anyonwiki(i,j,k,l,m,n,o) ⊗ K 
+    C = anyonwiki(i,j,k,l,m,n,o)
+    _,emb = is_subfield(base_ring(C),K)
+    extension_of_scalars(C, K, embedding = emb)
 end
 
 function anyonwiki_finite(K::FqField,i,j,k,l,m,n,o)

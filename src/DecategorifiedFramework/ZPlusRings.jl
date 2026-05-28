@@ -244,6 +244,9 @@ struct ZPlusRingMorphism
     images::Vector{ZPlusRingElem}
 end
 
+domain(f::ZPlusRingMorphism) = f.domain
+codomain(f::ZPlusRingMorphism) = f.codomain
+
 function hom(domain::ZPlusRing,
     codomain::ZPlusRing ,
     images::Vector{ZPlusRingElem};
@@ -277,4 +280,30 @@ function automorphisms(R::ℕRing)
     automorphism_perms = [p for p ∈ perms if is_zplus_ring_morphism(B,permuted(B,p))]
 
     [ZPlusRingMorphism(R,R,permuted(B,p)) for p ∈ automorphism_perms]
+end
+
+function adjoint_subring_basis(R::ℕRing)
+    B = basis(R)
+    adjoint_basis = _topologize(sum([b*involution(b) for b ∈ B]))
+    B[adjoint_basis]
+end
+
+function order_of_universal_grading_group(C::Category)
+    R = split_grothendieck_ring(C)
+    adjoint_basis = adjoint_subring_basis(R)
+    not_tracked = [b for b ∈ basis(R) if b ∉ adjoint_basis]
+    if isempty(not_tracked)
+        return 1
+    end
+    ord = 1
+    for b in basis(R)
+        b in adjoint_basis && continue
+
+        class = [b*a for a in adjoint_basis]
+
+        filter!(x -> x in class, not_tracked)
+
+        ord += 1
+    end
+    return ord
 end

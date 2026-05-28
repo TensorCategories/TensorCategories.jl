@@ -26,7 +26,7 @@ import Oscar: +, @alias, @attributes, AbstractSet, AcbField, StructureConstantAl
     is_independent, is_invertible, is_separable, iso_oscar_gap, norm, is_exact, add_error!,
     jordan_normal_form, kernel, kronecker_product, lcm, leading_coefficient, accuracy_bits,
     leading_monomial, left_transversal, lex, load, matrix, matrix_algebra, minpoly, quo,
-    monomials, multiplication_table, multiplicity, nullspace, nvars, one, orbit,
+    monomials, multiplication_table, multiplicity, nullspace, nvars, one, orbit, group,
     orbits, order, parent, permutation_matrix, preimage, primary_decomposition, product, rank, real_solutions, resultant, root_of_unity, roots, rref, save,
     set_attribute!, size, solve, sparse_matrix, splitting_field, is_normal,
     stabilizer, sub, subst, symbols, symmetric_group, tensor_power, tensor_product, tr, absolute_degree,
@@ -79,6 +79,7 @@ export ⋊
 export AbstractHomSpace 
 export action
 export action_matrix
+export action_by_inner_autoequivalences
 export add_to_local_database
 export algebra
 export algebra_extensions
@@ -95,6 +96,7 @@ export ArrowCategory
 export ArrowObject
 export ArrowMorphism
 export associative_algebra
+export autoequivalences
 export automorphisms
 export associator 
 export base_ring 
@@ -209,6 +211,7 @@ export GRepInduction
 export GRepRestriction 
 export split_grothendieck_ring 
 export GrothendieckRing
+export group
 export group_algebra
 export GroupRepresentationCategory
 export GroupRepresentation 
@@ -233,6 +236,7 @@ export horizontal_direct_sum
 export I2 
 export I2subcategory 
 export id 
+export identity_as_monoidal_functor
 export image 
 export indecomposable_subobjects
 export indecomposables
@@ -291,6 +295,7 @@ export is_spherical
 export is_split_semisimple
 export is_subobject 
 export is_tensor 
+export is_tensor_action
 export is_unitary
 export is_zero
 export isequivariant 
@@ -329,6 +334,7 @@ export monoidal_natural_transformations
 export monoidal_structure
 export monoidal_structures  
 export monoidal_functor
+export monoidal_functor_axiom
 export MonoidalFunctor
 export Morphism, morphism 
 export morphism_to_image

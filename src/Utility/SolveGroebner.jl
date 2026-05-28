@@ -5,7 +5,9 @@ function recover_solutions(p::Tuple, K::Field, var_order, deg = -1; splitting_in
     v = p.param
     rs = roots(K,f)
     solutions = []
- 
+    if length(rs) == 0
+        return []
+    end
     if K == QQBarField()
         C = CalciumField()
         rs = C.(rs)
@@ -79,7 +81,7 @@ function real_solutions_over_base_field(I::MPolyIdeal; splitting_info = true)
 
     S = recover_solutions(real_solutions(QI), K, symbols(base_ring(QI)), fix_solutions = fixed_sols, splitting_info = splitting_info)
     
-    @show n = ngens(base_ring(I))
+    n = ngens(base_ring(I))
 
     unique([s[1:n] for s ∈ S if all([g(s[1:n]...) == 0 for g ∈ G])])
 end
@@ -164,7 +166,7 @@ function witness_set(I::Ideal, bound = 100)
         S = if is_finite(K) 
             rational_solutions(J)
         else
-            recover_solutions(real_solutions(J), K, symbols(base_ring(QI)), fix_solutions = fixed_sols, splitting_info = false) 
+            recover_solutions(real_solutions(J), K, symbols(base_ring(QI)), fix_solutions = fixed_sols, splitting_info = true) 
         end
 
         s = unique([s[1:n] for s ∈ S])

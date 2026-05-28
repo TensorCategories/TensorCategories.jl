@@ -435,7 +435,6 @@ zero_morphism(V::VectorSpaceObject,W::VectorSpaceObject) = morphism(V,W, zero(ma
 
 function express_in_basis(f::VectorSpaceMorphism, B::Vector{<:VectorSpaceMorphism})
     F = base_ring(f)
-
     if typeof(F) <: Union{AcbField, ComplexField, ArbField}
         return express_in_basis_numeric(f,B)
     end

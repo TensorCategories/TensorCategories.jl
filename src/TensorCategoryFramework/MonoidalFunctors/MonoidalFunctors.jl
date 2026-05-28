@@ -4,6 +4,7 @@
 
 function monoidal_structures(F::AbstractFunctor)
     C = domain(F)
+    D = codomain(F)
     @assert is_fusion(C)
 
     S = simples(C)
@@ -112,25 +113,30 @@ function monoidal_structures(F::AbstractFunctor)
     mats = [sum([a .* matrix(f) for (a,f) ∈ zip(vars[(x,y)], bases[(x,y)])]) for (x,y) ∈ keys(vars) if !isempty(vars[(x,y)])]
 
     filter!(m -> !is_constant(det(m)), mats) 
-    dets = [det(m) for m ∈ mats]
+    # @show dets = [det(m) for m ∈ mats]
+    # n_dets = length(dets)
 
-    N = length(x)
-    #S,y = polynomial_ring(K, N + length(dets))
+    # N = length(x)
+    # S,y = polynomial_ring(K, [["x$i" for i ∈ 1:N]; ["d$i" for i ∈ 1:n_dets]])
+    
+    universal_order = order_of_universal_grading_group(codomain(F))
+    equations = [equations; [d^universal_order - 1 for d ∈ [det(m) for m ∈ mats]]]
 
-    # equations = [[e(y[1:N]...) for e ∈ equations]; [d(y[1:N]...)*t - 1 for (d,t) ∈ zip(dets, y[N+1:end])]]
-
-    # return I = ideal(equations)
-
-    # @show dim(I)
     I = ideal(equations)
+
     sols = dim(I) > 0 ? witness_set(I) : real_solutions_over_base_field(I)
    # sols = [s[1:N] for s ∈ sols]
-
+    
     nats = [Dict((x,y) => sum([v(s...) * t for (v,t) ∈ zip(vars[(x,y)], bases[(x,y)])]) for (x,y) ∈ Base.product(1:n,1:n)) for s ∈ sols]
 
     mon_structures = filter(e -> all(is_invertible.(values(e.monoidal_structure))), [monoidal_functor(F, S, n) for n ∈ nats])
 
-    unique_structures = MonoidalFunctor[]
+    if length(mon_structures) == 0 
+        return MonoidalFunctor[]
+    end
+
+    unique_structures = mon_structures[1:1]
+
     if F == id(C) 
         unique_structures =[identity_as_monoidal_functor(C)]
     end
@@ -141,6 +147,9 @@ function monoidal_structures(F::AbstractFunctor)
         end
     end
 
+    if length(unique_structures) != universal_order
+         @warn "Number of monoidal structures does not match order of universal grading group. Something's wrong..."
+    end
     unique_structures
 end
 
@@ -172,11 +181,13 @@ function monoidal_natural_transformations(F::AbstractMonoidalFunctor, G::Abstrac
     for X ∈ S, Y ∈ S
         eq_basis = basis(Hom(F(X)⊗F(Y), G(X ⊗ Y)))
         eqs = [zero(R) for _ ∈ eq_basis]
-
+        if length(eq_basis) == 0 
+            return AdditiveNaturalTransformation[]
+        end
         for (a,η) ∈ zip(x, Nats), (b,ν) ∈ zip(x, Nats)
 
             left = monoidal_structure(G,X,Y) ∘ (η(X) ⊗ ν(Y))  
-
+   
             coeffs = express_in_basis(left, eq_basis)
 
             eqs = eqs .+ ((a*b) .* coeffs)

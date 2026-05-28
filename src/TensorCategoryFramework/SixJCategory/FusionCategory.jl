@@ -6,7 +6,7 @@
 ----------------------------------------------------------=#
 @attributes mutable struct SixJCategory <: Category
     base_ring::Ring
-    simples::Int64
+    rank::Int64
     simples_names::Vector{String}
     ass::Array{MatElem,4}
     braiding::Array{MatElem,3}
@@ -15,7 +15,7 @@
     twist::Vector
     one::Vector{Int}
     name::String
-    embedding::AbsSimpleNumFieldEmbedding
+    embedding::AbsSimpleNumFieldEmbedding # optional: With this you can fix the category as a subcategory of a complex category
 
     function SixJCategory()
         new()
@@ -68,7 +68,7 @@ Initialize a fusion category. Associativity constraints are all set to 1, i.e. a
 function six_j_category(F::Ring, mult::Array{Int,3}, names::Vector{String} = ["X$i" for i ∈ 1:length(mult[1,1,:])])
     C = SixJCategory()
     C.base_ring = F
-    C.simples = length(mult[1,1,:])
+    C.rank = length(mult[1,1,:])
     C.simples_names = names
     set_tensor_product!(C,mult)
     set_pivotal!(C, [F(1) for _ ∈ names])
@@ -79,7 +79,7 @@ end
 function six_j_category(F::Ring, names::Vector{String})
     C = SixJCategory()
     C.base_ring = F
-    C.simples = length(names)
+    C.rank = length(names)
     C.simples_names = names
     set_pivotal!(C, [F(1) for _ ∈ names])
     
@@ -112,7 +112,7 @@ function set_braiding!(F::SixJCategory, braiding)
 end
 
 function rank(C::SixJCategory)
-    C.simples 
+    C.rank 
 end
 
 @doc raw""" 
@@ -179,7 +179,7 @@ function set_canonical_spherical!(C::SixJCategory)
 
     K = base_ring(C)
     
-    set_pivotal!(C, K.([1 for _ ∈ 1:C.simples]))
+    set_pivotal!(C, K.([1 for _ ∈ 1:C.rank]))
     set_pivotal!(C, K.(real.([fpdim(s)*inv(dim(s)) for s ∈ simples(C)])))
 
     if base_ring(C) isa Union{ArbField, AcbField}
@@ -208,7 +208,7 @@ function set_one!(F::SixJCategory, v::Vector)
 end 
 
 function set_one!(F::SixJCategory, i::Int)
-    F.one = [k == i for k ∈ 1:F.simples]
+    F.one = [k == i for k ∈ 1:F.rank]
 end
 
 function set_ribbon!(F::SixJCategory, r)
@@ -244,9 +244,9 @@ function braiding(X::SixJObject, Y::SixJObject)
         i = findfirst(e -> e != 0, X.components)
         j = findfirst(e -> e != 0, Y.components)
 
-        if ! all(isassigned(C.braiding, i,j,k) for k ∈ 1:C.simples)
+        if ! all(isassigned(C.braiding, i,j,k) for k ∈ 1:C.rank)
             r_symbol = get_attribute(C, :r_symbol)
-            C.braiding[i,j,:] = [r_symbol(i,j,k) for k ∈ 1:C.simples]
+            C.braiding[i,j,:] = [r_symbol(i,j,k) for k ∈ 1:C.rank]
         end
         return morphism(X⊗Y,Y⊗X, C.braiding[i,j,:])
     end
@@ -292,7 +292,7 @@ function associator(X::SixJObject, Y::SixJObject, Z::SixJObject)
     end
 
     F = base_ring(C)
-    n = C.simples
+    n = C.rank
     dom = X⊗Y⊗Z
 
     C_associator = C.ass
@@ -377,7 +377,7 @@ function inv_associator(X::SixJObject, Y::SixJObject, Z::SixJObject)
     end
 
     F = base_ring(C)
-    n = C.simples
+    n = C.rank
     dom = X⊗Y⊗Z
 
     C_associator = C.ass
@@ -408,19 +408,6 @@ function inv_associator(X::SixJObject, Y::SixJObject, Z::SixJObject)
         Distribution 
     -------------------------------------------------=#
 
-    # Before
-    # distr_before = distribute_left(X_summands, Y) ⊗ id(Z)
-    # distr_before = (direct_sum([distribute_right(Xᵢ,Y_summands) for Xᵢ ∈ X_summands]...)⊗id(Z)) ∘ distr_before
-    # distr_before = distribute_left([Xᵢ⊗Yⱼ for Yⱼ ∈ Y_summands, Xᵢ ∈ X_summands][:], Z) ∘ distr_before
-    # distr_before = direct_sum([distribute_right(Xᵢ⊗Yⱼ,Z_summands) for Yⱼ ∈ Y_summands, Xᵢ ∈ X_summands][:]...) ∘ distr_before
-    
-    # # After
-    # distr_after = id(X)⊗distribute_left(Y_summands, Z)
-    # distr_after = (id(X)⊗direct_sum([distribute_right(Yⱼ,Z_summands) for Yⱼ ∈ Y_summands]...)) ∘ distr_after
-    # distr_after = distribute_left(X_summands, Y⊗Z) ∘ distr_after
-    # YZ_arr = [Yⱼ⊗Zₖ for  Zₖ ∈ Z_summands, Yⱼ ∈ Y_summands][:]
-    # distr_after = direct_sum([distribute_right(Xᵢ, YZ_arr) for Xᵢ ∈ X_summands]) ∘ distr_after
-
     _,ix,px = direct_sum(X_summands)
     _,iy,py = direct_sum(Y_summands)
     _,iz,pz = direct_sum(Z_summands)
@@ -428,7 +415,6 @@ function inv_associator(X::SixJObject, Y::SixJObject, Z::SixJObject)
     distr_before= horizontal_direct_sum([(f⊗g)⊗h for f ∈ ix, g ∈ iy, h ∈ iz][:])
     distr_after = vertical_direct_sum([f⊗(g⊗h) for f ∈ px, g ∈ py, h ∈ pz][:])
 
-    #distr_after = horizontal_direct_sum([f⊗(g⊗h) for f ∈ ix, g ∈ iy, h ∈ iz][:])
     #-----------------------------------
     # Associator morphism
     #-----------------------------------
@@ -442,15 +428,15 @@ function inv_associator(X::SixJObject, Y::SixJObject, Z::SixJObject)
     return compose(distr_after, m, distr_before)
 end
 
-function vector_permutation(A::Vector,B::Vector)
-    perm = Int[]
-    for a ∈ A
-        i = findall(e -> e == a, B)
-        j = filter(e -> !(e ∈ perm), i)[1]
-        perm = [perm; j]
-    end
-    return perm
-end
+# function vector_permutation(A::Vector,B::Vector)
+#     perm = Int[]
+#     for a ∈ A
+#         i = findall(e -> e == a, B)
+#         j = filter(e -> !(e ∈ perm), i)[1]
+#         perm = [perm; j]
+#     end
+#     return perm
+# end
 
 function six_j_symbol(C::SixJCategory, i::Int, j::Int, k::Int, l::Int)
     if ! isassigned(C.ass, i,j,k,l)
@@ -536,7 +522,7 @@ function vertical_direct_sum(f::Vector{SixJMorphism})
     C = parent(f[1])
     cod = SixJObject(C, reduce(.+, [X.components for X ∈ codomain.(f)]))
 
-    mats = [hcat([g.m[i] for g ∈ f]...) for i ∈ 1:C.simples]
+    mats = [hcat([g.m[i] for g ∈ f]...) for i ∈ 1:C.rank]
 
     morphism(domain(f[1]), cod, mats)
 end
@@ -547,7 +533,7 @@ function horizontal_direct_sum(f::Vector{SixJMorphism})
     C = parent(f[1])
     dom = SixJObject(C, reduce(.+, [X.components for X ∈ domain.(f)]))
 
-    mats = [vcat([g.m[i] for g ∈ f]...) for i ∈ 1:C.simples]
+    mats = [vcat([g.m[i] for g ∈ f]...) for i ∈ 1:C.rank]
 
     morphism(dom, codomain(f[1]), mats)
 end
@@ -559,7 +545,7 @@ end
 
 function tr(f::SixJMorphism)
     # Make use of the fact that the trace is invariant under basis transformation.
-    return sum([left_trace(f[i]) for i ∈ 1:parent(f).simples])
+    return sum([left_trace(f[i]) for i ∈ 1:parent(f).rank])
 end
 
 """
@@ -575,19 +561,19 @@ function dual(X::SixJObject)
         # Check for rigidity
         i = findfirst(e -> e == 1, X.components)
         j = []
-        for k ∈ 1:C.simples 
+        for k ∈ 1:C.rank 
             if C.one[k] == 1
-                j = [j; findall(e -> C.tensor_product[i,e,k] >= 1, 1:C.simples)]
+                j = [j; findall(e -> C.tensor_product[i,e,k] >= 1, 1:C.rank)]
             end
         end
         if length(j) != 1
             throw(ErrorException("Object not rigid."))
         end
-        return SixJObject(C,[i == j[1] ? 1 : 0 for i ∈ 1:C.simples])
+        return SixJObject(C,[i == j[1] ? 1 : 0 for i ∈ 1:C.rank])
     end
 
     # Build dual from simple objects
-    return direct_sum([dual(Y)^(X.components[i]) for (Y,i) ∈ zip(simples(C), 1:C.simples)])[1]
+    return direct_sum([dual(Y)^(X.components[i]) for (Y,i) ∈ zip(simples(C), 1:C.rank)])[1]
 end
 
 
@@ -810,7 +796,7 @@ end
 function tensor_product(X::SixJObject, Y::SixJObject)
     #@assert parent(X) == parent(Y) "Mismatching parents"
     C = parent(X)
-    n = C.simples
+    n = C.rank
     T = [0 for i ∈ 1:n]
 
     Xc = X.components
@@ -837,11 +823,11 @@ function tensor_product(f::SixJMorphism, g::SixJMorphism)
     table = C.tensor_product
     simpl = simples(C)
 
-    for i ∈ 1:C.simples, j ∈ 1:C.simples
+    for i ∈ 1:C.rank, j ∈ 1:C.rank
         A = kronecker_product(f.m[i],g.m[j])
         d1,d2 = size(A)
         #if d1*d2 == 0 continue end
-        for k ∈ 1:C.simples
+        for k ∈ 1:C.rank
             if (c = table[i,j,k]) > 0
                 m = zero_morphism(simpl[k]^(c*d1),simpl[k]^(c*d2)).m
                 m[k] = kronecker_product(A, identity_matrix(base_ring(C),c))
@@ -877,7 +863,7 @@ end
 #     px_mats = matrices(zero_morphism(S,X))
 #     py_mats = matrices(zero_morphism(S,Y))
 
-#     for i ∈ 1:parent(X).simples
+#     for i ∈ 1:parent(X).rank
 #         (x,y) = X.components[i], Y.components[i]
 #         for j ∈ 1:x 
 #             ix_mats[i][j,j] = 1
@@ -907,7 +893,7 @@ function direct_sum(X::SixJObject...)
     inc = [matrices(zero_morphism(x,S)) for x ∈ X]
     proj = [matrices(zero_morphism(S,x)) for x ∈ X]
 
-    for i ∈ 1:parent(X[1]).simples
+    for i ∈ 1:parent(X[1]).rank
         k = [x[i] for x ∈ X]
         for j ∈ 1:length(k)
             for l ∈ 1:k[j]
@@ -937,7 +923,7 @@ function direct_sum(f::SixJMorphism...)
     cod = ⊕(codomain.(f)...)
     F = base_ring(dom)
 
-    mats = [diagonal_matrix([g.m[i] for g ∈ f]) for i ∈ 1:parent(dom).simples]
+    mats = [diagonal_matrix([g.m[i] for g ∈ f]) for i ∈ 1:parent(dom).rank]
 
     return morphism(dom,cod, mats)
 end
@@ -950,7 +936,7 @@ end
 #     #@assert length(unique!([domain.(f)...])) == 1 "Not compatible"
 
 #     ms = matrices.(f)
-#     m = [hcat([n[i] for n ∈ ms]...) for i ∈ 1:parent(f[1]).simples]
+#     m = [hcat([n[i] for n ∈ ms]...) for i ∈ 1:parent(f[1]).rank]
 #     return morphism(domain(f[1]), ⊕(codomain.(f)...), m)
 # end
 
@@ -961,12 +947,12 @@ end
 #     # @assert length(unique!([codomain.(f)...])) == 1 "Not compatible"
 
 #     ms = matrices.(f)
-#     m = [vcat([n[i] for n ∈ ms]...) for i ∈ 1:parent(f[1]).simples]
+#     m = [vcat([n[i] for n ∈ ms]...) for i ∈ 1:parent(f[1]).rank]
 #     return morphism(⊕(domain.(f)...), codomain(f[1]), m)
 # end
 
 
-zero(C::SixJCategory) = SixJObject(C,[0 for i ∈ 1:C.simples])
+zero(C::SixJCategory) = SixJObject(C,[0 for i ∈ 1:C.rank])
 
 function zero_morphism(X::SixJObject, Y::SixJObject)
     return SixJMorphism(X,Y,[zero(matrix_space(base_ring(X), cX, cY)) for (cX,cY) ∈ zip(X.components, Y.components)])
@@ -984,7 +970,7 @@ end
 #-------------------------------------------------------------------------------
 
 function simples(C::SixJCategory)
-    n = C.simples
+    n = C.rank
     [SixJObject(C, [i == j ? 1 : 0 for j ∈ 1:n]) for i ∈ 1:n]
 end
 
@@ -992,7 +978,7 @@ end
 function sort_simples!(C::SixJCategory, order::Vector{Int})
     C.tensor_product = [C.tensor_product[i,j,k] for i ∈ order, j ∈ order, k ∈ order]
 
-    n = C.simples
+    n = C.rank
    
 
     C.ass = C.ass[order,order,order,order]
@@ -1079,7 +1065,7 @@ function Hom(X::SixJObject, Y::SixJObject)
 
     basis = [zero_morphism(X,Y).m for i ∈ 1:d]
     next = 1
-    for k ∈ 1:parent(X).simples
+    for k ∈ 1:parent(X).rank
 
         for i ∈ 1:Xi[k], j ∈ 1:Yi[k]
             basis[next][k][i,j] = 1
@@ -1103,7 +1089,7 @@ function show(io::IO, C::SixJCategory)
     if isdefined(C,:name)
         print(io, "$(C.name)")
     else
-      print(io, "Fusion Category with $(C.simples) simple objects")
+      print(io, "Fusion Category with $(C.rank) simple objects")
     end
 end
 
@@ -1306,11 +1292,22 @@ end
 ----------------------------------------------------------=#
 
 function autoequivalences(C::SixJCategory)
-    if is_tambara_yamagami(C)
+    if is_tambara_yamagami(C) && is_modular(C)
         return tambara_yamagami_tensor_autoequivalences(C)
     end
-    error("Not implemented")
+
+    fusion_ring_autos = automorphisms(split_grothendieck_ring(C))
+
+    equivs = MonoidalFunctor[]
+
+    for f ∈ fusion_ring_autos 
+        images = [findfirst(==(a), f.images) for a in basis(domain(f))]
+        F = functor(C,C, simples(C)[images])
+        append!(equivs, monoidal_structures(F))
+    end
+    equivs
 end
+
 
 #=----------------------------------------------------------
     Reverse braided  

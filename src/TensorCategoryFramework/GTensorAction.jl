@@ -65,17 +65,17 @@ function action_by_inner_autoequivalences(C::Category)
 
     for i ∈ 1:n, j ∈ 1:n 
         F,G = inner_autos[[i,j]]
-        Y = G.object 
         X = F.object 
+        Y = G.object 
         dY = G.dual_object 
         dX = F.dual_object 
 
         dual_iso = inv(dual_monoidal_structure(X,Y))
         m = [compose( 
-            inv_associator(Y,X⊗V,dX) ⊗ id(dY),
-            (inv_associator(Y,X,V) ⊗ id(dX)) ⊗ id(dY),
-            associator((Y⊗X)⊗V,dX,dY),
-            id((Y⊗X)⊗V) ⊗ dual_iso
+            inv_associator(X,Y⊗V,dY) ⊗ id(dX),
+            (inv_associator(X,Y,V) ⊗ id(dY)) ⊗ id(dX),
+            associator((X⊗Y)⊗V,dY,dX),
+            id((X⊗Y)⊗V) ⊗ dual_iso
         ) for V ∈ indecs]
 
         monoidal_structure[(i,j)] = AdditiveNaturalTransformation(
@@ -114,6 +114,10 @@ end
     Trivial G-action 
 ----------------------------------------------------------=#
 
+
+#=----------------------------------------------------------
+    Comment
+----------------------------------------------------------=#
 
 #=----------------------------------------------------------
     Is Action? 
