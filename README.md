@@ -54,8 +54,7 @@ Vector space of dimension 2 over Real quadratic field defined by x^2 - 2.
 
 ## Installation
 
-You need to have [Julia](https://julialang.org/downloads/) installed. To use TensorCategories
-do the following:
+You need to have [Julia](https://julialang.org/downloads/) installed. To install TensorCategories.jl do the following:
 
 ```julia-repl
 julia> import Pkg
@@ -67,13 +66,9 @@ This will automatically install all dependencies like [OSCAR](https://www.oscar-
 
 ## How to cite
 
-If TensorCategories.jl contributes to your research, please cite both the paper introducing the package and its algorithms, and the archived software release.
-
-The main reference for the mathematical and algorithmic framework of TensorCategories.jl is:
+If TensorCategories.jl contributes to your research, please cite both the paper introducing the package and the archived software release.
 
 > Fabian Mäurer and Ulrich Thiel, *Computing the center of a fusion category*, arXiv:2406.13438, 2024.
-
-Please also cite the software DOI:
 
 > Fabian Mäurer, *TensorCategories.jl*, Zenodo, 2026. DOI: [10.5281/zenodo.18760250](https://doi.org/10.5281/zenodo.18760250).
 
