@@ -68,9 +68,9 @@ This will automatically install all dependencies like [OSCAR](https://www.oscar-
 
 If TensorCategories.jl contributes to your research, please cite both the paper introducing the package and the archived software release.
 
-> Fabian Mäurer and Ulrich Thiel, *Computing the center of a fusion category*, arXiv:2406.13438, 2024.
+1. Fabian Mäurer and Ulrich Thiel, *Computing the center of a fusion category*, arXiv:2406.13438, 2024.
 
-> Fabian Mäurer, *TensorCategories.jl*, Zenodo, 2026. DOI: [10.5281/zenodo.18760250](https://doi.org/10.5281/zenodo.18760250).
+2. Fabian Mäurer, *TensorCategories.jl*, Zenodo, 2026. DOI: [10.5281/zenodo.18760250](https://doi.org/10.5281/zenodo.18760250).
 
 ```bibtex
 @misc{MaeurerThiel2024ComputingCenter,
@@ -97,7 +97,7 @@ If TensorCategories.jl contributes to your research, please cite both the paper 
 
 ## Credits and Acknowledgements
 
-TensorCategories.jl was initiated by [**Ulrich Thiel**](https://agag-thiel.math.rptu.de/math/) (RPTU University Kaiserslautern-Landau) within project A20 "Towards unipotent character sheaves associated to Coxeter groups" (2020–2024) of the SFB-TRR 195 ["Symbolic Tools in Mathematics and their Application"](https://www.computeralgebra.de/sfb/), funded by the German Research Foundation (DFG). The package was created and developed by **Fabian Mäurer** as part of his Master's and PhD work under Thiel's supervision (2021–2026). Its development is currently supported by Thiel's project A20 "Categorical representation theory" (2024–2028) in the SFB-TRR 195. Additional support is provided by the Forschungsinitiative "SymbTools" of the state of Rheinland-Pfalz, in which Thiel is one of the project leaders.
+TensorCategories.jl was initiated by [**Ulrich Thiel**](https://agag-thiel.math.rptu.de/math/) (RPTU University Kaiserslautern-Landau) within his project A20 "Towards unipotent character sheaves associated to Coxeter groups" (2020–2024) of the SFB-TRR 195 ["Symbolic Tools in Mathematics and their Application"](https://www.computeralgebra.de/sfb/), funded by the German Research Foundation (DFG). The package was created and developed by **Fabian Mäurer** as part of his Master's and PhD work under Thiel's supervision (2021–2026). Its development is currently supported by Thiel's project A20 "Categorical representation theory" (2024–2028) in the SFB-TRR 195. Additional support is provided by the Forschungsinitiative "SymbTools" of the state of Rheinland-Pfalz, in which Thiel is one of the project leaders.
 
 [**Gert Vercleyen**](https://gert-vercleyen.github.io/) contributed to the  integration of the data from his [AnyonWiki](https://anyonwiki.github.io/).
 
