@@ -15,7 +15,7 @@ using TensorCategories, Oscar, ProgressMeter
 dir = mktempdir(cleanup = true) 
 
 # Create the log file for the runtime 
-log = open(joinpath(dir, "Centers_of_anyon_wiki.log"), "w")
+log = open(joinpath(dir, "Centers_of_anyonwiki.log"), "w")
 write(log, "Code, simples, splitting, skeletonizing, saving\n")
 flush(log)
 
@@ -43,7 +43,7 @@ codes = unique(c -> c[1:5], anyonwiki_keys(5))
     t4 = @elapsed save_fusion_category(Z3, dir, "center_$(cat[1])_$(cat[2])_$(cat[3])_$(cat[4])_$(cat[5])")
 
     # Write to log file
-    write(log, "[$(cat[1]),$(cat[2]),$(cat[3]),$(cat[4]),$(cat[5])],$t1,$t2,$t3,$t4\n")
+    write(log, "[$(cat[1]),$(cat[2]),$(cat[3]),$(cat[4]),$(cat[5]),$(cat[6]),$(cat[7])],$t1,$t2,$t3,$t4\n")
     flush(log)
 end
 

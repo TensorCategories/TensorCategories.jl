@@ -1157,9 +1157,11 @@ function extension_of_scalars(C::SixJCategory, L::Ring; embedding = embedding(ba
 
         if L isa NumField && isdefined(C, :embedding) 
             emb = getfield(C, :embedding) 
-            _embeddings = complex_embeddings(L)[1]
-            K = base_ring(C)
-            D.embedding = _embeddings[findfirst(e -> overlaps(e(embedding(gen(K))), emb(gen(K))), _embeddings)]
+            _embeddings = complex_embeddings(L)
+
+            # Note: If K == QQ the embedding numberfield is a NumField of degree 1, and base_ring(C) == QQ
+            K = number_field(emb)
+            D.embedding = _embeddings[findfirst(e -> overlaps(e(embedding(gen(base_ring(C)))), emb(gen(K))), _embeddings)]
         end
         return D
     catch 

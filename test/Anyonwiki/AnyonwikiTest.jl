@@ -2,28 +2,44 @@
 
 @testset "AnyonWiki" begin 
 
-    # Test the construction 
+    keys = anyonwiki_keys(4)
+    
     @testset "Construction Categories" begin
 
-        # Test loading of simple categories
-        @test try 
-            C = anyonwiki(2, 1, 0, 1, 2, 1, 1)
-            true
-        catch
-            false
+        # test random categories 
+        for k in rand(keys, 10)
+            C = anyonwiki(k...)
+            @test randomized_pentagon_axiom(C, 3)
+            @test is_pivotal(C)
         end
     end
 
     # Test center loading 
     @testset "Centers of anyonwiki" begin
 
-        # Test loading of simple centers
-        @test try 
-            C = anyonwiki_center(2, 1, 0, 1, 2, 1, 1)
-            true
-        catch
-            false
+        # Test loading of random simple centers
+        for k in rand(keys, 10)
+            C = anyonwiki_center(k...)
+            @test randomized_pentagon_axiom(C, 3)
         end
     end
 
+end
+
+#=----------------------------------------------------------
+    Test the computation of centers of the anyonwiki
+----------------------------------------------------------=#
+
+@testset "AnyonWiki Center" begin
+     
+    keys = anyonwiki_keys(4)
+
+    for k in rand(keys, 3)
+        C = anyonwiki_center(k...)
+        Z = center(C) 
+        Z2 = split(Z)
+        Z3 = skeletonize(Z2)
+        @test randomized_pentagon_axiom(Z2, 3)
+        @test randomized_pentagon_axiom(Z3, 3)
+    end
 end
