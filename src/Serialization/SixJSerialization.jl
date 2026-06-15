@@ -9,7 +9,7 @@ function save_object(s::SerializerState, C::SixJCategory)
 
         save_typed_object(s, base_ring(C), :base_ring)
 
-        save_object(s, C.simples, :simples)
+        save_object(s, C.rank, :rank)
 
         save_object(s, Tuple(simples_names(C)), :simples_names)
         # save_data_array(s, :simples_names) do   
@@ -66,9 +66,9 @@ function load_object(s::DeserializerState, ::Type{SixJCategory})
     
     C.base_ring = load_typed_object(s, :base_ring)
     
-    C.simples = load_object(s, Int64, :simples)
+    C.rank = load_object(s, Int64, :rank)
     
-    n = C.simples
+    n = C.rank
 
     C.simples_names = collect(load_object(s, NTuple{n, String}, :simples_names))
 

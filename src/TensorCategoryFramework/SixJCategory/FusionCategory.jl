@@ -660,7 +660,7 @@ function simple_objects_coev(X::SixJObject)
     # Delete close to zero part if inexact
     if base_ring(C) isa Union{AcbField,ComplexField,ArbField}
         if overlaps(F(real(factor)), zero(base_ring(C)))
-            factor = Fac(imag(factor))
+            factor = F(imag(factor))
         elseif overlaps(F(imag(factor)), zero(base_ring(C)))
             factor = F(real(factor))
         end
@@ -1155,11 +1155,19 @@ function extension_of_scalars(C::SixJCategory, L::Ring; embedding = embedding(ba
         end
         set_name!(D, C.name)
 
+        if isdefined(C, :embedding)
+            emb = getfield(C, :embedding) 
+            _embeddings = complex_embeddings(L)
+            K = base_ring(C)
+            D.embedding = _embeddings[findfirst(e -> overlaps(e(embedding(gen(K))), emb(gen(K))), _embeddings)]
+        end
         return D
     catch 
         error("Extension of scalars not possible")
     end
 end
+
+complex_embedding_of_base_ring(C::SixJCategory) = C.embedding
 
 function extension_of_scalars(C::SixJCategory, K::FqField)
     denom = if base_ring(C) == QQ 
@@ -1353,9 +1361,10 @@ end
 
 function is_unitary(C::SixJCategory)
     get_attribute!(C, :is_unitary) do 
-        if (base_ring(C) isa AbsSimpleNumField) 
-            !is_normal(base_ring(C)) && return false
-            !all(is_square(dim(a)) for a ∈ simples(C)) && return false
+        if base_ring(C) isa QQField
+            return false
+        elseif (base_ring(C) isa AbsSimpleNumField) 
+            return false
         elseif base_ring(C) isa RelSimpleNumField
             return false
         elseif (base_ring(C) isa FqField)
@@ -1504,18 +1513,22 @@ end
 
 @doc raw""" 
 
-    numeric_F_symbols(C::SixJCategory; precision = 2048)
-    numeric_F_symbols(C::SixJCategory, e::AbsSimpleNumFieldEmbedding; precision = 2048)
+    numeric_F_symbols(C::SixJCategory; precision = 128)
+    numeric_F_symbols(C::SixJCategory, e::AbsSimpleNumFieldEmbedding; precision = 128)
 
 Return a Dictionary of the F-symbols of ``C`` evaluated under the embedding ``e``. 
 """
-function numeric_F_symbols(C::SixJCategory, e::AbsSimpleNumFieldEmbedding; precision = 2048)
+function numeric_F_symbols(C::SixJCategory, e::AbsSimpleNumFieldEmbedding; precision = 128)
     F = F_symbols(C)
 
-    Dict(k => e(v, precision) for (k,v) ∈ F)
+    if base_ring(C) == QQ 
+        return Dict(k => e(number_field(e)(v), precision) for (k,v) ∈ F)
+    else
+        return Dict(k => e(v, precision) for (k,v) ∈ F)
+    end
 end
 
-function numeric_F_symbols(C::SixJCategory; precision = 2048)
+function numeric_F_symbols(C::SixJCategory; precision = 128)
     !isdefined(C, :embedding) && error("No embedding has been specified")
     numeric_F_symbols(C, getfield(C, :embedding), precision = precision)
 end

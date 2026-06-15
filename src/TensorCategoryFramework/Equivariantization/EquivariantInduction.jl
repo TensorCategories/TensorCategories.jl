@@ -2,6 +2,12 @@
     Induction to the G-Equivariantization 
 ----------------------------------------------------------=#
 
+@doc raw""" 
+
+    equivariant_induction(X::Object, T::GTensorAction)
+
+Given an object ``X`` in a category with a ``G``-action, compute the induced equivariant object in the equivariantization.
+"""
 function equivariant_induction(X::Object, T::GTensorAction, parent::Equivariantization = equivariantization(parent(X), T))
 
     G = group(T)

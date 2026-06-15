@@ -39,7 +39,7 @@ function anyonwiki(rank::Int,
     ass = dict_to_associator(rank, K, ass)
 
     set_tensor_product!(C, multiplication_table_from_F_symbols(ass))
-    set_associator!(C, transpose.(ass))
+    set_associator!(C, ass)
     set_one!(C, [i == 1 for i in 1:rank])
 
     if braiding != 0 
@@ -115,8 +115,7 @@ function dict_to_associator(N::Int, K::Field, ass::Dict)
         abc_d = collect(keys(D))
         l = Int(sqrt(length(abc_d)))
         if length(first(keys(ass))) == 6 
-            abc_d = sort(abc_d, by = v -> v[6])
-            abc_d = sort(abc_d, by = v -> v[5])
+            abc_d = sort(abc_d, by = v -> v[[6,5]])
         else
             abc_d = sort(abc_d, by = v -> v[[8,5,10,9,7,6]])
         end

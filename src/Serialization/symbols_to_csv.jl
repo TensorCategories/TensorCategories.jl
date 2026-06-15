@@ -75,6 +75,9 @@ function load_numeric_fusion_category(F::String, R::String, K::AcbField = AcbFie
 
     C = six_j_category(K, mult)
 
+    transpose && (ass = Oscar.transpose.(ass))
+    transpose && (braid = Oscar.transpose.(braid))
+
     set_associator!(C, ass)
     set_braiding!(C, braid)
 

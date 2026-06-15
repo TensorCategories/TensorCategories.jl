@@ -59,6 +59,10 @@ function six_j_category(C::Category, S::Vector{<:Object}, names::Vector{String} 
         set_braiding!(skel_C, skeletal_braiding(C,S))
     end
     
+    try 
+        skel_C.embedding = complex_embedding_of_base_ring(C)
+    catch
+    end
 
     return skel_C
 end

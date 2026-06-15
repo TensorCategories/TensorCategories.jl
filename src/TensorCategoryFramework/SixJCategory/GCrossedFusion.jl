@@ -39,7 +39,12 @@ function gcrossed_product(C::SixJCategory, T::GTensorAction)
         X = S[i1] ⊗ (TgY) ⊗ (TghZ)
         Y = g1 * g2 * g3
 
-        a = matrices((id(S[i1]) ⊗ monoidal_structure(T(g1), S[i2], T(g2)(S[i3]))) ∘ associator(S[i1], TgY, TghZ))
+        a = matrices(compose(
+            associator(S[i1], TgY, TghZ),
+            id(S[i1]) ⊗ (id(TgY) ⊗ monoidal_structure(T, g1, g2)(S[i3])),
+            id(S[i1]) ⊗ monoidal_structure(T(g1), S[i2], T(g2)(S[i3]))
+        ))
+        #a = matrices((id(S[i1]) ⊗ monoidal_structure(T(g1), S[i2], T(g2)(S[i3]))) ∘ associator(S[i1], TgY, TghZ))
 
         l = findfirst(==(Y), elements_of_G)
         for k ∈ 1:m, l2 ∈ 1:n

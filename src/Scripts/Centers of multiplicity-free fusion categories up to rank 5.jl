@@ -1,7 +1,9 @@
 #=----------------------------------------------------------
     This script computes the centers of all 
-    multiplicity-free fusion categories up to rank 5
-    and stores the results in a directory.
+    multiplicity-free fusion categories up to rank 5.
+
+    WARNING: This will take a long time (multiple days) 
+        to finish.
 
     It is recommended to start julia on multiple threads
     with julia --threads=N to speed up the computation.
@@ -9,35 +11,29 @@
 
 using TensorCategories, Oscar, ProgressMeter 
 
-# The path to store the results. Can be provided as a command line argument, otherwise the user will be prompted to enter one.
-_dir = if isempty(ARGS) 
-    println("Please specify a directory to store the results")
-    readline()
-else 
-    ARGS[1]
-end
+# Specify the directory to store the centers
+dir = mktempdir(cleanup = true) 
 
-dir = joinpath(_dir, "Centers/")
-!isdir(dir) && mkdir(dir)
+# Create the log file for the runtime 
+log = open(joinpath(dir, "Logs/Centers_of_anyon_wiki.log"), "w")
+write(log, "Code, simples, splitting, skeletonizing, saving\n")
+flush(log)
 
-# Open the log file
-log = open(joinpath(dir, "Centers.log"), "w")
-
-# The codes of the anyonwiki 
-codes = anyonwiki_keys(5)
-
-# optional: The braidings and pivotal structures do not change the center
+# The braidings and pivotal structures do not change the center
 # so we can pick one representative
-codes_without_braiding_and_pivotal = unique([c[1:5] for c ∈ codes])
-codes = [codes[findfirst(e -> e[1:5] == c, codes)] for c ∈ codes_without_braiding_and_pivotal]
+codes = unique(c -> c[1:5], anyonwiki_keys(5))
+
 
 @showprogress for cat in codes 
     # load the category
     C = anyonwiki(cat...)
 
-    # compute the center
     Z = center(C)
+
+    # Compute the simples
     t1 = @elapsed simples(Z)
+
+    # compute the splitting
     t2 = @elapsed Z2 = split(Z)[1]
 
     # Skeletonize 

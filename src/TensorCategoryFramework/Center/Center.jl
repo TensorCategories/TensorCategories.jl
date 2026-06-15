@@ -107,6 +107,7 @@ is_spherical(C::CenterCategory) = is_spherical(category(C))
 squared_norm(X::CenterObject) = squared_norm(object(X))
 dim(C::CenterCategory) = dim(category(C))^2
 
+complex_embedding_of_base_ring(C::CenterCategory) = complex_embedding_of_base_ring(category(C))
 
 @doc raw""" 
 
@@ -911,11 +912,6 @@ function simples_by_induction!(C::CenterCategory, log = true)
 
     S = CenterObject[]
 
-    if rank(category(C)) == 1
-        C.simples = S
-        return S 
-    end
-
     d = dim(C.category)^2
     C.induction_gens = induction_generators(C)
     simpls = simples(C.category)
@@ -1147,7 +1143,7 @@ function cyclotomic_splitting_field(polys::Vector{<:PolyRingElem})
     K = base_ring(polys[1])
     m = []
     for f ∈ polys 
-        for n ∈ 1:degree(f)^2 
+        for n ∈ 1:degree(f)^4 
             L = cyclotomic_extension(K,n)
             if !isempty(roots(L.Kr,f))
                 push!(m,n)
