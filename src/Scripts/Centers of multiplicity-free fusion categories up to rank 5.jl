@@ -15,7 +15,7 @@ using TensorCategories, Oscar, ProgressMeter
 dir = mktempdir(cleanup = true) 
 
 # Create the log file for the runtime 
-log = open(joinpath(dir, "Logs/Centers_of_anyon_wiki.log"), "w")
+log = open(joinpath(dir, "Centers_of_anyon_wiki.log"), "w")
 write(log, "Code, simples, splitting, skeletonizing, saving\n")
 flush(log)
 
