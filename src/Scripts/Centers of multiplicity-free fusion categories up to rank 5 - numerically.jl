@@ -31,7 +31,7 @@ for cat in codes
     t1 = @elapsed simples(Z)
     print("simples computed in $t1 seconds")
 
-    # Get F-symbols.
+    # Skeletonization
     t2 = @elapsed Z2 = skeletonize(Z)
     print(", skeletonized in $t2 seconds")
     println(", quick pentagon ckeck $(randomized_pentagon_axiom(Z2, 3) ? "passed" : "failed")")

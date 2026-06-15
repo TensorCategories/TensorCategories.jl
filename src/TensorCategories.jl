@@ -42,17 +42,15 @@ import Oscar: +, @alias, @attributes, AbstractSet, AcbField, StructureConstantAl
     rationals_as_number_field, inner_product, orthogonal_basis, overlaps, BigComplex,ArbFieldElem, lindep
 
 import Oscar.Serialization: @register_serialization_type,
-                 save_data_dict,
-                 save_data_array,
-                 save_object,
-                 save_type_params,
-                 save_typed_object,
-                 load_object,
-                 load_type_params,
-                 load_typed_object,
-                SerializerState,
-                DeserializerState,
-                 load_array_node
+    save_data_dict,
+    save_data_array,
+    save_object,
+    save_typed_object,
+    load_object,
+    load_typed_object,
+    SerializerState,
+    DeserializerState,
+    load_array_node
 
 using InteractiveUtils
 using SparseArrays
