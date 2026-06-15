@@ -410,7 +410,7 @@ end
 
 function double_dual_monoidal_structure(X::Object, Y::Object)
     compose(
-        dual(inv(dual_monoidal_structure(X,Y))),
+        inv(dual(dual_monoidal_structure(X,Y))),
         dual_monoidal_structure(dual(Y), dual(X))
     )
 end
@@ -518,6 +518,10 @@ function is_pivotal_numeric(C::Category)
 end
 
 function F_symbols(C::Category)
+    if !is_unitary(C) 
+        F_symbols(skeletonize(C))
+    end
+    
     homs = multiplicity_spaces(C)    
     N = rank(C)
     m = multiplicity(C) 

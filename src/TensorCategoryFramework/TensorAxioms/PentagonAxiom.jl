@@ -62,6 +62,7 @@ end
 function randomized_pentagon_axiom(C::Category, n::Int = 0)
     S = simples(C)
     m = length(S)
+    m == 1 && return true
     if n == 0
         n = m^2
     end

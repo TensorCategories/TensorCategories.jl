@@ -126,11 +126,17 @@ function dict_to_associator(N::Int, K::Field, ass::Dict)
     ass_matrices 
 end
 
-function anyonwiki_keys(n::Int = 7)
-    d = include(joinpath(@__DIR__, "base_field_generators.jl"))
+function anyonwiki_keys(n::Int = 7, attrs::String...)
+    d = eval.(Meta.parse.(readlines(joinpath(@__DIR__, "keys.csv"))[2:end]))
 
-    return [k for (k,v) in sort(d) if k[1] ≤ n]
+    filter!(e -> e[1] <= n, d)
+
+    "spherical" in attrs && filter!(e -> e[8], d)
+    "modular" in attrs && filter!(e -> e[9], d)
+    "unitary" in attrs && filter!(e -> e[10], d)
+    return [k[1:7] for k in d]
 end
+
 
 function group_dict_keys_by(f::Function, D::Dict)
     groups = Dict()

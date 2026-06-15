@@ -16,7 +16,6 @@ function pivotal_structures(C::SixJCategory)
     C_x = six_j_category(Kx, multiplication_table(C))
     set_associator!(C_x, [change_base_ring(Kx, m) for m ∈ C.ass])
     set_one!(C_x, C.one)
-    
     set_pivotal!(C_x, piv)
 
     eqs = []
@@ -26,7 +25,7 @@ function pivotal_structures(C::SixJCategory)
 
         append!(eqs, filter!(!=(0), collect(matrix(eq))[:]))
     end
-    
+    @show dim(ideal(collect(groebner_basis(ideal(eqs)))))
     sols = real_solutions_over_base_field(ideal(collect(groebner_basis(ideal(eqs)))))
 
     return [[p(s...) for p ∈ piv] for s ∈ sols]
