@@ -5,7 +5,7 @@ import Base: *, +, -, ==, ^, getindex, getproperty, in, issubset, iterate, lengt
 import Oscar
 import Oscar.AbstractAlgebra.Generic: Poly
 import Oscar.AbstractAlgebra: Group
-import Oscar.Hecke: RelSimpleNumField, regular_module, meataxe
+import Oscar.Hecke: RelSimpleNumField, regular_module, meataxe, NumFieldEmb
 import Oscar: +, @alias, @attributes, AbstractSet, AcbField, StructureConstantAlgebra, AssociativeAlgebraElem, ngens,
     cyclotomic_field, Fac, Field, FieldElem, FinField, GF, GAP,QQ,AbsSimpleNumFieldEmbedding,
     GAPGroupHomomorphism, GL, GSet, GroupElem, Hecke.AbstractAssociativeAlgebra,
@@ -317,6 +317,7 @@ export left_module_category
 export left_trace 
 export load 
 export load_fusion_category
+export load_numeric_fusion_category
 export matrices 
 export matrix 
 export meataxe
@@ -395,6 +396,7 @@ export QZZ
 export R_symbols
 export radical
 export rand
+export randomized_pentagon_axiom
 export rational_lift 
 export regular_representation
 export Representation 
@@ -605,7 +607,6 @@ include("Examples/Haagerup/ExtendedHaagerup.jl")
 include("Examples/SU(k)/SU(3)_3.jl")
 
 
-@register_serialization_type SixJCategory "SixJCategory"
 
 include("Serialization/SixJSerialization.jl")
 include("Serialization/symbols_to_csv.jl")
@@ -614,6 +615,8 @@ include("Serialization/symbols_to_csv.jl")
 include("AnyonWiki/AnyonWiki.jl")
 include("AnyonWiki/CheckAnyonwiki.jl")
 
+
+@register_serialization_type SixJCategory "SixJCategory"
 
 # @register_serialization_type SixJMorphism
 # @register_serialization_type SixJObject

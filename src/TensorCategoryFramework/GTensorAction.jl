@@ -47,6 +47,12 @@ end
     Cannonical G-action
 ----------------------------------------------------------=#
 
+@doc raw""" 
+
+    action_by_inner_automorphisms(C::Category)
+
+For a fusion category ``C`` compute the action of the group of inner autoequivalences on ``C``.
+"""
 function action_by_inner_autoequivalences(C::Category)
 
     # Build Group of inner autoequivalences
@@ -91,9 +97,9 @@ end
 
 @doc raw""" 
 
-    inner_automorphisms(C::Category)
+    inner_autoequivalences(C::Category)
 
-Return a vector with all non-equivalent inner automorphisms
+Return a vector with all non-equivalent inner autoequivalences of ```C```.
 """
 function inner_autoequivalences(C::Category) 
     invertibls = invertibles(C)
@@ -144,6 +150,30 @@ function is_tensor_action(F::GTensorAction)
 
     true
 end
+
+
+function monoidal_functor_axiom(F::GTensorAction)
+    S = elements(group(F))
+    
+    for X ∈ S, Y ∈ S, Z ∈ S 
+        left = compose(
+            monoidal_structure(F,X,Y) ⊗ id(F(Z)),
+            monoidal_structure(F, X * Y, Z)
+        )
+
+        right = compose(
+            id(F(X)) ⊗ monoidal_structure(F,Y,Z),
+            monoidal_structure(F, X, Y * Z)
+        )
+
+        if right != left 
+            return false 
+        end
+    end
+
+    true
+end
+
 #=----------------------------------------------------------
     Printing 
 ----------------------------------------------------------=#

@@ -198,7 +198,12 @@ end
 
 indecomposables(F::InnerAutoequivalence) = indecomposables(domain(F))
 
+@doc raw""" 
 
+    inner_autoequivalence(X::Object)
+
+Compute the inner autoequivalence ``V ↦ X ⊗ V ⊗ X^*`` for an invertible object ``X``.
+"""
 function inner_autoequivalence(X::Object) 
     @req is_invertible(X) "Object has to be invertible"
     inner_autoequivalence(parent(X),X)

@@ -10,6 +10,7 @@ makedocs(
     format = Documenter.HTML(
         canonical = "https://juliadocs.github.io/Documenter.jl/stable/",
         prettyurls = !("local" in ARGS),
+        collapselevel=1,
         mathengine = MathJax3(Dict(
             :tex => Dict(
                 "inlineMath" => [["\$","\$"], ["\\(","\\)"]],
@@ -54,11 +55,10 @@ makedocs(
         #     "ℤ₊-Rings" => "ZPlusRings.md"
         # ],
        #"Multitensor Category Interface" => "Multitensor.md",
-        "Categorical Constructions" => [
-            "The Drinfeld Center" => "Constructions/Center.md",
+        "The Drinfeld Center" => "Constructions/Center.md",
             #"The Drinfeld Centralizer" => "Constructions/Centralizer.md",
-            "Internal Module Categories" => "Constructions/ModuleCategories.md"
-        ],
+        "Internal Module Categories" => "Constructions/ModuleCategories.md",
+        "Group Actions on Fusion Categories" => "Constructions/GroupActions.md",
         "References" => "References.md"
     ],
 )

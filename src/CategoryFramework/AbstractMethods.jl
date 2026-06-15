@@ -849,7 +849,7 @@ function numeric(X::Union{Category,Object,Morphism}, precision::Int = 64)
     numeric(X,precision, precision)
 end
 
-function numeric(C::Category, precision = 64)
+function numeric(C::Category, precision, max_bits)
     K = base_ring(C)
     @assert typeof(K) <: Union{QQBarField, ArbField, AcbField} "This doesn't make sense here. Use 'extension_of_scalars'"
     CC = AcbField(max_bits)
