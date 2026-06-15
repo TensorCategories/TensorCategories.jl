@@ -111,9 +111,9 @@ is_additive(T::RightTensorProductFunctor) = is_additive(domain(T))
             (id(X) ⊗ coev(Y)) ⊗ id(dX),
             inv_associator(X, Y, dual(Y)) ⊗ id(dX),
         ),
-        inv_associator(dXY, XY ⊗ dY, dual(X)),
+        inv_associator(dXY, XY ⊗ dY, dX),
         inv_associator(dXY, XY, dY) ⊗ id(dX),
-        ev(dXY) ⊗ id(dY) ⊗ id(dX)
+        ev(XY) ⊗ id(dY) ⊗ id(dX)
     )   
 end
 

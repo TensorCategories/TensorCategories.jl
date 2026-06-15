@@ -1155,9 +1155,9 @@ function extension_of_scalars(C::SixJCategory, L::Ring; embedding = embedding(ba
         end
         set_name!(D, C.name)
 
-        if isdefined(C, :embedding)
+        if L isa NumField && isdefined(C, :embedding) 
             emb = getfield(C, :embedding) 
-            _embeddings = complex_embeddings(L)
+            _embeddings = complex_embeddings(L)[1]
             K = base_ring(C)
             D.embedding = _embeddings[findfirst(e -> overlaps(e(embedding(gen(K))), emb(gen(K))), _embeddings)]
         end
@@ -1361,15 +1361,17 @@ end
 
 function is_unitary(C::SixJCategory)
     get_attribute!(C, :is_unitary) do 
-        if base_ring(C) isa QQField
+        if base_ring(C) isa Union{QQField, NumField, FqField}
             return false
-        elseif (base_ring(C) isa AbsSimpleNumField) 
-            return false
-        elseif base_ring(C) isa RelSimpleNumField
-            return false
-        elseif (base_ring(C) isa FqField)
-            return false 
         end
+
+        !is_spherical(C) && return false
+        if base_ring(C) isa Union{ArbField, AcbField}
+            !all([overlaps(fpdim(s), dim(s)) for s ∈ simples(C)]) && return false
+        else
+            !all([fpdim(s) == dim(s) for s ∈ simples(C)]) && return false
+        end
+
         for x ∈ simples(C), y ∈ simples(C), z ∈ simples(C) 
             !is_unitary(associator(x,y,z)) && return false 
         end 
@@ -1670,9 +1672,14 @@ end
 function numeric(C::SixJCategory, precision, max_bits)
     K = base_ring(C)
     CC = AcbField(max_bits)
+    if K == QQ 
+        _K, = rationals_as_number_field()
+        return extension_of_scalars(C, CC, embedding = x -> C.embedding(_K(x), max_bits))
+    end
     if !(typeof(K) <: Union{QQBarField, ArbField, AcbField})
         return extension_of_scalars(C, CC, embedding = x -> CC(C.embedding(x, max_bits)))
     end
+
     extension_of_scalars(C, CC, embedding = x -> qqbar_to_acb_with_error(x,precision,max_bits))
 end
 
