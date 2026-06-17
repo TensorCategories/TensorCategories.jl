@@ -41,10 +41,10 @@ end
 
 @testset "AnyonWiki Center" begin
     keys = anyonwiki_keys(3)
-    @testset "Rank < 5: Computation" begin
+    @testset "Rank < 4: Computation" begin
 
         for k in rand(keys, 3)
-            C = anyonwiki_center(k...)
+            C = anyonwiki(k...)
             Z = center(C) 
             Z2, = split(Z)
             Z3 = skeletonize(Z2)
