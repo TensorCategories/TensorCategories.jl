@@ -29,7 +29,6 @@ end
 
 include("GroupActionsTests/TensorActionTests.jl")
 include("GroupActionsTests/EquivariantizationTests.jl")
-include("GroupActionsTests/GCrossedTests.jl")
 
 include("Anyonwiki/AnyonwikiTest.jl")
 

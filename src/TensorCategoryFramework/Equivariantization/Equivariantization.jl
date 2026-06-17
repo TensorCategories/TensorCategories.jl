@@ -190,7 +190,7 @@ function Hom(X::EquivariantObject, Y::EquivariantObject)
 
     for (g,u,v) ∈ zip(elements(G), X.structure_maps, Y.structure_maps)
         base = basis(Hom(T(g)(object(X)),object(Y)))
-        eq = zeros(Kx, length(base))
+        eq = [zero(Kx) for _ in eachindex(base)]
         Tg = T(g)
         for (f,a) ∈ zip(H,x)
             coeffs = express_in_basis(v ∘ Tg(f), base)

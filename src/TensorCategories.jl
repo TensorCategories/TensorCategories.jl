@@ -608,10 +608,7 @@ include("Examples/SU(k)/SU(3)_3.jl")
 
 include("Serialization/SixJSerialization.jl")
 include("Serialization/symbols_to_csv.jl")
-#include("Serialization/CenterSerialization.jl")
-#include("SixJCategoryDatabase/main.jl")
 include("AnyonWiki/AnyonWiki.jl")
-include("AnyonWiki/CheckAnyonwiki.jl")
 
 
 @register_serialization_type SixJCategory "SixJCategory"

@@ -61,6 +61,30 @@ function anyonwiki(rank::Int,
     return C
 end
 
+function anyonwiki(K::Field, i,j,k,l,m,n,o)
+    C = anyonwiki(i,j,k,l,m,n,o)
+    _,emb = is_subfield(base_ring(C),K)
+    extension_of_scalars(C, K, embedding = emb)
+end
+
+function anyonwiki_finite(K::FqField,i,j,k,l,m,n,o)
+    C = anyonwiki(i,j,k,l,m,n,o)
+
+    extension_of_scalars(C,K)
+end
+
+function multiplication_table_from_F_symbols(ass::Array{<:MatElem,4})
+    # Build multiplication_table
+    N, = size(ass)
+
+    mult = zeros(Int,N,N,N)
+    
+    for i ∈ 1:N, j ∈ 1:N, k ∈ 1:N 
+        mult[i,j,k] = size(ass[1,i,j,k])[1]
+    end
+    return mult
+end
+
 @doc raw""" 
 
     anyonwiki_center(i,j,k,l,m,n,o)
@@ -170,143 +194,7 @@ function dict_to_braiding(N::Int, K::Field, braid::Dict)
     braiding_array
 end
 
-function anyonwiki_from_numerics(rank::Int, 
-                    multiplicity::Int, 
-                    non_self_dual::Int,
-                    fusion_ring::Int, 
-                    associator::Int, 
-                    braiding::Int, 
-                    pivotal::Int, 
-                    K::Union{Ring,Nothing} = nothing ; minimal = false)
-    
-    field_dict = include(joinpath(@__DIR__, "base_field_generators.jl"))
 
-    # if ! minimal && K === nothing 
-    #     if n ∈ ZZ.(readlines(joinpath(anyon_path, "cycloPos.txt")))
-    #         return anyonwiki_cyclotomic(n)
-    #     end
-    # end
-
-    K,e = load_anyonwiki_number_field(rank, multiplicity, non_self_dual,fusion_ring, associator, braiding, pivotal)
-
-
-    data = []
-    CC = AcbField(2048)
-    Q = QQBarField()
-    # deg = typeof(K) <: Union{<:NumField,QQField} ? degree(K) : 24
-    # if typeof(K) <: Union{<:NumField,QQField}
-    #     es = complex_embeddings(K) 
-    #     r = load_anyonwiki_associator_root(n)
-    #     r2 = load_anyonwiki_pivotal_root(n) 
-    #     for f ∈ es 
-    #         try 
-    #             preimage(f,r)
-    #             preimage(f,r2)
-    #             global e = f
-    #             break 
-    #         catch 
-    #         end
-    #     end
-    # end
-
-    cat_string = "cat_$(rank)_$(multiplicity)_$(non_self_dual)_$(fusion_ring)_$(associator)_$(braiding)_$(pivotal).jl"
-    
-    # Get associator dict with strings
-    _ass_dict = include(joinpath(@__DIR__, "AnyonWikiData/new_6j_Symbols/$cat_string"))
-    # ass_dict = Dict{Vector{Int}, elem_type(K)}()
-    # # Convert data to numberfield
-    # for (k, str) ∈ _ass_dict 
-    #     x = string_to_acb(CC, str)
-    #     x = preimage(e, x, degree(K))
-    #     ass_dict[k] = K(x)
-    # end
-
-    ass_dict = apply_preimage_to_anyon_file(e, joinpath(@__DIR__, "AnyonWikiData/new_6j_Symbols/$cat_string"))
-
-    # open(joinpath(anyon_path, "new_6j_symbols/cat_$n")) do f 
-
-    #     while ! eof(f)
-
-    #         s = readline(f) 
-    #         s = filter(!=('\"'), s)
-    #         s = split(s, " ")
-
-    #         indices = Int[eval(Meta.parse(a)) for a ∈ s[1:end-3]]
-
-    #         found = false 
-
-    #         while ! found
-    #             x_real = CC(s[end-2] * "+/- 1e-510")
-    #             x_imag = CC(s[end][1:end-2] * "+/- 1e-510") * CC(im) 
-    #             try 
-    #             global x = guess(Q, x_real + x_imag, deg)
-    #             found = true
-    #             catch  err
-    #                 if precision(CC) > 5000 error(err) end
-    #                 CC = AcbField(2*precision(CC)) 
-    #             end
-    #         end
-    #         if typeof(K) <: Union{<:NumField,QQField}
-    #             append!(data, [Any[indices; preimage(e,x)]])
-    #         else 
-    #             append!(data, [Any[indices; K(x)]])       
-    #         end
-    #     end
-    # end
-    N = rank
-    
-    # Construct multiplication table from associators
-    mult = zeros(Int,N,N,N)
-    
-    for (_,a,b,c) ∈ filter(e -> e[1] == 1, keys(ass_dict)) 
-        
-        mult[a,b,c] = 1 
-    end
-
-    C = six_j_category(K, mult)
-    set_name!(C, "Fusion category ($(cat_string[5:end-3])) from AnyonWiki")
-
-    # Build matrices for 6j-Symbols
-    for a ∈ 1:N, b ∈ 1:N, c ∈ 1:N, d ∈ 1:N
-        abc_d = filter(e -> e[[1,2,3,4]] == [a,b,c,d], collect(keys(ass_dict)))
-        l = Int(sqrt(length(abc_d)))
-        abc_d = sort(abc_d, by = v -> v[6])
-        abc_d = sort(abc_d, by = v -> v[5])
-        
-        M = matrix(K,l,l, [ass_dict[v] for v ∈ abc_d])
-        set_associator!(C,a,b,c,d,M)  
-    end
-    set_one!(C, 1)
-    
-
-    set_pivotal!(C, load_anyonwiki_pivotal(rank::Int, 
-        multiplicity::Int, 
-        non_self_dual::Int,
-        fusion_ring::Int, 
-        associator::Int, 
-        braiding::Int, 
-        pivotal::Int, K, e))
-    
-    if braiding != 0
-        set_braiding!(C, anyonwiki_braiding(rank::Int, 
-            multiplicity::Int, 
-            non_self_dual::Int,
-            fusion_ring::Int, 
-            associator::Int, 
-            braiding::Int, 
-            pivotal::Int, K, e))
-    end
-    C
-end
-
-function string_to_acb(CC::AcbField, str::String)
-    re,co = split(str, "+")
-    if co == "0"
-        x = CC(re * "+/- 2e-510")
-    else
-        x = CC(re * "+/- 2e-510") + CC(co[1:end-2] * "+/- 2e-510")*CC(im)
-    end
-end
 
 function load_anyonwiki_number_field(rank::Int, 
     multiplicity::Int, 
@@ -339,346 +227,17 @@ function load_anyonwiki_number_field(rank::Int,
         emb = complex_embedding(K,root)
         return K, emb
     end
-    # line = 1
-    # open(joinpath(anyon_path, "base_field_generators.jl")) do f 
-
-    #     while ! eof(f) 
-
-    #         s = readline(f) 
-            
-    #         if line == n 
-    #             global _,x = QQ[:x]
-    #             min_pol = eval(Meta.parse(s))
-
-    #             global K1 = min_pol == 1 ? QQ : number_field(min_pol)[1]
-    #             break
-    #         end
-            
-    #         line += 1
-    #     end
-    # end
-    
-    # line = 1
-    # open(joinpath(pivotal_path, "Polynomials")) do f 
-
-    #     while ! eof(f) 
-
-    #         s = readline(f) 
-            
-    #         if line == n 
-    #             global _,x = QQ[:x]
-    #             min_pol = eval(Meta.parse(s))
-
-    #             global K2 =  min_pol == 1 ? QQ : number_field(min_pol)[1]
-    #             break
-    #         end
-            
-    #         line += 1
-    #     end
-    # end
-    
-    # K1 == K2 && return K1
-    # K1 == QQ && return K2
-    # K2 == QQ && return K1 
-
-    # simplify(splitting_field([defining_polynomial(K1), defining_polynomial(K2)]))[1]
 end
 
-# function load_anyonwiki_associator_root(n::Int)
-#     line = 1
-#     CC = AcbField(2048)
-#     Q = QQBarField()
-#     deg = 24
-#     open(joinpath(associator_path, "Roots.dat")) do f 
-
-#         while ! eof(f) 
-#             s = readline(f) 
-#             if line == n
-#                 s = filter(!=('\"'), s)
-#                 s = split(s, " ")
-#                 x_real = CC(s[1] * " +/- 1e-512")
-#                 x_imag = CC(s[end][1:end-2] * "+/- 1e-512") * CC(im) 
-
-#                 return guess(Q,x_real + x_imag,deg)
-#             end
-#             line += 1
-#         end
-#     end
-# end
-
-# function load_anyonwiki_pivotal_root(n::Int)
-#     line = 1
-#     CC = AcbField(2048)
-#     Q = QQBarField()
-#     deg = 24
-#     open(joinpath(pivotal_path, "Roots.dat")) do f 
-
-#         while ! eof(f) 
-#             s = readline(f) 
-#             if line == n
-#                 s = filter(!=('\"'), s)
-#                 s = split(s, " ")
-#                 x_real = CC(s[1] * " +/- 1e-512")
-#                 x_imag = CC(s[end][1:end-2] * "+/- 1e-512") * CC(im) 
-
-#                 return guess(Q,x_real + x_imag,deg)
-#             end
-#             line += 1
-#         end
-#     end
-# end
-
-function apply_preimage_to_anyon_file(e::AbsSimpleNumFieldEmbedding, file::String)
-    str = read(file, String)
-    reg = r"\"[^\"]*\""
-    matches = unique(collect([m.match[2:end-1] for m in eachmatch(reg,str)]))
-    sub = Dict(String(k) =>  preimage(e, string_to_acb(AcbField(2048), String(k)), degree(number_field(e))) for k in matches)
-    dict = include(file)
-
-    new_dict = Dict(k => sub[v] for (k,v) ∈ dict)
-end
-
-function load_anyonwiki_pivotal(rank::Int, 
-    multiplicity::Int, 
-    non_self_dual::Int,
-    fusion_ring::Int, 
-    associator::Int, 
-    braiding::Int, 
-    pivotal::Int,
-    K, e = complex_embeddings(K)[1])
-
-    CC = AcbField(2048)
-    Q = QQBarField()
-
-    cat_string = "cat_$(rank)_$(multiplicity)_$(non_self_dual)_$(fusion_ring)_$(associator)_$(braiding)_$(pivotal).jl"
-
-    piv = include(joinpath(@__DIR__, "AnyonWikiData/new_P_Symbols/$cat_string"))
-
-    [K(preimage(e,string_to_acb(CC, piv[x]), degree(K))) for x in sort(collect(keys(piv)))]
-    # deg = typeof(K) <: Union{<:NumField,QQField} ? degree(K) : 24
-
-    # piv = elem_type(K)[]
-    # open(joinpath(pivotal_path, "pivots_cat_$n")) do f 
-
-    #     while ! eof(f) 
-
-    #         s = readline(f) 
-    #         s = filter(!=('\"'), s)
-    #         s = split(s, " ")
-
-    #         x_real = CC(s[2] * " +/- 1e-512")
-    #         x_imag = CC(s[4][1:end-2] * "+/- 1e-512") * CC(im) 
-
-    #         x = guess(Q, x_real + x_imag, deg)
-
-    #         if typeof(K) <: Union{<:NumField,QQField}
-    #             push!(piv, preimage(e, x))
-    #         else 
-    #             push!(piv, K(x))    
-    #         end
-    #     end
-    # end
-    # return piv 
-end
-
-
-function load_anyonwiki_attributes(n::Int) 
-    symbols = [ :braided, :unitary, :spherical, :ribbon, :modular]
-    open(joinpath(@__DIR__, "AnyonWikiData/cat_properties.txt")) do f 
-
-        line = 1
-        while ! eof(f) 
-            s = readline(f) 
-
-            if line == n+1
-                s = filter(!=('\"'), s)
-                s = split(s, ", ")
-
-                return Dict(k => parse(Bool, t) for (t, k) in zip(s,symbols))
-            end
-            line += 1
-        end
-    end
-end
-
-
-function anyonwiki_cyclotomic(n::Int)
-    r = anyonwiki_cyclotomic_root(n)
-    
-    if r > 2 
-        eval(Meta.parse("global K, z$r = cyclotomic_field($r, \"z$r\")"))
+function string_to_acb(CC::AcbField, str::String)
+    re,co = split(str, "+")
+    if co == "0"
+        x = CC(re * "+/- 2e-510")
     else
-        global K = QQ 
+        x = CC(re * "+/- 2e-510") + CC(co[1:end-2] * "+/- 2e-510")*CC(im)
     end
-    
-    anyonwiki_cyclotomic(n, K)
 end
 
-# function anyonwiki_cyclotomic(n::Int, K::Field)
-    
-#     r = anyonwiki_cyclotomic_root(n)
-#     root = root_of_unity(K,r)
-#     eval(Meta.parse("z$r = $(root)"))
-
-
-#     associator_array = anyonwiki_cyclotomic_associator(n,K)
-   
-#     mult = multiplication_table_from_F_symbols(associator_array)
-
-
-#     C = six_j_category(K, mult)
-#     set_name!(C, "Fusion category number $n from AnyonWiki")
-#     set_associator!(C, associator_array)
-#     set_one!(C, [i == 1 for i ∈ 1:C.simples])
-
-#     pivotals = include(joinpath(anyon_path, "cyclic_P_Symbols/cat_$n.jl"))
-
-#     set_pivotal!(C, K.([pivotals[[i]] for i ∈ 1:length(pivotals)]))
-
-#     attrs = load_anyonwiki_attributes(n)
-
-#     if attrs[:braided] 
-       
-#         braiding_array = anyonwiki_cyclotomic_braiding(n, K)
-#         set_braiding!(C, braiding_array)
-#     end
-
-#     return C
-    
-# end
-
-function anyonwiki(K::Field, i,j,k,l,m,n,o)
-    C = anyonwiki(i,j,k,l,m,n,o)
-    _,emb = is_subfield(base_ring(C),K)
-    extension_of_scalars(C, K, embedding = emb)
-end
-
-function anyonwiki_finite(K::FqField,i,j,k,l,m,n,o)
-    C = anyonwiki(i,j,k,l,m,n,o)
-
-    extension_of_scalars(C,K)
-    # r = anyonwiki_cyclotomic_root(n)
-
-    # f_symbol_string = readlines(joinpath(anyon_path, "cyclic_6j_Symbols/cat_$n.jl"))[4]
-
-    # ind = findall(r"\//\d+", f_symbol_string)
-    # inverse = lcm([parse(Int, f_symbol_string[i[3:end]]) for i in ind])
-
-    # K = finite_prime_field_with_root_of_unity(r, inverse + 1)
-
-    # anyonwiki_cyclotomic(n,K)
-end
-
-function multiplication_table_from_F_symbols(ass::Array{<:MatElem,4})
-    # Build multiplication_table
-    N, = size(ass)
-
-    mult = zeros(Int,N,N,N)
-    
-    for i ∈ 1:N, j ∈ 1:N, k ∈ 1:N 
-        mult[i,j,k] = size(ass[1,i,j,k])[1]
-    end
-    return mult
-end
-
-# function anyonwiki_braiding(rank::Int, 
-#     multiplicity::Int, 
-#     non_self_dual::Int,
-#     fusion_ring::Int, 
-#     associator::Int, 
-#     braiding::Int, 
-#     pivotal::Int,
-#     K::Field, emb)
-
-#     CC = AcbField(2048)
-
-#     cat_string = "cat_$(rank)_$(multiplicity)_$(non_self_dual)_$(fusion_ring)_$(associator)_$(braiding)_$(pivotal).jl"
-    
-#     _braiding_dict = include(joinpath(anyon_path, "new_R_Symbols/$cat_string"))
-#     braiding_dict = Dict{Vector{Int}, elem_type(K)}()
-#     # for (k, str) ∈ _braiding_dict 
-#     #     x = string_to_acb(CC, @show str)
-#     #     x = preimage(emb, x, degree(K))
-#     #     braiding_dict[k] = K(x)
-#     # end
-
-#     braiding_dict = apply_preimage_to_anyon_file(emb, joinpath(anyon_path, "new_R_Symbols/$cat_string"))
-#     N = rank
-
-#     braiding_array = Array{MatElem}(undef, N,N,N)
-
-#     for a ∈ 1:N, b ∈ 1:N, c ∈ 1:N
-#         ab_c = filter(e -> e[[1,2,3]] == [a,b,c], collect(keys(braiding_dict)))
-#         l = Int(sqrt(length(ab_c)))
-
-#         M = matrix(K,l,l, [braiding_dict[v] for v ∈ ab_c])
-#         braiding_array[a,b,c] = M
-#     end
-
-#     return braiding_array
-# end
-
-# function anyonwiki_cyclotomic_root(n::Int)
-#     cyclopos = [parse(Int, s) for s ∈ readlines(joinpath(anyon_path, "cycloPos.txt"))]
-
-#     attrs = load_anyonwiki_attributes(n)
-
-#     if n ∉ cyclopos 
-#         error("Category number $n is not cyclotomic")
-#     end
-
-#     f_symbol_string = readlines(joinpath(anyon_path, "cyclic_6j_Symbols/cat_$n.jl"))[4]
-    
-#     p_symbol_string = readlines(joinpath(anyon_path, "cyclic_P_Symbols/cat_$n.jl"))[4]
-
-#     r_symbol_string = if attrs[:braided]
-#         readlines(joinpath(anyon_path, "cyclic_R_Symbols/cat_$n.jl"))[4]
-#     else 
-#         ""
-#     end
-
-#     # read root
-#     i = findfirst(r"z\d*", f_symbol_string)
-#     j = findfirst(r"z\d*", p_symbol_string)
-#     k = if attrs[:braided]
-#         findfirst(r"z\d*", r_symbol_string)
-#     else 
-#         nothing
-#     end 
-
-#     if i === nothing && j === nothing && k == nothing
-#         return 1 
-#     else
-#         roots = [l === nothing ? 1 : parse(Int, s[l][2:end]) for (s,l) ∈ zip([f_symbol_string,p_symbol_string, r_symbol_string], [i,j,k])]
-
-#         return r = lcm(roots...)
-#     end
-# end
-
-# function anyonwiki_cyclotomic_associator(n::Int, K::Field)
-#     r = anyonwiki_cyclotomic_root(n)
-#         root = root_of_unity(K,r)
-#     eval(Meta.parse("z$r = $(root)"))
-
-#     # read 6j-symbols 
-#     associator_dict = include(joinpath(anyon_path, "cyclic_6j_Symbols/cat_$n.jl"))
-
-#     N = maximum([a[1] for a ∈ keys(associator_dict)])
-
-#     associator_array = Array{MatElem}(undef, N,N,N,N)
-    
-#     # Build matrices for 6j-Symbols
-#     for a ∈ 1:N, b ∈ 1:N, c ∈ 1:N, d ∈ 1:N
-#         abc_d = filter(e -> e[[1,2,3,4]] == [a,b,c,d], collect(keys(associator_dict)))
-#         l = Int(sqrt(length(abc_d)))
-#         abc_d = sort(abc_d, by = v -> v[6])
-#         abc_d = sort(abc_d, by = v -> v[5])
-        
-#         M = matrix(K,l,l, [associator_dict[v] for v ∈ abc_d])
-#         associator_array[a,b,c,d] = M
-#     end
-#     return associator_array 
-# end
 
 function finite_prime_field_with_root_of_unity(n::Int, lower_bound = 2)
     p = next_prime(maximum([n,lower_bound-1])) 
@@ -688,43 +247,6 @@ function finite_prime_field_with_root_of_unity(n::Int, lower_bound = 2)
     return GF(p)
 end
 
-# function anyonwiki_center(n::Int; cyclotomic = false)
-#     if cyclotomic 
-#         load(joinpath(@__DIR__, "AnyonWikiData/CyclotomicCenters/CyclotomicCenter_$n.mrdi"))
-#     else 
-#         load(joinpath(@__DIR__, "AnyonWikiData/Centers/Center_$n.mrdi"))
-#     end
-# end
-
-
-# function load_anyonwiki_fusion_rules(n::Int)
-
-#     data = []
-
-#     open(joinpath(associator_path, "cat_$n")) do f 
-
-#         while ! eof(f)
-
-#             s = readline(f) 
-#             s = filter(!=('\"'), s)
-#             s = split(s, " ")
-
-#             push!(data, Int[eval(Meta.parse(a)) for a ∈ s[1:4]])
-#         end
-#     end
-
-#     N = maximum([a[1] for a ∈ data])
-    
-#     # Construct multiplication table from associators
-#     mult = zeros(Int,N,N,N)
-    
-#     for (_,a,b,c) ∈ filter(e -> e[1] == 1, data) 
-        
-#         mult[a,b,c] = 1 
-#     end
-
-#     return mult 
-# end
 
 function fusion_ring_name(m::Array{Int,3})
     r = size(m,1)
@@ -993,3 +515,70 @@ function save_fusion_category_meta_data(C::SixJCategory, file::String)
 end
 
 
+function anyonwiki_center_simple_name_to_vec(s::String, simpls::Vector{String})
+    s = split(s, ",")[1]
+    s = replace(s, "(" => "", "⊕" => "", ")" => "")
+
+    ret = []
+
+    for S ∈ simpls 
+        if occursin(Regex("(\\d+)⋅$S"), s)
+            m = collect(eachmatch(Regex("(\\d+)⋅$S"),s))[1]
+            push!(ret, parse(Int, match(r"\d+", m.match).match))
+        elseif occursin(S, s)
+            push!(ret, 1)
+        else
+            push!(ret, 0)
+        end
+    end
+    ret
+end
+
+
+function anyonwiki_center_forgetful(i,j,k,l,m,n,o)
+    names = TensorCategories.anyonwiki_center_meta(i,j,k,l,m,n,o)["simples_names"]
+    vecs = transpose(hcat([anyonwiki_center_simple_name_to_vec(s, ["𝟙"; ["X$q" for q ∈ 2:i]]) for s ∈ names]...))
+end
+
+k = anyonwiki_keys(5)
+
+p = "/tmpbig/maeurer/Data/TensorCategoriesDatabase/AnyonWikiCenters"
+
+for i ∈ k 
+    name = "center_$(i[1])_$(i[2])_$(i[3])_$(i[4])_$(i[5])_$(i[6])_$(i[7])"
+
+    meta = include(joinpath(p, "$name", "$(name)_meta")) 
+
+    if haskey(meta, "embedding")
+        continue
+    end
+    println(i)
+    # C = anyonwiki_center(i...)
+    # Z = split(center(anyonwiki(i...)))
+    C = anyonwiki(i...)
+   
+    L = TensorCategories.anyonwiki_center_meta(i...)["field"]
+    K,_ = TensorCategories.load_anyonwiki_number_field(i...)
+
+    f = K == QQ ? L : is_subfield(K, L)[2]
+
+    e = getfield(C, :embedding)
+    embL = complex_embeddings(L)
+    j = argmin([abs(e(gen(K)) - q(f(gen(K)))) for q in embL]) 
+    r = AcbField()(embL[j](gen(L)))
+
+    insertline(joinpath(p, name, "$(name)_meta"), "\t\"embedding\" => AcbField()(\"$(string(real(r)))\") + AcbField()(\"$(string(imag(r)))\")*AcbField()(im),", 9)
+    # sp = Dict(i => f(dim(S[i])) * inv(dim(Z[i])) for i ∈ 1:length(S))
+   
+    # TensorCategories.save_symbols(sp, joinpath(p, name, "$(name)_P_symbols"))
+
+    # m = multiplicity(C)
+
+    # insertline(joinpath(p, name, "$(name)_meta"), "\t\"multiplicity\" => $m,", 8)
+
+    s = read(joinpath(p, "$name", "$(name)_meta"), String)
+    s = replace(s, r"Skeletization" => "Skeletonization")
+    write(joinpath(p, "$name", "$(name)_meta"), s)
+    
+    println("Done $name")
+end

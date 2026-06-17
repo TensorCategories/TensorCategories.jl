@@ -39,3 +39,14 @@ T = gtensor_action(I, elements(G), [a,b], monoidal_str)
     @test length(monoidal_natural_transformations(b∘a, b)) == 2
     @test length(monoidal_natural_transformations(b∘b, b)) == 0
 end
+
+#=----------------------------------------------------------
+    Test The construction of the G-crossed Product 
+        C ⋉ G
+----------------------------------------------------------=#
+
+GI = gcrossed_product(I,T)
+
+@testset "G-crossed product of Ising category with ℤ₂" begin
+    @test pentagon_axiom(GI)
+end
