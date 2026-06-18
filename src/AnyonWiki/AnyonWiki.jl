@@ -61,13 +61,23 @@ function anyonwiki(rank::Int,
     return C
 end
 
-function anyonwiki(K::Field, i,j,k,l,m,n,o)
+function anyonwiki(K::NumField, i,j,k,l,m,n,o)
     C = anyonwiki(i,j,k,l,m,n,o)
     _,emb = is_subfield(base_ring(C),K)
     extension_of_scalars(C, K, embedding = emb)
 end
 
-function anyonwiki_finite(K::FqField,i,j,k,l,m,n,o)
+function anyonwiki(K::QQBarField, i,j,k,l,m,n,o)
+    C = anyonwiki(i,j,k,l,m,n,o)
+    extension_of_scalars(C, K)
+end
+
+function anyonwiki(K::AcbField, i,j,k,l,m,m,o)
+    C = anyonwiki(i,j,k,l,m,n,o)
+    numeric(C, precision(K))    
+end
+
+function anyonwiki(K::FqField,i,j,k,l,m,n,o)
     C = anyonwiki(i,j,k,l,m,n,o)
 
     extension_of_scalars(C,K)
