@@ -8,3 +8,4 @@ Codecov.jl
 docs/build/
 .vscode/*
 coverage/
+computations/anyonwiki_centers/center_runs/

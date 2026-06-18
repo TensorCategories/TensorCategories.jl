@@ -1,45 +1,50 @@
 #=----------------------------------------------------------
-    Compute the centers of all multiplicity free unitary fusion 
-    fusion categories up to rank 5 numerically
+    This script computes the centers of all 
+    multiplicity-free fusion categories up to rank 5.
+
+    WARNING: This will take a long time (multiple days) 
+        to finish.
+
+    It is recommended to start julia on multiple threads
+    with julia --threads=N to speed up the computation.
 ----------------------------------------------------------=#
 
-using TensorCategories
+using TensorCategories, Oscar
 
 # Specify the directory to store the centers
 dir = mktempdir(cleanup = true) 
 
 # Create the log file for the runtime 
-log = open(joinpath(dir, "Centers_of_anyon_wiki.log"), "w")
-write(log, "Code, simples, skeletonizing, saving\n")
+log = open(joinpath(dir, "Centers_of_anyonwiki.log"), "w")
+write(log, "Code, simples, splitting, skeletonizing, saving\n")
 flush(log)
 
-# Numeric Computations at the moment only make sense for unitary categories
-codes = anyonwiki_keys(5, "unitary")
+# The braidings and pivotal structures do not change the center
+# so we can pick one representative
+codes = unique(c -> c[1:5], anyonwiki_keys(5))
 
 print("\x1b[2J\x1b[H")
-println("Computing the centers of all multiplicity free unitary fusion categories up to rank 5 numerically\n\n")
+println("Computing the centers of all multiplicity free unitary fusion categories up to rank 5 algebraically\n\n")
 
 for (i,cat) in pairs(codes) 
     # load the category
-
-    C = numeric(anyonwiki(cat...), 512)
+    C = anyonwiki(cat...)
 
     Z = center(C)
 
     # Compute the simples
     t1 = @elapsed simples(Z)
 
-    # Skeletonization
-    t2 = @elapsed Z2 = skeletonize(Z)
+    # compute the splitting
+    t2 = @elapsed Z2 = split(Z)[1]
 
-    # saving
-    t3 = @elapsed numeric_symbols_to_csv("center_$(cat[1])_$(cat[2])_$(cat[3])_$(cat[4])_$(cat[5])", F_symbols(Z2))
+    # Skeletonize 
+    t3 = @elapsed Z3 = six_j_category(Z2)
 
+    # Store the results
+    t4 = @elapsed save_fusion_category(Z3, dir, "center_$(cat[1])_$(cat[2])_$(cat[3])_$(cat[4])_$(cat[5])")
 
-    # loading 
-    t4 = @elapsed Z3 = load_numeric_fusion_category("center_$(cat[1])_$(cat[2])_$(cat[3])_$(cat[4])_$(cat[5])", AcbField(32))
-
-    # print progress
+    # Print progress
     i > 1 && print("\x1b[1A\x1b[2K"^7)
     print(cat)
     print(" - Progress: $(i)/$(length(codes))")
@@ -66,4 +71,3 @@ for (i,cat) in pairs(codes)
 end
 
 close(log)
-
