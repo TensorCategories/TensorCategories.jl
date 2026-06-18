@@ -6,5 +6,5 @@ Codecov.jl
 .DS_Store
 .vscode
 docs/build/
-.vscode/
+.vscode/*
 coverage/
