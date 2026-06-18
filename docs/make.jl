@@ -8,7 +8,7 @@ makedocs(
     modules = [TensorCategories],
     warnonly = true,
     format = Documenter.HTML(
-        canonical = "https://juliadocs.github.io/Documenter.jl/stable/",
+        canonical = "https://TensorCategories.github.io/TensorCategories.jl/stable/",
         prettyurls = !("local" in ARGS),
         collapselevel=1,
         mathengine = MathJax3(Dict(
@@ -65,5 +65,6 @@ makedocs(
 
 
 deploydocs(
-    repo   = "github.com/FabianMaeurer/TensorCategories.jl.git",
+    repo   = "github.com/TensorCategories/TensorCategories.jl.git",
+    devbranch = "master",
 )
