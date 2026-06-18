@@ -1,18 +1,39 @@
 cff-version: 1.2.0
-title: "TensorCategories.jl"
-version: 0.5.5
-license: "MIT"
+
+message: >
+  If TensorCategories.jl contributes to your research, please cite the paper listed in the preferred citation below. The Zenodo DOI identifies the archived software release.
+
+title: TensorCategories.jl
 type: software
-abstract: "TensorCategories provides a vast framework to compute categorical constructions of fusion categories explictly. These include the center and module categories"
-message: "If you use this software, please cite it as below."
-doi: 10.5281/zenodo.18760250
-url: "https://github.com/FabianMaeurer/TensorCategories.jl"
+
 authors:
-  - given-names: Fabian
-    family-names: Maeurer
-    affiliation: RPTU Kaiserslautern-Landau
+  - family-names: Mäurer
+    given-names: Fabian
+
+repository-code: https://github.com/TensorCategories/TensorCategories.jl
+
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.18760250
+    description: Archived software release on Zenodo
+
+preferred-citation:
+  type: article
+  title: Computing the center of a fusion category
+  authors:
+    - family-names: Mäurer
+      given-names: Fabian
+    - family-names: Thiel
+      given-names: Ulrich
+  year: 2024
+  doi: 10.48550/arXiv.2406.13438
+  journal: arXiv
+
 keywords:
-  - Tensor Categories
-  - Fusion Categories
-  - Drinfeld Center 
-  - Module Categories
+  - tensor categories
+  - fusion categories
+  - category theory
+  - computational algebra
+  - Julia
+
+license: GPL-3.0-or-later
