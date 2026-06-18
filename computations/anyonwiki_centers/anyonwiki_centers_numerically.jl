@@ -3,7 +3,7 @@
     fusion categories up to rank 5 numerically
 ----------------------------------------------------------=#
 
-using TensorCategories
+using TensorCategories, Oscar
 
 # Specify the directory to store the centers
 dir = mktempdir(cleanup = true) 
