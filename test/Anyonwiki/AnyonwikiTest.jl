@@ -60,3 +60,24 @@ end
         end
     end
 end
+
+#=----------------------------------------------------------
+    load anyonwiki with other fields
+----------------------------------------------------------=#
+
+@testset "AnyonWiki with other fields" begin
+    @testset "QQBar" begin
+        C = anyonwiki(QQBarField(), 3,1,0,1,2,1,1)
+        @test randomized_pentagon_axiom(C, 3)
+    end
+
+    @testset "finite" begin
+        C = anyonwiki(GF(17), 3,1,0,1,2,1,1)
+        @test randomized_pentagon_axiom(C, 3)
+    end
+
+    @testset "AcbField" begin
+        C = anyonwiki(AcbField(), 3,1,0,1,2,1,1)
+        @test randomized_pentagon_axiom(C, 3)
+    end
+end

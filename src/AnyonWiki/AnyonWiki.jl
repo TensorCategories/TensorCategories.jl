@@ -72,14 +72,13 @@ function anyonwiki(K::QQBarField, i,j,k,l,m,n,o)
     extension_of_scalars(C, K)
 end
 
-function anyonwiki(K::AcbField, i,j,k,l,m,m,o)
+function anyonwiki(K::AcbField, i,j,k,l,m,n,o)
     C = anyonwiki(i,j,k,l,m,n,o)
     numeric(C, precision(K))    
 end
 
 function anyonwiki(K::FqField,i,j,k,l,m,n,o)
     C = anyonwiki(i,j,k,l,m,n,o)
-
     extension_of_scalars(C,K)
 end
 
