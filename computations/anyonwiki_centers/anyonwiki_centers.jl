@@ -50,7 +50,7 @@ Usage:
 
 Options:
     --workers N, -w N
-        Number of Julia worker processes to create. Default: 16.
+        Number of Julia worker processes to create. Default: 1.
 
     --threads N, -t N
         Number of Julia threads per worker process. Default: 1.
@@ -151,7 +151,7 @@ function parse_cli(args)
     end
 
     return ScriptOptions(
-        workers = haskey(opts, "workers") ? parse_positive_int(opts["workers"], "--workers") : 16,
+        workers = haskey(opts, "workers") ? parse_positive_int(opts["workers"], "--workers") : 1,
         threads_per_worker = haskey(opts, "threads") ? parse_positive_int(opts["threads"], "--threads") : 1,
         first = haskey(opts, "first") ? parse_positive_int(opts["first"], "--first") : nothing,
         last = haskey(opts, "last") ? parse_positive_int(opts["last"], "--last") : nothing,
