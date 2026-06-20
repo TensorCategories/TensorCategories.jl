@@ -37,7 +37,7 @@ using Printf
 using TensorCategories
 
 Base.@kwdef struct ScriptOptions
-    workers::Int = 16
+    workers::Int = 1
     threads_per_worker::Int = 1
     first::Union{Nothing, Int} = nothing
     last::Union{Nothing, Int} = nothing
@@ -162,24 +162,21 @@ const OPTIONS = parse_cli(ARGS)
 const NUM_WORKERS = OPTIONS.workers
 const THREADS_PER_WORKER = OPTIONS.threads_per_worker
 const RUN_ROOT = joinpath(pwd(), "center_runs")
+const CPU_TYPE = Sys.cpu_info()[1].model
 const TIMING_HEADER = (
-    "run_id",
-    "started_at",
+    "anyonwiki_code",
     "global_index",
-    "completion_index",
-    "run_jobs",
-    "total_codes",
-    "code",
-    "worker",
+    "datetime",
+    "cpu_type",
+    "workers",
+    "threads",
     "simples_seconds",
     "splitting_seconds",
     "skeletonizing_seconds",
     "saving_seconds",
+    "total_seconds",
     "check_split",
     "check_skeletonized",
-    "filename",
-    "status",
-    "output_directory",
 )
 
 function fresh_run_dir(first_index, last_index)
@@ -223,7 +220,7 @@ function format_seconds(x)
     if isnan(x)
         return "NaN"
     end
-    return @sprintf("%.6f", x)
+    return @sprintf("%.1f", x)
 end
 
 println("Loaded TensorCategories on master process $(myid()).")
@@ -267,15 +264,21 @@ end
         local Z2
         local Z3
 
-        t_simples = @elapsed simples(Z)
-        t_split = @elapsed Z2 = split(Z)[1]
-        t_skeletonize = @elapsed Z3 = six_j_category(Z2)
+        t_total = @elapsed begin
+
+            t_simples = @elapsed simples(Z)
+            t_split = @elapsed Z2 = split(Z)[1]
+            t_skeletonize = @elapsed Z3 = six_j_category(Z2)
+
+        end
 
         filename = "center_$(cat[1])_$(cat[2])_$(cat[3])_$(cat[4])_$(cat[5])"
         t_save = @elapsed save_fusion_category(Z3, dir, filename)
 
         check_split = randomized_pentagon_axiom(Z2, 3)
         check_skeletonized = randomized_pentagon_axiom(Z3, 3)
+
+        
 
         println("[worker $(myid())] DONE  #$(global_index) $(cat)")
         flush(stdout)
@@ -290,6 +293,7 @@ end
             t_split = t_split,
             t_skeletonize = t_skeletonize,
             t_save = t_save,
+            t_total = t_total,
             check_split = check_split,
             check_skeletonized = check_skeletonized,
             error = "",
@@ -314,6 +318,7 @@ end
             t_split = NaN,
             t_skeletonize = NaN,
             t_save = NaN,
+            t_total = NaN,
             check_split = false,
             check_skeletonized = false,
             error = msg,
@@ -471,23 +476,19 @@ failed = Ref(0)
             end
 
             timing_line = join((
-                run_id,
-                string(started_at),
-                string(result.global_index),
-                string(completion_index),
-                string(njobs),
-                string(total_codes),
                 string(result.cat),
-                string(result.worker),
+                string(result.global_index),
+                string(now()),
+                CPU_TYPE,
+                string(NUM_WORKERS),
+                string(THREADS_PER_WORKER),
                 format_seconds(result.t_simples),
                 format_seconds(result.t_split),
                 format_seconds(result.t_skeletonize),
                 format_seconds(result.t_save),
+                format_seconds(result.t_total),
                 string(result.check_split),
                 string(result.check_skeletonized),
-                result.filename,
-                status,
-                dir,
             ), '\t')
 
             println(timing_log, timing_line)
