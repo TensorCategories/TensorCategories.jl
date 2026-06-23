@@ -99,8 +99,11 @@ The software itself is archived on Zenodo and can be cited as follows:
 }
 ```
 
+## License
 
-## Credits and Acknowledgements
+The TensorCategories.jl package is licensed under the GNU Public License, Version 3.0 or later: Copyright (C) 2021 Fabian Mäurer and contributors. See the file `LICENSE` in the source repository for the full license text.
+
+## Acknowledgements
 
 TensorCategories.jl was initiated by [**Ulrich Thiel**](https://agag-thiel.math.rptu.de/math/) (RPTU University Kaiserslautern-Landau) within his project A20 "Towards unipotent character sheaves associated to Coxeter groups" (2020–2024) of the SFB-TRR 195 ["Symbolic Tools in Mathematics and their Application"](https://www.computeralgebra.de/sfb/), funded by the German Research Foundation (DFG). The package was created and developed by **Fabian Mäurer** as part of his Master's and PhD work under Thiel's supervision (2021–2026). Its development is currently supported by Thiel's project A20 "Categorical representation theory" (2024–2028) in the SFB-TRR 195. Additional support is provided by the Forschungsinitiative "SymbTools" of the state of Rheinland-Pfalz, in which Thiel is one of the project leaders.
 
