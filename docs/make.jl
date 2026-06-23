@@ -59,7 +59,8 @@ makedocs(
             #"The Drinfeld Centralizer" => "Constructions/Centralizer.md",
         "Internal Module Categories" => "Constructions/ModuleCategories.md",
         "Group Actions on Fusion Categories" => "Constructions/GroupActions.md",
-        "References" => "References.md"
+        "References" => "References.md",
+        "Developing" => "Developing/Developing.md"
     ],
 )
 
