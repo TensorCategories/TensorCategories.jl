@@ -72,3 +72,5 @@ anyonwiki_code	global_index	datetime	cpu_type	workers	threads	simples_seconds	sp
 (5, 1, 0, 4, 3, 0, 1)	56	2026-06-19T23:18:29.950	Intel(R) Xeon(R) Gold 6240M CPU @ 2.60GHz	16	1	24.1	92097.0	1454.6	9.6	93575.7	true	true
 (5, 1, 0, 10, 4, 1, 1)	64	2026-06-20T04:41:41.494	Intel(R) Xeon(R) Gold 6240M CPU @ 2.60GHz	16	1	0.8	34.0	110766.4	46.2	110801.1	true	true
 (5, 1, 0, 10, 2, 1, 1)	62	2026-06-20T06:23:26.158	Intel(R) Xeon(R) Gold 6240M CPU @ 2.60GHz	16	1	2.3	35.0	108335.0	27.9	108372.4	true	true
+(5, 1, 0, 10, 1, 1, 1)	61	2026-06-21T11:05:03.409	Intel(R) Xeon(R) Gold 6240M CPU @ 2.60GHz	16	1	1.1	32.9	109429.0	44.6	109463.0	true	true
+(5, 1, 0, 10, 5, 1, 1)	65	2026-06-23T11:19:41.386	Intel(R) Xeon(R) Gold 6240M CPU @ 2.60GHz	16	1	1.2	33.9	110876.2	27.8	110911.3	true	true
