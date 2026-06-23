@@ -2,9 +2,11 @@
 
 <div align="center">
 <a href="https://julialang.org/" target="_blank">
-<img src="docs/src/assets/logo/logo-text.svg" alt="Julia Logo" width="300" height="142"></img>
+<img src="docs/src/assets/logo/logo-notext.svg" alt="Julia Logo" width="100"></img>
 </a>
 </div>
+
+<br>
 
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://tensorcategories.github.io/TensorCategories.jl/stable/) [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://tensorcategories.github.io/TensorCategories.jl/dev/) [![](https://github.com/TensorCategories/TensorCategories.jl/actions/workflows/runtests.yml/badge.svg)](https://github.com/TensorCategories/TensorCategories.jl/actions/workflows/runtests.yml) [![](https://codecov.io/gh/TensorCategories/TensorCategories.jl/branch/master/graph/badge.svg?token=axGHAcozx5)](https://codecov.io/gh/TensorCategories/TensorCategories.jl) [![Citation](https://img.shields.io/badge/Citation-arXiv%3A2406.13438-B31B1B?logo=arxiv)](https://arxiv.org/abs/2406.13438)
 
