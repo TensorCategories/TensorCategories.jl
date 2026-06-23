@@ -1,5 +1,11 @@
 # TensorCategories.jl
 
+<div align="center">
+<a href="https://julialang.org/" target="_blank">
+<img src="docs/src/assets/logo/logo-text.svg" alt="Julia Logo" width="300" height="142"></img>
+</a>
+</div>
+
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://tensorcategories.github.io/TensorCategories.jl/stable/) [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://tensorcategories.github.io/TensorCategories.jl/dev/) [![](https://github.com/TensorCategories/TensorCategories.jl/actions/workflows/runtests.yml/badge.svg)](https://github.com/TensorCategories/TensorCategories.jl/actions/workflows/runtests.yml) [![](https://codecov.io/gh/TensorCategories/TensorCategories.jl/branch/master/graph/badge.svg?token=axGHAcozx5)](https://codecov.io/gh/TensorCategories/TensorCategories.jl) [![Citation](https://img.shields.io/badge/Citation-arXiv%3A2406.13438-B31B1B?logo=arxiv)](https://arxiv.org/abs/2406.13438)
 
 TensorCategories.jl is an open-source software package for computations with tensor categories, especially fusion categories. Built on the [Julia](https://julialang.org/) programming language and the [OSCAR](https://www.oscar-system.org/) computer algebra system, it is designed to closely follow the standard mathematical framework for tensor categories as presented, for example, in [Tensor Categories](https://math.mit.edu/~etingof/egnobookfinal.pdf) by Etingof, Gelaki, Nikshych, and Ostrik: objects, morphisms, tensor products, associators, and other categorical structures are represented as such, while concrete combinatorial descriptions, such as F-symbols, are also supported. The package supports exact symbolic computations over arbitrary base fields, including number fields and fields of positive characteristic, as well as numerical computations intended for applications in mathematical physics such as anyon models and conformal field theory.
