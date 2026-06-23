@@ -101,7 +101,12 @@ The software itself is archived on Zenodo and can be cited as follows:
 
 ## License
 
-The TensorCategories.jl package is licensed under the GNU Public License, Version 3.0 or later: Copyright (C) 2021 Fabian Mäurer and contributors. See the file `LICENSE` in the source repository for the full license text.
+The TensorCategories.jl package is licensed under the GNU General Public License v3.0 or later. 
+
+Copyright (c) 2021 Fabian Mäurer and contributors. 
+
+See [`LICENSE`](LICENSE) for the full license text.
+See [`COPYRIGHT`](COPYRIGHT) for copyright information.
 
 ## Acknowledgements
 
