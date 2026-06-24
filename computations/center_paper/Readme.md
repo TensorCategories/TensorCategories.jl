@@ -1,6 +1,13 @@
-# Computation of centers from the AnyonWiki
+# Computations in our paper on computing the center
 
-With the scripts in this folder you can compute the centers of the [multiplicity-free fusion categories](https://anyonwiki.github.io/pages/Lists/losmffc.html) from the [AnyonWiki](https://anyonwiki.github.io/). The AnyonWiki introduced a labeling system for these categories in the form $\mathrm{FC}^{a,b,c}_{d,e,f,g}$, see the [conventions](https://anyonwiki.github.io/pages/Lists/Conventions.html). The first entry $a$ is the rank of the category; the two last entries $f$ and $g$ correspond to different braidings and pivotal structures, respectively. 
+In this folder we have scripts, additional information, and tests regarding the computations involved in our paper:
+
+Mäurer, F. & Thiel, U. (2024). Computing the center of a fusion category. https://arxiv.org/abs/2406.13438
+
+
+## Center of AnyonWiki categories
+
+With the scripts in this folder you can (re)compute the centers of the [multiplicity-free fusion categories](https://anyonwiki.github.io/pages/Lists/losmffc.html) from the [AnyonWiki](https://anyonwiki.github.io/). The AnyonWiki introduced a labeling system for these categories in the form $\mathrm{FC}^{a,b,c}_{d,e,f,g}$, see the [conventions](https://anyonwiki.github.io/pages/Lists/Conventions.html). The first entry $a$ is the rank of the category; the two last entries $f$ and $g$ correspond to different braidings and pivotal structures, respectively. 
 
 The corresponding category can be loaded into TensorCategories.jl with the command
 
@@ -17,7 +24,7 @@ codes_all = sort!(
 )
 ```
 
-The core computations that are done in the scripts are computing the center (over a defining number field), find a splitting field of this category and extend to it, compute the F-symbols and save them (numerically in the numeric script), and do a randomized check on the pentagon axiom of the center:
+In this folder there are three scripts starting with `anyonwiki_center` going through all these categories. The core computations that are done in the scripts are computing the center (over a defining number field), find a splitting field of this category and extend to it, compute the F-symbols and save them (numerically in the numeric script), and do a randomized check on the pentagon axiom of the center:
 
 ```julia
 C = anyonwiki(cat...)
@@ -72,11 +79,14 @@ julia anyonwiki_centers_dist.jl \
   --last 40
 ```
 
-The script saves timings in the table `center_runs/timings_all.tsv`.
+The script saves timings in the table `center_runs/timings_all.tsv`. We have added our timings  
 
-We have stored the centers of the also in our database and you can load it with the command
+We have stored the centers also in our database. You can load it with the command:
 
 ```julia
 anyonwiki_center(a,b,c,d,e,f,g)
 ```
 
+## Further code from the paper
+
+All code that was given in the paper is also listed in the file `paper_code_listings.jl`.
