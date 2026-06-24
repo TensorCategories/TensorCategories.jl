@@ -8,5 +8,8 @@ Codecov.jl
 docs/build/
 .vscode/*
 coverage/
-computations/anyonwiki_centers/center_runs/
+computations/center_paper/center_runs/
+computations/center_paper/extra_tests2_results/
+computations/center_paper/center_paper/rank_le_3.log
 docs/Manifest.toml
+

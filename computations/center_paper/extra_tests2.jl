@@ -9,7 +9,7 @@ mkpath(dir)
 codetostring(code) = join(string.(code),"_")
 
 #codes = include("catcodes.jl")
-codes = anyonwiki_keys(2)
+codes = anyonwiki_keys(5)
 
 @showprogress for code in codes
     try
