@@ -15,6 +15,7 @@ StyledStrings = "f489334b-da3d-4c2e-b8f0-e476e12c162b"
 [compat]
 Oscar = "1.5"
 julia = "1.10"
+Images = "0.26"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
