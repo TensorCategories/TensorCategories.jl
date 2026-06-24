@@ -1145,7 +1145,8 @@ function extension_of_scalars(C::SixJCategory, L::Ring; embedding = embedding(ba
             D.one = C.one
         end
         if isdefined(C, :pivotal)
-            D.pivotal = L.(embedding.(C.pivotal))
+            D.pivotal = [L(1) for i ∈ 1:rank(C)]
+            D.pivotal = [embedding(dim(C[i])) * inv(dim(D[i])) for i ∈ 1:rank(C)]
         end
         if  isdefined(C, :braiding)
             D.braiding = [matrix(L, size(a)..., embedding.(collect(a))) for a ∈ C.braiding]
