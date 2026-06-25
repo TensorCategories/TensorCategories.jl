@@ -22,20 +22,22 @@ Current highlights include:
 
 * A generic algorithm for computing Drinfeld centers of fusion categories, producing explicit central objects with half-braidings rather than only abstract equivalence classes; see [arXiv:2406.13438](https://arxiv.org/abs/2406.13438).
 
-* Computation of the Drinfeld centers, including F-symbols and R-symbols, for all 279 multiplicity-free fusion categories up to rank 5; the results are stored in our [TensorCategoriesDatabase](https://github.com/TensorCategories/TensorCategoriesDatabase).
+* Computation of the Drinfeld centers, including F-symbols and R-symbols, for all 279 multiplicity-free fusion categories up to rank 5; the results are stored in our [TensorCategoriesDatabase](https://github.com/TensorCategories/TensorCategoriesDatabase). These centers yield new high-rank and not multiplicity-free examples of modular categories, e.g. rank 21 and multiplicity 2.
 
 * Explicit computation of F-symbols, R-symbols, and pivotal coefficients for the Drinfeld center of the Haagerup subfactor; see [arXiv:2601.20012](https://arxiv.org/abs/2601.20012).
 
 
 ## Showcase
 
-Here is a showcase example computing the center of the Ising fusion category over the field $\mathbb{Q}(\sqrt{2})$. The computation shows that the center is *not* split over $\mathbb{Q}(\sqrt{2})$.
+Here is a showcase example computing the center $\mathcal{Z}(\mathcal{C})$ of the Ising fusion category $\mathcal{C}$ over the field $\mathbb{Q}(\sqrt{2})$. The computation shows that $\mathcal{Z}(\mathcal{C})$ is *not* split over $\mathbb{Q}(\sqrt{2})$, i.e. some simple objects will decompose after scalar extension to $\mathbb{C}$. We then compute the multiplication table of the fusion ring and the S-matrix of this non-split modular category.
 
 ```julia-repl
-julia> using TensorCatgories, Oscar
+julia> using TensorCategories, Oscar
 
 julia> K,r2 = quadratic_field(2)
 (Real quadratic field defined by x^2 - 2, sqrt(2))
+
+julia> C = ising_category(K,r2)
 
 julia> simples(C)
 3-element Vector{SixJObject}:
@@ -54,8 +56,23 @@ julia> S  = simples(Z)
  Central object: 2⋅χ
  Central object: 4⋅X
 
-julia> H = End(S[4])
+julia> End(S[4])
 Vector space of dimension 2 over Real quadratic field defined by x^2 - 2.
+
+julia> print_multiplication_table(S, ["X$i" for i in eachindex(S)])
+5×5 Matrix{String}:
+ "X1"  "X2"  "X3"            "X4"           "X5"
+ "X2"  "X1"  "X3"            "X4"           "X5"
+ "X3"  "X3"  "X1 ⊕ X2 ⊕ X4"  "2⋅X3"         "2⋅X5"
+ "X4"  "X4"  "2⋅X3"          "2⋅X1 ⊕ 2⋅X2"  "2⋅X5"
+ "X5"  "X5"  "2⋅X5"          "2⋅X5"         "4⋅X1 ⊕ 4⋅X2 ⊕ 8⋅X3 ⊕ 4⋅X4"
+
+julia> smatrix(Z)
+[        1            1    2    2    4*sqrt(2)]
+[        1            1    2    2   -4*sqrt(2)]
+[        2            2    0   -4            0]
+[        2            2   -4    4            0]
+[4*sqrt(2)   -4*sqrt(2)    0    0            0]
 ```
 
 ## Installation
