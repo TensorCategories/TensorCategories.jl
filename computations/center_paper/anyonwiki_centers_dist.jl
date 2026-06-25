@@ -161,7 +161,7 @@ end
 const OPTIONS = parse_cli(ARGS)
 const NUM_WORKERS = OPTIONS.workers
 const THREADS_PER_WORKER = OPTIONS.threads_per_worker
-const RUN_ROOT = joinpath(pwd(), "center_runs")
+const RUN_ROOT = joinpath(pwd(), "output/anyonwiki_centers_dist")
 const CPU_TYPE = Sys.cpu_info()[1].model
 const TIMING_HEADER = (
     "anyonwiki_code",

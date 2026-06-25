@@ -55,31 +55,27 @@ and
 julia anyonwiki_center_numerically.jl --threads=N
 ```
 
-where N is the numner of threads. This uses internal threading of TensorCategories.
+where N is the number of threads. This uses internal threading of TensorCategories.
 
 > [!WARNING]
-> If you interrupt the script with `Ctrl+C` there will still be worker processes. You can kill all julia processes with `pkill julia`. 
+> If you interrupt the script with `Ctrl+C` there will still be worker processes. You can kill all Julia processes with `pkill julia`. 
 
 There is also a more advanced script `anyonwiki_center_dist.jl` for distributed computation. It has several options:
 
-* `--workers`: The number of seperate processes (each working on one category). Notice that each worker is a julia process that needs to load TensorCategories and OSCAR, so this will take some time. The default is 1.
+* `--workers`: The number of separate processes (each working on one category). Notice that each worker is a Julia process that needs to load TensorCategories and OSCAR, so this will take some time. The default is 1.
 * `--threads`: The number of threads for each worker. This uses the internal threading of TensorCategories. The default is 1.
-* `--first`: The entry number in `codes_all` where to start the compution. The default is 1.
-* `--last`: The entry in `codes_all` where to stop the compution. The default is the last entry.
+* `--first`: The entry number in `codes_all` where to start the computation. The default is 1.
+* `--last`: The entry in `codes_all` where to stop the computation. The default is the last entry.
 
 The `--first` and `--last` option help to resume computations, potentially with different workers and threads.
 
 So, an example call would be:
 
 ```bash
-julia anyonwiki_centers_dist.jl \
-  --workers 4 \
-  --threads 4 \
-  --first 1 \
-  --last 40
+julia anyonwiki_centers_dist.jl --workers 4 --threads 4 --first 1 --last 40
 ```
 
-The script saves timings in the table `center_runs/timings_all.tsv`. We have added our timings  
+The script saves timings in the table `output/anyonwiki_centers_dist/timings_all.tsv`. We have added our timings to `timings_all.tsv` in the main folder.
 
 We have stored the centers also in our database. You can load it with the command:
 

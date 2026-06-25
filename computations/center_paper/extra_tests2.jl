@@ -1,9 +1,12 @@
+# Some extra tests
+#
+# Start with julia extra_tests2.jl
 using TensorCategories
 using Oscar
 using ProgressMeter
 
 #dir = "results/"
-const dir = joinpath(pwd(), "extra_tests2_results/")
+const dir = joinpath(pwd(), "output/extra_tests2/")
 mkpath(dir)
 
 codetostring(code) = join(string.(code),"_")

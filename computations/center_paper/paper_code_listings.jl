@@ -1,5 +1,7 @@
 # This file contains all the code listings from our paper
 # "Computing the center of a fusion category"
+# 
+# Run with julia paper_code_lists.jl
 
 println("Loading packages")
 using TensorCategories, Oscar
