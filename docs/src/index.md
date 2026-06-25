@@ -15,7 +15,7 @@ Current highlights include:
 
 * A generic algorithm for computing Drinfeld centers of fusion categories, producing explicit central objects with half-braidings rather than only abstract equivalence classes; see [arXiv:2406.13438](https://arxiv.org/abs/2406.13438).
 
-* Computation of the Drinfeld centers, including F-symbols and R-symbols, for all 279 multiplicity-free fusion categories up to rank 5; the results are stored in our [TensorCategoriesDatabase](https://github.com/TensorCategories/TensorCategoriesDatabase). These centers yield new high-rank and not multiplicity-free examples of modular categories, e.g. rank 21 and multiplicity 2.
+* Computation of the Drinfeld centers, including F-symbols and R-symbols, for all 279 multiplicity-free fusion categories up to rank 5; the results are stored in our [TensorCategoriesDatabase](https://github.com/TensorCategories/TensorCategoriesDatabase). Some of these centers yield new high-rank and not multiplicity-free examples of modular categories, e.g. rank 21 and multiplicity 2.
 
 * Explicit computation of F-symbols, R-symbols, and pivotal coefficients for the Drinfeld center of the Haagerup subfactor; see [arXiv:2601.20012](https://arxiv.org/abs/2601.20012).
 
