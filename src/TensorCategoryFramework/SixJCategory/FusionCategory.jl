@@ -182,7 +182,7 @@ function set_canonical_spherical!(C::SixJCategory)
     set_pivotal!(C, K.([1 for _ ∈ 1:C.rank]))
     set_pivotal!(C, K.(real.([fpdim(s)*inv(dim(s)) for s ∈ simples(C)])))
 
-    if base_ring(C) isa Union{ArbField, AcbField}
+    if K isa Union{ArbField, AcbField}
         p = C.pivotal 
         for i in 1:rank(C)
             if overlaps(p[i], K(1))
@@ -824,6 +824,7 @@ function tensor_product(f::SixJMorphism, g::SixJMorphism)
     simpl = simples(C)
 
     for i ∈ 1:C.rank, j ∈ 1:C.rank
+       # @show parent(f.m[i]), parent(g.m[j])
         A = kronecker_product(f.m[i],g.m[j])
         d1,d2 = size(A)
         #if d1*d2 == 0 continue end
@@ -1147,6 +1148,11 @@ function extension_of_scalars(C::SixJCategory, L::Ring; embedding = embedding(ba
         if isdefined(C, :pivotal)
             D.pivotal = [L(1) for i ∈ 1:rank(C)]
             D.pivotal = [embedding(dim(C[i])) * inv(dim(D[i])) for i ∈ 1:rank(C)]
+
+            # If L is a numeric Field we need to make sure, that the precision is set right
+            if L isa Union{ArbField, AcbField}
+                D.pivotal = L.(D.pivotal)
+            end
         end
         if  isdefined(C, :braiding)
             D.braiding = [matrix(L, size(a)..., embedding.(collect(a))) for a ∈ C.braiding]

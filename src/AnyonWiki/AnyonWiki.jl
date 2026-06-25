@@ -342,6 +342,7 @@ function save_fusion_category(C::SixJCategory, path::String, name::String)
     if is_braided(C) 
         save_symbols(R_symbols(C), joinpath(cat_path, "$(name)_R_symbols"))
     end
+    return nothing
 end
 
 function anyonwiki_center_meta(i,j,k,l,m,n,o)

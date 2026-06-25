@@ -6,17 +6,18 @@
 using TensorCategories, Oscar
 
 # Specify the directory to store the centers
-dir = mktempdir(cleanup = true) 
+!isdir(joinpath(@__DIR__, "output")) && mkdir(joinpath(@__DIR__, "output"))
+!isdir(joinpath(@__DIR__, "output/numerical_centers_of_anyonwiki")) && mkdir(joinpath(@__DIR__, "output/numerical_centers_of_anyonwiki"))
+dir = joinpath(@__DIR__, "output", "numerical_centers_of_anyonwiki")
 
 # Create the log file for the runtime 
-log = open(joinpath(dir, "Centers_of_anyon_wiki.log"), "w")
+log = open(joinpath(dir, "numerical_enters_of_anyon_wiki.log"), "w")
 write(log, "Code, simples, skeletonizing, saving\n")
 flush(log)
 
 # Numeric Computations at the moment only make sense for unitary categories
 codes = anyonwiki_keys(5, "unitary")
 
-print("\x1b[2J\x1b[H")
 println("Computing the centers of all multiplicity free unitary fusion categories up to rank 5 numerically\n\n")
 
 for (i,cat) in pairs(codes) 
@@ -33,14 +34,14 @@ for (i,cat) in pairs(codes)
     t2 = @elapsed Z2 = skeletonize(Z)
 
     # saving
-    t3 = @elapsed numeric_symbols_to_csv("center_$(cat[1])_$(cat[2])_$(cat[3])_$(cat[4])_$(cat[5])", F_symbols(Z2))
+    t3 = @elapsed numeric_symbols_to_csv(joinpath(dir,"center_$(cat[1])_$(cat[2])_$(cat[3])_$(cat[4])_$(cat[5])"), F_symbols(Z2))
 
 
     # loading 
-    t4 = @elapsed Z3 = load_numeric_fusion_category("center_$(cat[1])_$(cat[2])_$(cat[3])_$(cat[4])_$(cat[5])", AcbField(32))
+    t4 = @elapsed Z3 = load_numeric_fusion_category(joinpath(dir, "center_$(cat[1])_$(cat[2])_$(cat[3])_$(cat[4])_$(cat[5])"), AcbField(32))
 
     # print progress
-    i > 1 && print("\x1b[1A\x1b[2K"^7)
+
     print(cat)
     print(" - Progress: $(i)/$(length(codes))")
     println(": ")
@@ -49,7 +50,7 @@ for (i,cat) in pairs(codes)
     println("Quick pentagon check $(randomized_pentagon_axiom(Z2, 3) ? "passed" : "failed")")
     println("Saved in $t3 seconds")
     println("Loaded in $t4 seconds")
-    println("Quick check of loaded category $(randomized_pentagon_axiom(Z3, 3) ? "passed" : "failed")")
+    println("Quick check of loaded category $(randomized_pentagon_axiom(Z3, 3) ? "passed" : "failed")\n")
 
 
     # Write to log file

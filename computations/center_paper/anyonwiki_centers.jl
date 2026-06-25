@@ -12,7 +12,9 @@
 using TensorCategories, Oscar
 
 # Specify the directory to store the centers
-dir = mktempdir(cleanup = true) 
+!isdir(joinpath(@__DIR__, "output")) && mkdir(joinpath(@__DIR__, "output"))
+!isdir(joinpath(@__DIR__, "output/centers_of_anyonwiki")) && mkdir(joinpath(@__DIR__, "output/centers_of_anyonwiki"))
+dir = joinpath(@__DIR__, "output", "centers_of_anyonwiki")
 
 # Create the log file for the runtime 
 log = open(joinpath(dir, "Centers_of_anyonwiki.log"), "w")

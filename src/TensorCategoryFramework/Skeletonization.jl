@@ -157,6 +157,12 @@ function six_j_symbols_of_construction(C::Category, S = simples(C), mult = nothi
         @warn("Computing F-symbols is buggy for non unitary numeric categories. Check Results afterwards")
     end
 
+    if length(S) == 1 
+        ass = Array{MatElem}(undef,1,1,1,1)
+        ass[1,1,1,1] = identity_matrix(base_ring(C),1)
+        return ass 
+    end
+
     if log !== nothing 
         path = if isabspath(log) 
             log 

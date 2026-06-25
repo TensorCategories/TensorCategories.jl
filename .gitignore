@@ -11,4 +11,5 @@ coverage/
 computations/center_paper/center_runs/
 computations/center_paper/extra_tests2_results/
 computations/center_paper/rank_le_3.log
+computations/center_paper/output
 docs/Manifest.toml
