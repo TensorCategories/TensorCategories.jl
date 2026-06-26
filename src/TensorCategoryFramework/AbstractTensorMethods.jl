@@ -519,7 +519,7 @@ end
 
 function F_symbols(C::Category)
     if !is_unitary(C) 
-        F_symbols(skeletonize(C))
+        return F_symbols(skeletonize(C))
     end
     
     homs = multiplicity_spaces(C)    

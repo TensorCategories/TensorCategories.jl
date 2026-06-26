@@ -441,7 +441,7 @@ function express_in_basis(f::VectorSpaceMorphism, B::Vector{<:VectorSpaceMorphis
 
     B_mat = matrix(F,hcat([[x for x ∈ b.m][:] for b ∈ B]...))
     f_mat = matrix(F, 1, *(size(f.m)...), [x for x ∈ f.m][:])
-    
+
     return [x for x ∈ solve(transpose(B_mat),f_mat, side = :left)][:]
 end
 

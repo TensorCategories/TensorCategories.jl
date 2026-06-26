@@ -15,3 +15,10 @@ end
     S = simples(center(RepG))
     @test length(S) == 7
 end
+
+@testset "Skeletonize center of RepG" begin 
+    R = representation_category(GF(13), symmetric_group(3))
+    Z = center(R)
+    Z = skeletonize(Z)
+    @test randomized_pentagon_axiom(Z,3)
+end

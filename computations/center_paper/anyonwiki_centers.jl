@@ -44,7 +44,7 @@ for (i,cat) in pairs(codes)
     t3 = @elapsed Z3 = six_j_category(Z2)
 
     # Store the results
-    t4 = @elapsed save_fusion_category(Z3, dir, "center_$(cat[1])_$(cat[2])_$(cat[3])_$(cat[4])_$(cat[5])")
+    t4 = @elapsed save_fusion_category(Z3, dir, "center_$(cat[1])_$(cat[2])_$(cat[3])_$(cat[4])_$(cat[5])_$(cat[6])_$(cat[7])")
 
     # Print progress
     i > 1 && print("\x1b[1A\x1b[2K"^7)

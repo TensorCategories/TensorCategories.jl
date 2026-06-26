@@ -34,11 +34,11 @@ for (i,cat) in pairs(codes)
     t2 = @elapsed Z2 = skeletonize(Z)
 
     # saving
-    t3 = @elapsed numeric_symbols_to_csv(joinpath(dir,"center_$(cat[1])_$(cat[2])_$(cat[3])_$(cat[4])_$(cat[5])"), F_symbols(Z2))
+    t3 = @elapsed numeric_symbols_to_csv(joinpath(dir,"center_$(cat[1])_$(cat[2])_$(cat[3])_$(cat[4])_$(cat[5])_$(cat[6])_$(cat[7]).csv"), F_symbols(Z2))
 
 
     # loading 
-    t4 = @elapsed Z3 = load_numeric_fusion_category(joinpath(dir, "center_$(cat[1])_$(cat[2])_$(cat[3])_$(cat[4])_$(cat[5])"), AcbField(32))
+    t4 = @elapsed Z3 = load_numeric_fusion_category(joinpath(dir, "center_$(cat[1])_$(cat[2])_$(cat[3])_$(cat[4])_$(cat[5])_$(cat[6])_$(cat[7]).csv"), AcbField(32))
 
     # print progress
 

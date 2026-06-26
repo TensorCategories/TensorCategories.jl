@@ -789,6 +789,10 @@ function Hom(X::CenterObject, Y::CenterObject)
         return HomSpace(X,Y,CenterMorphism[])
     end
 
+    # if is_finite(base_ring(X)) 
+    #     return hom_by_linear_equations(X,Y)
+    # end
+
     if alg_closed && has_attribute(X, :is_simple) && 
         get_attribute(X, :is_simple) &&
         has_attribute(Y, :is_simple) &&
@@ -1317,7 +1321,7 @@ function hom_by_linear_equations(X::CenterObject, Y::CenterObject, ind = 1:rank(
         end
         eq_i = [zero(Fx) for _ ∈ 1:length(base)]
         for (f,a) ∈ zip(B,poly_basis)
-            coeffs = express_in_basis((id(s)⊗f)∘γₛ - λₛ∘(f⊗id(s)), H)
+            coeffs = express_in_basis((id(s)⊗f)∘γₛ - λₛ∘(f⊗id(s)), base)
             eq_i = eq_i .+ (a .* coeffs)
         end
         
