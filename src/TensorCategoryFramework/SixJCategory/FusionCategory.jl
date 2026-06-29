@@ -666,10 +666,10 @@ function simple_objects_coev(X::SixJObject)
         end
     end
 
-    try 
+    if is_unitary(C)
         return inv(sqrt(factor)) * unscaled_coev
-    catch 
     end
+
     return unscaled_coev
     #mats = [diagonal_matrix(F(1),n,m) for (n,m) ∈ zip(C.one, cod.components)]
     #return morphism(one(C), cod, mats)
@@ -1146,8 +1146,9 @@ function extension_of_scalars(C::SixJCategory, L::Ring; embedding = embedding(ba
             D.one = C.one
         end
         if isdefined(C, :pivotal)
-            D.pivotal = [L(1) for i ∈ 1:rank(C)]
-            D.pivotal = [embedding(dim(C[i])) * inv(dim(D[i])) for i ∈ 1:rank(C)]
+            D.pivotal = embedding.(C.pivotal)
+            # D.pivotal = [L(1) for i ∈ 1:rank(C)]
+            # D.pivotal = [embedding(dim(C[i])) * inv(dim(D[i])) for i ∈ 1:rank(C)]
 
             # If L is a numeric Field we need to make sure, that the precision is set right
             if L isa Union{ArbField, AcbField}
