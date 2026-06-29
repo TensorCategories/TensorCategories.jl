@@ -21,6 +21,7 @@ makedocs(
     ),
     pages = [
         "Home" => "index.md",
+        "Quick Start" => "QuickStart/QuickStart.md",
         "Implementing Categories" => [
             "Philosophy" => "Interface/Philosophy.md",
             "Categories" => "Interface/Categories.md",
@@ -59,13 +60,9 @@ makedocs(
             #"The Drinfeld Centralizer" => "Constructions/Centralizer.md",
         "Internal Module Categories" => "Constructions/ModuleCategories.md",
         "Group Actions on Fusion Categories" => "Constructions/GroupActions.md",
-        "References" => "References.md",
-        "Project" => [
-            "Citations" => "Project/Citations.md",
-            "Developing" => "Project/Developing.md",
-            "Further Literature" => "Project/FurtherLiterature.md",
-        ]
-    ]
+        "Developing" => "Developing/Developing.md",
+        "References" => "References.md"
+    ],
 )
 
 

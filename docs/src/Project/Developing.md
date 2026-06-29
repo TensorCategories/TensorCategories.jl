@@ -89,7 +89,7 @@ alias jlrel='julia --project=$HOME/julia-envs/rel'
 
 ## Building documentation
 
-Once initialize the docs environment:
+Only once initialize the docs environment:
 
 ```bash
 cd ~/TensorCategories.jl
@@ -111,5 +111,30 @@ julia --project=docs docs/make.jl
 When working on a remote machine, clone the built documentation to the local machine for viewing:
 
 ```bash
-rsync -avz --delete remote:~/TensorCategories.jl/docs/build/ TC-docs
+rsync -avz --delete remote:~/TensorCategories.jl/docs/build/ tc-docs
+```
+
+On the local machine it's best to serve the documentation via little web server:
+
+```julia
+python3 -m http.server 8000
+```
+
+Then open:
+
+```
+http://localhost:8000
+```
+
+For convenience, add a script `serv.sh` for starting the server:
+
+```bash
+python3 -m http.server 8000
+```
+
+Moreover, a script `pull.sh` to pull the documentation from the server:
+
+```bash
+rsync -avz --delete --exclude='/pull.sh' --exclude='/serv.sh' remote:~/TensorCategories.jl/docs/build/ .
+
 ```

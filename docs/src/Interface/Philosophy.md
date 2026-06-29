@@ -1,4 +1,4 @@
-# The Motivation 
+# [The Motivation](@id interface-philosophy)
 
 This package began its journey asking the question "Can we play around 
 with explicit categorical entities in the computer?".
