@@ -60,8 +60,12 @@ makedocs(
         "Internal Module Categories" => "Constructions/ModuleCategories.md",
         "Group Actions on Fusion Categories" => "Constructions/GroupActions.md",
         "References" => "References.md",
-        "Developing" => "Developing/Developing.md"
-    ],
+        "Project" => [
+            "Citations" => "Project/Citations.md",
+            "Developing" => "Project/Developing.md",
+            "Further Literature" => "Project/FurtherLiterature.md",
+        ]
+    ]
 )
 
 
