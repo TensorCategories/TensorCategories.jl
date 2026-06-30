@@ -8,8 +8,8 @@ using TensorCategories, Oscar
 
 println("Section 6: Ising category")
 
-function ising_cat(F::Ring, a::RingElem)
-    C = six_j_category(F,["1", "𝜒", "X"])
+function ising_category(K::Ring, a::RingElem)
+    C = six_j_category(K,["1", "𝜒", "X"])
     # Multiplication table of the Grothendieck ring
     M = zeros(Int,3,3,3)
     M[1,1,:] = [1,0,0]
@@ -23,18 +23,17 @@ function ising_cat(F::Ring, a::RingElem)
     M[3,3,:] = [1,1,0]
     set_tensor_product!(C,M)
     # The associators
-    set_associator!(C,2,3,2, matrices(-id(C[3])))
-    set_associator!(C,3,2,3, matrices((id(C[1]))⊕(-id(C[2]))))
-    z = zero(matrix_space(F,0,0))
-    set_associator!(C,3,3,3, [z, z, inv(a)*matrix(F,[1 1; 1 -1])])
+    set_associator!(C, 2, 3, 2, 3, matrix(K, 1, 1, [-1]))
+    set_associator!(C ,3, 2, 3, 2, matrix(K, 1, 1, [-1]))
+    set_associator!(C, 3, 3, 3, 3, inv(a)*matrix(K,[1 1; 1 -1]))
     set_one!(C,[1,0,0])
-    set_spherical!(C, [F(1) for s in simples(C)])
+    set_spherical!(C, [K(1) for s in simples(C)])
     set_name!(C, "Ising fusion category")
     return C
 end
 
 K,r2 = quadratic_field(2)
-C = ising_cat(K,r2)
+C = ising_category(K,r2)
 a,b,c = simples(C)
 
 Z = center(C)
