@@ -136,5 +136,4 @@ Moreover, a script `pull.sh` to pull the documentation from the server:
 
 ```bash
 rsync -avz --delete --exclude='/pull.sh' --exclude='/serv.sh' remote:~/TensorCategories.jl/docs/build/ .
-
 ```
