@@ -846,7 +846,7 @@ end
     numeric        
 ----------------------------------------------------------=#
 function numeric(X::Union{Category,Object,Morphism}, precision::Int = 64)
-    numeric(X,precision, precision)
+    numeric(X,precision, 2*precision)
 end
 
 function numeric(C::Category, precision, max_bits)
@@ -873,16 +873,18 @@ end
 function qqbar_to_acb_with_error(x, precision, max_bits = precision*8)
     CC = AcbField(max_bits)
     R  = ArbField(max_bits)
-    z = CC(x)
-    r = real(z)
-    c = imag(z)
-    if !is_exact(r)
-        add_error!(r, R("+/- 1e-$precision"))
-    end
-    if !is_exact(c)
-        add_error!(c, R("+/- 1e-$precision"))
-    end
-    CC(r,c)
+    z = AcbField(precision)(CC(x))
+    return z
+
+    # r = real(z)
+    # c = imag(z)
+    # if !is_exact(r)
+    #     add_error!(r, R("+/- 1e-$precision"))
+    # end
+    # if !is_exact(c)
+    #     add_error!(c, R("+/- 1e-$precision"))
+    # end
+    # CC(r,c)
 end
 
 #=----------------------------------------------------------

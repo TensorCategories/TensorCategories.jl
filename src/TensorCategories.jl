@@ -500,16 +500,26 @@ const Anyon = artifact"AnyonWiki"
 function __init__() 
     if displaysize(stdout)[2] >= 96
         println(styled"""
-{yellow:A ⊗ (B ⊗ C) ----------------------------> (B ⊗ C) ⊗ A -----------------------------> B ⊗ (C ⊗ A)}
-     {yellow:|}  _____                          ____      _                        {blue:_}               {yellow:|}
-     {yellow:|} |_   _|__ _ __  ___  ___  _ __ / ___|__ _| |_ ___  __ _  ___  _ __{blue:(_)} ___  ___     {yellow:|}
-     {yellow:|}   | |/ _ \\ '_ \\/ __|/ _ \\| '__| |   / _` | __/ _ \\/ _` |/ _ \\| '__| |/ _ \\/ __|    {yellow:|}
-     {yellow:|}   | |  __/ | | \\__ \\ (_) | |  | |__| (_| | ||  __/ (_| | (_) | |  | |  __/\\__ \\    {yellow:|}
-     {yellow:|}   |_|\\___|_| |_|___/\\___/|_|   \\____\\__,_|\\__\\___|\\__, |\\___/|_|  |_|\\___||___/    {yellow:|}
-     {yellow:|}                                                   |___/                            {yellow:|}
-     {yellow:v}       {yellow:A Computational Framework}                             v$(string(VERSION_NUMBER))                 {yellow:v}
-{yellow:(B ⊗ A) ⊗ C ----------------------------> (A ⊗ C) ⊗ B -----------------------------> (B ⊗ A) ⊗ C}
-""") 
+             {bright_yellow:X} {bright_yellow:X}        
+           {bright_yellow:X}     {bright_yellow:X}     
+         {bright_yellow:X}    {green:_}    {bright_yellow:X}   TensorCategories.jl
+       {bright_yellow:X}    {red:_}{green:(_)}{magenta:_}    {bright_yellow:X} -------------------        
+        {bright_yellow:X}  {red:(_)} {magenta:(_)}  {bright_yellow:X}  A computational Framework 
+         {bright_yellow:X}         {bright_yellow:X}   Version $(string(VERSION_NUMBER))
+          {bright_yellow:X}       {bright_yellow:X}       
+           {bright_yellow:X} {bright_yellow:X} {bright_yellow:X} {bright_yellow:X}
+""")
+#         println(styled"""
+# {yellow:A ⊗ (B ⊗ C) ----------------------------> (B ⊗ C) ⊗ A -----------------------------> B ⊗ (C ⊗ A)}
+#      {yellow:|}  _____                          ____      _                        {blue:_}               {yellow:|}
+#      {yellow:|} |_   _|__ _ __  ___  ___  _ __ / ___|__ _| |_ ___  __ _  ___  _ __{blue:(_)} ___  ___     {yellow:|}
+#      {yellow:|}   | |/ _ \\ '_ \\/ __|/ _ \\| '__| |   / _` | __/ _ \\/ _` |/ _ \\| '__| |/ _ \\/ __|    {yellow:|}
+#      {yellow:|}   | |  __/ | | \\__ \\ (_) | |  | |__| (_| | ||  __/ (_| | (_) | |  | |  __/\\__ \\    {yellow:|}
+#      {yellow:|}   |_|\\___|_| |_|___/\\___/|_|   \\____\\__,_|\\__\\___|\\__, |\\___/|_|  |_|\\___||___/    {yellow:|}
+#      {yellow:|}                                                   |___/                            {yellow:|}
+#      {yellow:v}       {yellow:A Computational Framework}                             v$(string(VERSION_NUMBER))                 {yellow:v}
+# {yellow:(B ⊗ A) ⊗ C ----------------------------> (A ⊗ C) ⊗ B -----------------------------> (B ⊗ A) ⊗ C}
+# """) 
     end
 end
 

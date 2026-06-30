@@ -457,6 +457,7 @@ end
 function (K::AcbField)(f::SixJMorphism)
     x = matrix(f)[1,1]
     if f != x*id(domain(f))
+        @show matrix(f)
         error("Not a scalar")
     end
     K(x)
