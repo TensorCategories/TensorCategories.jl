@@ -118,7 +118,7 @@ end
 @doc raw""" 
     set_associator!(F::SixJCategory, ass::Array{MatElem,4})
     set_associator!(F::SixJCategory, i::Int, j::Int, k::Int, ass::Vector{<:MatElem})
-    set_associator!(F::SixJCategory, i::Int, j::Int, k::Int, l::Int, ass::Array{T,N}) where {T,N}
+    set_associator!(F::SixJCategory, i::Int, j::Int, k::Int, l::Int, ass::MatElem) 
     set_associator!(F::SixJCategory, i::Int, j::Int, k::Int, l::Int, m::Int, n::Int, v::RingElem) 
 
 Set the ``F``-symbols of ``F``.
@@ -666,7 +666,7 @@ function simple_objects_coev(X::SixJObject)
         end
     end
 
-    if is_unitary(C)
+    if base_ring(C) isa Union{QQBarField, ComplexField, AcbField, ArbField}
         return inv(sqrt(factor)) * unscaled_coev
     end
 

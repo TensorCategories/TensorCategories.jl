@@ -81,3 +81,30 @@ end
         @test randomized_pentagon_axiom(C, 3)
     end
 end
+
+# Test saving and loading 
+@testset "Saving and loading" begin
+
+    @testset "Numeric" begin
+        mktempdir() do path
+
+            C = anyonwiki(4,1,2,4,1,0,1)
+            
+            num_F_symbs = numeric_F_symbols(C, precision = 64)
+
+            numeric_symbols_to_csv(joinpath(path, "TensorCategories-section7-test"), num_F_symbs)
+            D = load_numeric_fusion_category(joinpath(path, "TensorCategories-section7-test"), AcbField(32))
+            @test randomized_pentagon_axiom(D, 3)
+        end
+    end
+
+    @testset "Symbolic" begin
+        mktempdir() do path
+            C = anyonwiki(4,1,2,4,1,0,1)
+            
+            save_fusion_category(C, path, "TensorCategories-section7-test")
+            D = load_fusion_category(joinpath(path, "TensorCategories-section7-test"))
+            @test randomized_pentagon_axiom(D, 3)
+        end
+    end
+end
