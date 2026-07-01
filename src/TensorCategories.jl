@@ -501,13 +501,25 @@ const Anyon = artifact"AnyonWiki"
 const VERSION_NUMBER = Base.pkgversion(@__MODULE__)
 
 function _git_short_hash()
+    root = normpath(joinpath(@__DIR__, ".."))
+
+    # Require Git metadata directly in the package root.
+    # This works for normal clones and worktrees:
+    #   normal clone: .git is a directory
+    #   worktree:     .git is a file
+    #
+    # It also avoids accidentally picking up some unrelated parent repository.
+    ispath(joinpath(root, ".git")) || return nothing
+
     git = Sys.which("git")
     git === nothing && return nothing
 
-    root = normpath(joinpath(@__DIR__, ".."))
-
     try
-        return readchomp(`$git -C $root rev-parse --short=7 HEAD`)
+        hash = readchomp(pipeline(
+            `$git -C $root rev-parse --short=8 HEAD`;
+            stderr=devnull,
+        ))
+        return isempty(hash) ? nothing : hash
     catch
         return nothing
     end
@@ -515,8 +527,11 @@ end
 
 function _version_string()
     s = string(VERSION_NUMBER)
-    h = _git_short_hash()
-    h === nothing || (s *= " ($(h))")
+
+    if (hash = _git_short_hash()) !== nothing
+        s *= " ($hash)"
+    end
+
     return s
 end
 
