@@ -516,7 +516,7 @@ function _git_short_hash()
 
     try
         hash = readchomp(pipeline(
-            `$git -C $root rev-parse --short=8 HEAD`;
+            `$git -C $root rev-parse --short=7 HEAD`;
             stderr=devnull,
         ))
         return isempty(hash) ? nothing : hash
