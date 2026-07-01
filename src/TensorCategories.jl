@@ -497,6 +497,29 @@ export ZPlusRingElem, ℕRingElem, ℤ₊RingElem
 
 const Anyon = artifact"AnyonWiki"
 
+# UT: Want to add Git commit id
+const VERSION_NUMBER = Base.pkgversion(@__MODULE__)
+
+function _git_short_hash()
+    git = Sys.which("git")
+    git === nothing && return nothing
+
+    root = normpath(joinpath(@__DIR__, ".."))
+
+    try
+        return readchomp(`$git -C $root rev-parse --short=7 HEAD`)
+    catch
+        return nothing
+    end
+end
+
+function _version_string()
+    s = string(VERSION_NUMBER)
+    h = _git_short_hash()
+    h === nothing || (s *= " ($(h))")
+    return s
+end
+
 function __init__() 
     if displaysize(stdout)[2] >= 96
         println(styled"""
@@ -505,7 +528,7 @@ function __init__()
   {bright_yellow:X}    {green:_}    {bright_yellow:X}     TensorCategories.jl
 {bright_yellow:X}    {red:_}{green:(_)}{magenta:_}    {bright_yellow:X}   -------------------        
  {bright_yellow:X}  {red:(_)} {magenta:(_)}  {bright_yellow:X}    A computational framework 
-  {bright_yellow:X}         {bright_yellow:X}     Version $(string(VERSION_NUMBER))
+  {bright_yellow:X}         {bright_yellow:X}     Version $(_version_string())
    {bright_yellow:X}       {bright_yellow:X}       
     {bright_yellow:X} {bright_yellow:X} {bright_yellow:X} {bright_yellow:X}""")
 #         println(styled"""
@@ -522,7 +545,7 @@ function __init__()
     end
 end
 
-const VERSION_NUMBER = Base.pkgversion(@__MODULE__)
+#const VERSION_NUMBER = Base.pkgversion(@__MODULE__)
 
 include("CategoryFramework/AbstractTypes.jl")
 include("CategoryFramework/AbstractMethods.jl")
