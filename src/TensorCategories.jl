@@ -500,15 +500,14 @@ const Anyon = artifact"AnyonWiki"
 function __init__() 
     if displaysize(stdout)[2] >= 96
         println(styled"""
-             {bright_yellow:X} {bright_yellow:X}        
-           {bright_yellow:X}     {bright_yellow:X}     
-         {bright_yellow:X}    {green:_}    {bright_yellow:X}   TensorCategories.jl
-       {bright_yellow:X}    {red:_}{green:(_)}{magenta:_}    {bright_yellow:X} -------------------        
-        {bright_yellow:X}  {red:(_)} {magenta:(_)}  {bright_yellow:X}  A computational Framework 
-         {bright_yellow:X}         {bright_yellow:X}   Version $(string(VERSION_NUMBER))
-          {bright_yellow:X}       {bright_yellow:X}       
-           {bright_yellow:X} {bright_yellow:X} {bright_yellow:X} {bright_yellow:X}
-""")
+      {bright_yellow:X} {bright_yellow:X}        
+    {bright_yellow:X}     {bright_yellow:X}     
+  {bright_yellow:X}    {green:_}    {bright_yellow:X}     TensorCategories.jl
+{bright_yellow:X}    {red:_}{green:(_)}{magenta:_}    {bright_yellow:X}   -------------------        
+ {bright_yellow:X}  {red:(_)} {magenta:(_)}  {bright_yellow:X}    A computational framework 
+  {bright_yellow:X}         {bright_yellow:X}     Version $(string(VERSION_NUMBER))
+   {bright_yellow:X}       {bright_yellow:X}       
+    {bright_yellow:X} {bright_yellow:X} {bright_yellow:X} {bright_yellow:X}""")
 #         println(styled"""
 # {yellow:A ⊗ (B ⊗ C) ----------------------------> (B ⊗ C) ⊗ A -----------------------------> B ⊗ (C ⊗ A)}
 #      {yellow:|}  _____                          ____      _                        {blue:_}               {yellow:|}

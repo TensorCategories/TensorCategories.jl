@@ -7,3 +7,5 @@
 ## Arithmetic
 
 1. Sanford, S. (2025). Fusion categories over non-algebraically closed fields. Journal of Algebra, 663, 316–351. <https://doi.org/10.1016/j.jalgebra.2024.09.010>
+
+1. Plavnik, J., Sanford, S., & Sconce, D. (2025). Tambara–Yamagami categories over the reals: The nonsplit case. Journal of the London Mathematical Society, 112(6). <https://doi.org/10.1112/jlms.70355>
