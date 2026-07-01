@@ -46,17 +46,21 @@ for (i,cat) in pairs(codes)
     # Store the results
     t4 = @elapsed save_fusion_category(Z3, dir, "center_$(cat[1])_$(cat[2])_$(cat[3])_$(cat[4])_$(cat[5])_$(cat[6])_$(cat[7])")
 
+    # Load the results
+    t5 = @elapsed Z4 = load_fusion_category(joinpath(dir, "center_$(cat[1])_$(cat[2])_$(cat[3])_$(cat[4])_$(cat[5])_$(cat[6])_$(cat[7])"))
+
     # Print progress
     i > 1 && print("\x1b[1A\x1b[2K"^7)
     print(cat)
     print(" - Progress: $(i)/$(length(codes))")
     println(": ")
     println("Simples computed in $t1 seconds")
-    println("Skeletonized in $t2 seconds")
+    println("Split in $t2 seconds")
+    println("Skeletonized in $t3 seconds")
     println("Quick pentagon check $(randomized_pentagon_axiom(Z2, 3) ? "passed" : "failed")")
-    println("Saved in $t3 seconds")
-    println("Loaded in $t4 seconds")
-    println("Quick check of loaded category $(randomized_pentagon_axiom(Z3, 3) ? "passed" : "failed")")
+    println("Saved in $t4 seconds")
+    println("Loaded in $t5 seconds")
+    println("Quick check of loaded category $(randomized_pentagon_axiom(Z4, 3) ? "passed" : "failed")")
 
 
     # Write to log file
@@ -64,11 +68,12 @@ for (i,cat) in pairs(codes)
     write(log, " - Progress: $(i)/$(length(codes))")
     write(log, ": \n")
     write(log, "Simples computed in $t1 seconds\n")
-    write(log, "Skeletonized in $t2 seconds\n")
+    write(log, "Split in $t2 seconds\n")
+    write(log, "Skeletonized in $t3 seconds\n")
     write(log, "Quick pentagon check $(randomized_pentagon_axiom(Z2, 3) ? "passed" : "failed")\n")
-    write(log, "Saved in $t3 seconds\n")
-    write(log, "Loaded in $t4 seconds\n")
-    write(log, "Quick check of loaded category $(randomized_pentagon_axiom(Z3, 3) ? "passed" : "failed")\n\n")
+    write(log, "Saved in $t4 seconds\n")
+    write(log, "Loaded in $t5 seconds\n")
+    write(log, "Quick check of loaded category $(randomized_pentagon_axiom(Z4, 3) ? "passed" : "failed")\n\n")
     flush(log)
 end
 
