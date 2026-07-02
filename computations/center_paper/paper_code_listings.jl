@@ -61,6 +61,19 @@ half_braiding(Z[4])
 R = endomorphism_ring(Z[4])
 basis(R)
 
+# Final extra test:
+ZM = ZL ⊗ M
+if length(simples(ZM)) != 9
+    error("Number of simples of ZM not correct")
+end
+
+for i=1:length(simples(ZM))
+    if dim(End(ZM[i])) != 1
+        error("ZM does not split!")
+    end
+end
+
+
 println("Section 7: AnyonWiki")
 
 C = anyonwiki(3,1,0,3,1,1,1);
