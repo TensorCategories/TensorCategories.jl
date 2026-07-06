@@ -1,15 +1,79 @@
 using TensorCategories, Oscar
+using Dates
+
+const FAIL_FAST = true
 
 codes = unique(c -> c[1:5], anyonwiki_keys(5))
 
-for (i,cat) in pairs(codes) 
+run_timestamp = Dates.format(now(), dateformat"yyyy-mm-dd_HH-MM-SS")
+const OUTFILE = "output/pentagon_stats_$(run_timestamp).csv"
 
-    println(cat)
-
-    Z = anyonwiki_center(cat...)
-
-    if pentagon_axiom(Z) == false
-        error("Pengagon axiom not satisfied!")
+function pkgversion_string(M::Module)
+    try
+        v = Base.pkgversion(M)
+        return isnothing(v) ? "unknown" : string(v)
+    catch
+        return "unknown"
     end
-    
 end
+
+function cpu_string()
+    try
+        return Sys.cpu_info()[1].model
+    catch
+        return "unknown"
+    end
+end
+
+function csv_escape(x)
+    s = string(x)
+    return "\"" * replace(s, "\"" => "\"\"") * "\""
+end
+
+function csv_row(xs...)
+    return join(csv_escape.(xs), ",")
+end
+
+cpu = cpu_string()
+tc_version = pkgversion_string(TensorCategories)
+oscar_version = pkgversion_string(Oscar)
+
+open(OUTFILE, "w") do io
+    println(io, csv_row(
+        "index",
+        "code",
+        "timestamp",
+        "cpu",
+        "tensorcategories_version",
+        "oscar_version",
+        "pentagon_axiom",
+        "pentagon_runtime_seconds",
+    ))
+
+    for (i, cat) in enumerate(codes)
+        println("[$i / $(length(codes))] ", cat)
+
+        Z = anyonwiki_center(cat...)
+
+        timestamp = Dates.format(now(), dateformat"yyyy-mm-dd HH:MM:SS")
+        runtime = @elapsed result = pentagon_axiom(Z)
+
+        println(io, csv_row(
+            i,
+            repr(cat),
+            timestamp,
+            cpu,
+            tc_version,
+            oscar_version,
+            result,
+            runtime,
+        ))
+        flush(io)
+
+        if FAIL_FAST && result == false
+            error("Pentagon axiom not satisfied for cat = $(repr(cat))")
+        end
+    end
+end
+
+println("Wrote statistics to $(OUTFILE)")

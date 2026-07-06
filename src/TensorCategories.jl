@@ -498,8 +498,6 @@ export ZPlusRingElem, ℕRingElem, ℤ₊RingElem
 const Anyon = artifact"AnyonWiki"
 
 # UT: Want to add Git commit id
-const VERSION_NUMBER = Base.pkgversion(@__MODULE__)
-
 function _git_short_hash()
     root = normpath(joinpath(@__DIR__, ".."))
 
@@ -525,8 +523,13 @@ function _git_short_hash()
     end
 end
 
+function _version_number()
+    return Base.pkgversion(@__MODULE__)
+end
+
 function _version_string()
-    s = string(VERSION_NUMBER)
+    v = _version_number()
+    s = v === nothing ? "unknown" : string(v)
 
     if (hash = _git_short_hash()) !== nothing
         s *= " ($hash)"
