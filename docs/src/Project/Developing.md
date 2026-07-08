@@ -42,16 +42,24 @@ Update the release version:
 juliaup update release
 ```
 
-## Separate development and release environments
+## Environments
 
-It is useful to have separate development and release environments. 
+It is useful to have separate environments for development and releases.
 
 ```bash
 mkdir -p ~/julia-envs/dev
 mkdir -p ~/julia-envs/rel
 ```
 
-Now set up the development environment:
+We first clone both the TensorCategories.jl and OSCAR repositories:
+
+```bash
+cd ~
+git clone git@github.com:TensorCategories/TensorCategories.jl.git
+git clone git@github.com:oscar-system/Oscar.jl.git
+```
+
+Now we set up the development environment:
 
 ```bash
 julia --project=~/julia-envs/dev
@@ -83,8 +91,8 @@ Pkg.instantiate()
 Add Bash aliases:
 
 ```bash
-alias jldev='julia --project=$HOME/julia-envs/dev'
-alias jlrel='julia --project=$HOME/julia-envs/rel'
+alias jldev='julia --project=~/julia-envs/dev'
+alias jlrel='julia --project=~/julia-envs/rel'
 ```
 
 ## Building documentation
@@ -136,4 +144,38 @@ Moreover, a script `pull.sh` to pull the documentation from the server:
 
 ```bash
 rsync -avz --delete --exclude='/pull.sh' --exclude='/serv.sh' remote:~/TensorCategories.jl/docs/build/ .
+```
+
+
+## Sysimage
+
+One can speed up startup time and first-call time in Julia by creating a "sysimage" with [PackageCompiler](https://julialang.github.io/PackageCompiler.jl/dev/). Here is how this works.
+
+It is probably useful to use the release environment we created above. Then:
+
+```julia-repl
+julia> using Pkg
+
+julia> Pkg.add("PackageCompiler")
+
+julia> using PackageCompiler
+
+julia> create_sysimage(
+    ["TensorCategories"],
+    sysimage_path = "~/julia-sysimages/TC-sysimage-0.6.0.so",
+    precompile_execution_file = "~/TensorCategories.jl/computations/center_paper/paper_code_listings.jl",
+)
+```
+
+The `precompile_execution_file` file is a file with instructions that are "representative" to what you want to run. You can then use this sysimage with:
+
+```bash
+jlrel --sysimage /home/thiel/julia-sysimages/TC-sysimage-0.6.0.so
+```
+
+It makes sense to create an alias in `.bashrc`:
+
+```bash
+alias tc="jlrel --sysimage /home/thiel/julia-sysimages/TC-sysimage-0.6.0.so"
+complete -f tc # make Bash complete only filenames for the tc command/alias
 ```

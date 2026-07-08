@@ -35,7 +35,7 @@ function csv_row(xs...)
 end
 
 cpu = cpu_string()
-tc_version = pkgversion_string(TensorCategories)
+tc_version = TensorCategories._version_string()
 oscar_version = pkgversion_string(Oscar)
 
 open(OUTFILE, "w") do io
