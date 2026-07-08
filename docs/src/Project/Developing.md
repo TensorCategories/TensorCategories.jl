@@ -170,12 +170,12 @@ julia> create_sysimage(
 The `precompile_execution_file` file is a file with instructions that are "representative" to what you want to run. You can then use this sysimage with:
 
 ```bash
-jlrel --sysimage /home/thiel/julia-sysimages/TC-sysimage-0.6.0.so
+jlrel --sysimage ~/julia-sysimages/TC-sysimage-0.6.0.so
 ```
 
 It makes sense to create an alias in `.bashrc`:
 
 ```bash
-alias tc="jlrel --sysimage /home/thiel/julia-sysimages/TC-sysimage-0.6.0.so"
+alias tc="jlrel --sysimage ~/julia-sysimages/TC-sysimage-0.6.0.so"
 complete -f tc # make Bash complete only filenames for the tc command/alias
 ```
