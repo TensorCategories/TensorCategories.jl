@@ -3,10 +3,14 @@ using Dates
 
 const FAIL_FAST = true
 
-codes = anyonwiki_keys(5)
+codes = anyonwiki_keys(7)
 
 run_timestamp = Dates.format(now(), dateformat"yyyy-mm-dd_HH-MM-SS")
-const OUTFILE = "output/anyonwiki_db_check_$(run_timestamp).csv"
+
+!isdir(joinpath(@__DIR__, "output")) && mkdir(joinpath(@__DIR__, "output"))
+!isdir(joinpath(@__DIR__, "output/anyonwiki_db_check")) && mkdir(joinpath(@__DIR__, "output/anyonwiki_db_check"))
+
+const OUTFILE = "output/anyonwiki_db_check/anyonwiki_db_check_$(run_timestamp).csv"
 
 function pkgversion_string(M::Module)
     try
@@ -48,6 +52,8 @@ open(OUTFILE, "w") do io
         "oscar_version",
         "pentagon_axiom",
         "pentagon_runtime_seconds",
+        "hexagon_axiom",
+        "hexagon_runtime_seconds",
     ))
 
     for (i, cat) in enumerate(codes)
@@ -56,7 +62,14 @@ open(OUTFILE, "w") do io
         C = anyonwiki(cat...)
 
         timestamp = Dates.format(now(), dateformat"yyyy-mm-dd HH:MM:SS")
-        runtime = @elapsed result = pentagon_axiom(C)
+        pentagon_runtime_seconds = @elapsed pentagon_axiom_result = pentagon_axiom(C)
+        
+        if is_braided(C)
+            hexagon_runtime_seconds = @elapsed hexagon_axiom_result = hexagon_axiom(C)
+        else
+            hexagon_axiom_result = "N/A"
+            hexagon_runtime_seconds = "N/A"
+        end
 
         println(io, csv_row(
             i,
@@ -65,13 +78,15 @@ open(OUTFILE, "w") do io
             cpu,
             tc_version,
             oscar_version,
-            result,
-            runtime,
+            pentagon_axiom_result,
+            pentagon_runtime_seconds,
+            hexagon_axiom_result,
+            hexagon_runtime_seconds,
         ))
         flush(io)
 
-        if FAIL_FAST && result == false
-            error("Pentagon axiom not satisfied for cat = $(repr(cat))")
+        if FAIL_FAST && (pentagon_axiom_result == false || hexagon_runtime_seconds == false)
+            error("Axiom not satisfied for cat = $(repr(cat))")
         end
     end
 end
