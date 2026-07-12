@@ -6,31 +6,25 @@ Here is some basic information for developing.
 
 [Juliaup](https://github.com/JuliaLang/juliaup) is the official version manager for Julia. It allows multiple Julia versions to be installed side by side, provides a simple way to switch between them or select a specific version when starting Julia, and keeps installed versions up to date. Juliaup manages the Julia executables themselves, while packages and package environments continue to be managed separately through Julia's built-in package manager (Pkg).
 
-Install with:
+Install Juliaup with:
 
 ```bash
 curl -fsSL https://install.julialang.org | sh
 ```
 
-Install the latest stable release:
+Juliaup supports different "channels" of Julia versions. One can select a default channel, and then when entering `julia` the version from the default channel is started. After installation of Juliaup the "release" channel is selected as default. You can check this with:
 
 ```bash
-juliaup add release
+juliaup status
 ```
 
-Set the default:
+To additionally install the lts channel do:
 
 ```bash
-juliaup default release
+juliaup add lts
 ```
 
-Then
-
-```bash
-julia
-```
-
-starts the default version. To run a specific version without changing the default:
+To run a specific version without changing the default:
 
 ```bash
 julia +lts
@@ -40,6 +34,13 @@ Update the release version:
 
 ```
 juliaup update release
+```
+
+If you need to install Julia into a different path, add the following lines to your `.basrhc` *before* the Juliaup installation:
+
+```bash
+export JULIAUP_DEPOT_PATH=/data/juliaup
+export JULIA_DEPOT_PATH=/data/julia
 ```
 
 ## Environments
@@ -158,13 +159,13 @@ julia> using Pkg
 
 julia> Pkg.add("PackageCompiler")
 
-julia> using PackageCompiler
+julia> using PackageCompiler, TensorCategories
 
 julia> create_sysimage(
-    ["TensorCategories"],
-    sysimage_path = "~/julia-sysimages/TC-sysimage-0.6.0.so",
-    precompile_execution_file = "~/TensorCategories.jl/computations/center_paper/paper_code_listings.jl",
-)
+           ["TensorCategories"],
+           sysimage_path = "/groups/AGAG/julia-sysimages/TC-sysimage-0.6.0.so",
+           precompile_execution_file = joinpath(pkgdir(TensorCategories), "computations", "center_paper", "paper_code_listings.jl"),
+       )
 ```
 
 The `precompile_execution_file` file is a file with instructions that are "representative" to what you want to run. You can then use this sysimage with:
