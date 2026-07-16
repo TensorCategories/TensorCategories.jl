@@ -150,7 +150,7 @@ rsync -avz --delete --exclude='/pull.sh' --exclude='/serv.sh' remote:~/TensorCat
 
 ## Sysimage
 
-One can speed up startup time and first-call time in Julia by creating a "sysimage" with [PackageCompiler](https://julialang.github.io/PackageCompiler.jl/dev/). Here is how this works.
+One can speed up startup time and first-call time in Julia by creating a "sysimage" with [PackageCompiler](https://julialang.github.io/PackageCompiler.jl/dev/). This is especially useful for distributed computing. Here is how this works.
 
 It is probably useful to use the release environment we created above. Then:
 
@@ -168,15 +168,27 @@ julia> create_sysimage(
        )
 ```
 
-The `precompile_execution_file` file is a file with instructions that are "representative" to what you want to run. You can then use this sysimage with:
+The `precompile_execution_file` file is a file with instructions that are "representative" to what you want to run and which are then precompiled; the example file covers most of the main functions of TensorCategories.jl. You can then use this sysimage with:
 
 ```bash
 jlrel --sysimage ~/julia-sysimages/TC-sysimage-0.6.0.so
 ```
 
-It makes sense to create an alias in `.bashrc`:
+It makes sense to create an executable script to start the sysimage. Create `~/bin/tc`:
 
-```bash
-alias tc="jlrel --sysimage ~/julia-sysimages/TC-sysimage-0.6.0.so"
-complete -f tc # make Bash complete only filenames for the tc command/alias
 ```
+#!/bin/bash
+
+exec julia \
+    --project="$HOME/julia-envs/rel" \
+    --sysimage="$HOME/julia-sysimages/TC-sysimage-0.6.0.so" \
+    "$@"
+```
+
+Make it executable:
+
+```
+chmod +x tc
+```
+
+In `.bashrc` add `~/bin` to `PATH`.
