@@ -20,6 +20,10 @@ cd "$SLURM_SUBMIT_DIR"
 
 export JULIA_NUM_THREADS="$SLURM_CPUS_PER_TASK"
 
-"$HOME/bin/tc" \
+#"$HOME/bin/tc" \
+#    computations/center_paper/anyonwiki_db_check.jl \
+#   "$SLURM_ARRAY_TASK_ID"
+
+"$HOME/bin/jlrel" \
     computations/center_paper/anyonwiki_db_check.jl \
     "$SLURM_ARRAY_TASK_ID"
