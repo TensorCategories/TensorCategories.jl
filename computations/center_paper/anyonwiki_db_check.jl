@@ -16,11 +16,7 @@ using .ComputationLogging
 
 const FAIL_FAST = true
 
-const OUTFILE = get(
-    ENV,
-    "TC_COMPUTATION_OUTFILE",
-    joinpath(@__DIR__, "output", "anyonwiki_db_check.csv"),
-)
+const OUTFILE = joinpath(@__DIR__, "logs", "anyonwiki_db_check.csv")
 
 codes = anyonwiki_keys(7)
 
