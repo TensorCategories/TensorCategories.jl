@@ -1,3 +1,7 @@
+# A PackageCompiler sysimage warmup file covering most
+# of the main functions of TensorCategories.jl.
+
+
 include("paper_code_listings.jl")
 
 C = anyonwiki(3,1,0,3,1,1,1)

@@ -89,12 +89,31 @@ Pkg.add("TensorCategories")
 Pkg.instantiate()
 ```
 
-Add Bash aliases:
+It makes sense to add executable scripts for starting the respective environment. In, say, `~/bin` add the scripts `jldev` and `jlrel`:
 
 ```bash
-alias jldev='julia --project=~/julia-envs/dev'
-alias jlrel='julia --project=~/julia-envs/rel'
+#!/bin/bash
+
+exec julia \
+    --project="$HOME/julia-envs/dev" \
+    "$@"
 ```
+
+```bash
+#!/bin/bash
+
+exec julia \
+    --project="$HOME/julia-envs/rel" \
+    "$@"
+```
+
+Make them executable:
+
+```
+chmod +x jldev jlrel
+```
+
+In `.bashrc` add `~/bin` to `PATH`.
 
 ## Building documentation
 
@@ -163,7 +182,7 @@ julia> using PackageCompiler, TensorCategories
 
 julia> create_sysimage(
            ["TensorCategories"],
-           sysimage_path = "/groups/AGAG/julia-sysimages/TC-sysimage-0.6.0.so",
+           sysimage_path = "~/julia-sysimages/TC-sysimage-0.6.0.so",
            precompile_execution_file = joinpath(pkgdir(TensorCategories), "computations", "center_paper", "paper_code_listings.jl"),
        )
 ```
@@ -176,7 +195,7 @@ jlrel --sysimage ~/julia-sysimages/TC-sysimage-0.6.0.so
 
 It makes sense to create an executable script to start the sysimage. Create `~/bin/tc`:
 
-```
+```bash
 #!/bin/bash
 
 exec julia \
@@ -192,3 +211,32 @@ chmod +x tc
 ```
 
 In `.bashrc` add `~/bin` to `PATH`.
+
+
+## Cluster computation
+
+For computations on a cluster, one should use sysimages as explained above to reduce compilation time. But if the cluster has inhomogeneous hardware, things get a bit more complicated. In `create_sysimage` one can specify CPU targets with the `cpu_target` option. By default, this is `native` ([reference](https://julialang.github.io/PackageCompiler.jl/stable/refs.html)), meaning it is optimized for the machine on which you do the compilation. If this does not match the hardware on the cluster, you need to specify the correct CPU targets. You can list the available targets with `julia -C help`. See also [here](https://docs.julialang.org/en/v1/devdocs/sysimg/#sysimg-multi-versioning) for more information.
+
+So, for example, to create a sysimage specifically for AMD Zen 2 CPUs (e.g. AMD EPYC 7262) use:
+
+```julia-repl
+julia> create_sysimage(
+           ["TensorCategories"],
+           sysimage_path = "~/julia-sysimages/TC-sysimage-0.6.0-znver2.so",
+           precompile_execution_file = joinpath(pkgdir(TensorCategories), "computations", "center_paper", "paper_code_listings.jl"),
+           cpu_target = "znver2"
+       )
+```
+
+Then create the executable script `~/bin/tc-znver2`:
+
+```bash
+#!/bin/bash
+
+exec julia \
+    --project="$HOME/julia-envs/rel" \
+    --sysimage="$HOME/julia-sysimages/TC-sysimage-0.6.0-znver2.so" \
+    "$@"
+```
+
+Check out the [SLURM Quick Start User Guide](https://slurm.schedmd.com/quickstart.html) and the [SLURM Reference Sheet](https://docs.nesi.org.nz/Getting_Started/Cheat_Sheets/Slurm-Reference_Sheet). You can find an [example SLURM script](https://github.com/TensorCategories/TensorCategories.jl/blob/master/computations/center_paper/anyonwiki_db_check.slurm) in the repository.
