@@ -170,7 +170,7 @@ julia> Pkg.add("PackageCompiler")
 Now, we create the sysimage:
 
 ```julia-repl
-julia> using PackageCompiler
+julia> using PackageCompiler, TensorCategories, Oscar
 
 julia> create_sysimage(
            ["TensorCategories", "Oscar"],
@@ -180,11 +180,19 @@ julia> create_sysimage(
        )
 ```
 
-The compilation takes around 1 hour and the sysimage file is about 2.2GB in size.
-
 Here, `cpu_target` is only necessary for an HPC environment, and you should set it to the same value as `JULIA_CPU_TARGET` from above (this is not inherited). 
 
-The `precompile_execution_file` file is a file with instructions that are "representative" to what you want to run and which are then precompiled; the example file covers most of the main functions of TensorCategories.jl. You can then use this sysimage with the `--sysimage` command line argument. We do this with an executable script `~/bin/tc`:
+The `precompile_execution_file` file is a file with instructions that are "representative" to what you want to run and which are then precompiled; the example file covers most of the main functions of TensorCategories.jl. 
+
+The compilation takes around 1 hour and the sysimage file size is about 3GB. On an HPC you should compile on a node. Request a node with:
+
+```bash
+salloc --time=03:00:00 --partition=PART --mem=32G
+```
+
+Then run the above compilation.
+
+You can use the sysimage with the `--sysimage` command line argument. We do this with an executable script `~/bin/tc`:
 
 ```bash
 #!/bin/bash
