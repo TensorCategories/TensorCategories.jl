@@ -1,16 +1,42 @@
 # Developing
 
-Here is some basic information for developing.
+Here is some basic information for developing and advanced usage.
 
-## Juliaup
+
+## Julia environment
+
+We will set up a versatile Julia environment that allows working with different Julia versions, project environments (development and release), and that can also be used on High Performance Clusters with inhomogeneous hardware. The latter is challenging with Julia due to, e.g., precompile caches that should not be mixed across different CPU types. We got the key ideas from the [Julia on HPC Clusters](https://juliahpc.github.io/) documentation. 
+
+We will store everything into a folder we call here `$JULIA_DIR`. For a local installation you can simply use `~/.julia`. For a cluster installation you should follow [these guidelines](https://juliahpc.github.io/user_gettingstarted/#place_the_julia_depot_on_the_parallel_file_system) for choosing a location.
+
+
+### Juliaup
 
 [Juliaup](https://github.com/JuliaLang/juliaup) is the official version manager for Julia. It allows multiple Julia versions to be installed side by side, provides a simple way to switch between them or select a specific version when starting Julia, and keeps installed versions up to date. Juliaup manages the Julia executables themselves, while packages and package environments continue to be managed separately through Julia's built-in package manager (Pkg).
 
-Install Juliaup with:
+```bash
+mkdir -p $JULIA_DIR/julia-depot
+mkdir -p $JULIA_DIR/juliaup-depot
+```
+
+In `.basrc` put:
 
 ```bash
-curl -fsSL https://install.julialang.org | sh
+export JULIA_DEPOT_PATH="$JULIA_DIR/julia-depot"
+export JULIAUP_DEPOT_PATH="$JULIA_DIR/juliaup-depot"
 ```
+
+Then source this with:
+
+```bash
+source ~/.bashrc
+```
+
+Now, install Juliaup with:
+
+```bash
+curl -fsSL https://install.julialang.org | sh -s -- --path "$JULIA_DIR/juliaup"
+``` 
 
 Juliaup supports different "channels" of Julia versions. One can select a default channel, and then when entering `julia` the version from the default channel is started. After installation of Juliaup the "release" channel is selected as default. You can check this with:
 
@@ -32,54 +58,45 @@ julia +lts
 
 Update the release version:
 
-```
+```bash
 juliaup update release
 ```
 
-If you need to install Julia into a different path, add the following lines to your `.basrhc` *before* the Juliaup installation:
+### CPU Target (HPC)
+
+This section is only relevant for HPC environments with inhomogeneous hardware. To avoid precompilation cache conflicts across different CPU architectures you should always set the [`JULIA_CPU_TARGET`](https://docs.julialang.org/en/v1.10-dev/manual/environment-variables/#JULIA_CPU_TARGET) environment variable to a value that is generic enough to cover all the types of CPUs that you're targeting ([reference](https://juliahpc.github.io/user_faq/#how_can_i_force_julia_to_compile_code_for_a_heterogeneous_cluster)). You should also do this before adding any packages.
+
+For a SLURM cluster you can log into a node from a partition `PART` and output the Julia CPU target name as follows:
 
 ```bash
-export JULIAUP_DEPOT_PATH=/data/juliaup
-export JULIA_DEPOT_PATH=/data/julia
+srun --partition=PART --nodes=1 --ntasks=1 --cpus-per-task=1 --time=00:00:30 --mem=8G julia -e 'println(Sys.CPU_NAME)'
 ```
 
-## Environments
+For the [RPTU HPC 'Elwetritsch'](https://hpc.rz.rptu.de/elwetritsch/hardware.shtml) we get the following:
 
-It is useful to have separate environments for development and releases.
+| partition                | target         |
+| -----------              | --------       |
+| haswell-256, haswell-64s | haswell        |
+| skylake-96, skylake-384  | skylake-avx512 |
+| epyc-256                 | znver2         |
+| epyc-768                 | znver5         |
+
+So, ignoring the older haswells, an appropriate choice here would be:
 
 ```bash
-mkdir -p ~/julia-envs/dev
-mkdir -p ~/julia-envs/rel
+export JULIA_CPU_TARGET="generic;skylake-avx512,clone_all;znver2,clone_all"
 ```
 
-We first clone both the TensorCategories.jl and OSCAR repositories:
+
+### Project Environments
+
+It is useful to have separate project environments for releases and development.
+
+First, we create the release environment.
 
 ```bash
-cd ~
-git clone git@github.com:TensorCategories/TensorCategories.jl.git
-git clone git@github.com:oscar-system/Oscar.jl.git
-```
-
-Now we set up the development environment:
-
-```bash
-julia --project=~/julia-envs/dev
-```
-
-Then:
-
-```julia
-using Pkg
-Pkg.develop(path=expanduser("~/Oscar.jl"))
-Pkg.develop(path=expanduser("~/TensorCategories.jl"))
-Pkg.add("Revise")
-Pkg.instantiate()
-```
-
-Set up the release environment:
-
-```bash
-julia --project=~/julia-envs/rel
+mkdir -p "$JULIA_DIR/projects/rel"
+julia --project="$JULIA_DIR/projects/rel"
 ```
 
 ```julia
@@ -89,35 +106,99 @@ Pkg.add("TensorCategories")
 Pkg.instantiate()
 ```
 
-It makes sense to add executable scripts for starting the respective environment. In, say, `~/bin` add the scripts `jldev` and `jlrel`:
+Add the executable script `~/bin/jlrel` to start the release environment:
 
 ```bash
 #!/bin/bash
 
 exec julia \
-    --project="$HOME/julia-envs/dev" \
+    --project="$JULIA_DIR/projects/rel" \
     "$@"
 ```
+
+Make the script executable with `chmod +x jlrel` and add `~/bin` to `PATH` in `.bashrc`.
+
+Now, we set up the development environment. Clone both the TensorCategories.jl and OSCAR repositories:
+
+```bash
+cd /data
+git clone git@github.com:TensorCategories/TensorCategories.jl.git
+git clone git@github.com:oscar-system/Oscar.jl.git
+```
+
+```bash
+mkdir -p "$JULIA_DIR/projects/dev"
+julia --project="$JULIA_DIR/projects/dev"
+```
+
+```julia
+using Pkg
+Pkg.develop(path=expanduser("/data/Oscar.jl"))
+Pkg.develop(path=expanduser("/data/TensorCategories.jl"))
+Pkg.add("Revise")
+Pkg.instantiate()
+```
+
+Executable script `~/bin/jldev`:
 
 ```bash
 #!/bin/bash
 
 exec julia \
-    --project="$HOME/julia-envs/rel" \
+    --project="$JULIA_DIR/projects/dev"
     "$@"
 ```
 
-Make them executable:
+### Sysimage
 
-```
-chmod +x jldev jlrel
+One can speed up startup time and first-call time in Julia by creating a "sysimage" with [PackageCompiler](https://julialang.github.io/PackageCompiler.jl/dev/). This is especially useful (also essential) for distributed computing, not just on an HPC. Here is how this works.
+
+First, create a directory for sysimages:
+
+```bash
+mkdir -p "$JULIA_DIR/sysimages"
 ```
 
-In `.bashrc` add `~/bin` to `PATH`.
+We use the release environment we created above. First install PackageCompiler:
+
+```julia-repl
+julia> using Pkg
+
+julia> Pkg.add("PackageCompiler")
+```
+
+Now, we create the sysimage:
+
+```julia-repl
+julia> using PackageCompiler
+
+julia> create_sysimage(
+           ["TensorCategories", "Oscar"],
+           sysimage_path = "$JULIA_DIR/sysimages/TC-sysimage-0.6.0.so",
+           precompile_execution_file = joinpath(pkgdir(TensorCategories), "computations", "center_paper", "paper_code_listings.jl"),
+           cpu_target = "$JULIA_CPU_TARGET"
+       )
+```
+
+The compilation takes around 1 hour and the sysimage file is about 2.2GB in size.
+
+Here, `cpu_target` is only necessary for an HPC environment, and you should set it to the same value as `JULIA_CPU_TARGET` from above (this is not inherited). 
+
+The `precompile_execution_file` file is a file with instructions that are "representative" to what you want to run and which are then precompiled; the example file covers most of the main functions of TensorCategories.jl. You can then use this sysimage with the `--sysimage` command line argument. We do this with an executable script `~/bin/tc`:
+
+```bash
+#!/bin/bash
+
+exec julia \
+    --project="$JULIA_DIR/projects/rel" \
+    --sysimage="$JULIA_DIR/sysimages/TC-sysimage-0.6.0.so" \
+    "$@"
+```
+
 
 ## Building documentation
 
-Only once initialize the docs environment:
+Initialize the docs environment:
 
 ```bash
 cd ~/TensorCategories.jl
@@ -167,76 +248,3 @@ rsync -avz --delete --exclude='/pull.sh' --exclude='/serv.sh' remote:~/TensorCat
 ```
 
 
-## Sysimage
-
-One can speed up startup time and first-call time in Julia by creating a "sysimage" with [PackageCompiler](https://julialang.github.io/PackageCompiler.jl/dev/). This is especially useful for distributed computing. Here is how this works.
-
-It is probably useful to use the release environment we created above. Then:
-
-```julia-repl
-julia> using Pkg
-
-julia> Pkg.add("PackageCompiler")
-
-julia> using PackageCompiler, TensorCategories
-
-julia> create_sysimage(
-           ["TensorCategories"],
-           sysimage_path = "~/julia-sysimages/TC-sysimage-0.6.0.so",
-           precompile_execution_file = joinpath(pkgdir(TensorCategories), "computations", "center_paper", "paper_code_listings.jl"),
-       )
-```
-
-The `precompile_execution_file` file is a file with instructions that are "representative" to what you want to run and which are then precompiled; the example file covers most of the main functions of TensorCategories.jl. You can then use this sysimage with:
-
-```bash
-jlrel --sysimage ~/julia-sysimages/TC-sysimage-0.6.0.so
-```
-
-It makes sense to create an executable script to start the sysimage. Create `~/bin/tc`:
-
-```bash
-#!/bin/bash
-
-exec julia \
-    --project="$HOME/julia-envs/rel" \
-    --sysimage="$HOME/julia-sysimages/TC-sysimage-0.6.0.so" \
-    "$@"
-```
-
-Make it executable:
-
-```
-chmod +x tc
-```
-
-In `.bashrc` add `~/bin` to `PATH`.
-
-
-## Cluster computation
-
-For computations on a cluster, one should use sysimages as explained above to reduce compilation time. But if the cluster has inhomogeneous hardware, things get a bit more complicated. In `create_sysimage` one can specify CPU targets with the `cpu_target` option. By default, this is `native` ([reference](https://julialang.github.io/PackageCompiler.jl/stable/refs.html)), meaning it is optimized for the machine on which you do the compilation. If this does not match the hardware on the cluster, you need to specify the correct CPU targets. You can list the available targets with `julia -C help`. See also [here](https://docs.julialang.org/en/v1/devdocs/sysimg/#sysimg-multi-versioning) for more information.
-
-So, for example, to create a sysimage specifically for AMD Zen 2 CPUs (e.g. AMD EPYC 7262) use:
-
-```julia-repl
-julia> create_sysimage(
-           ["TensorCategories"],
-           sysimage_path = "~/julia-sysimages/TC-sysimage-0.6.0-znver2.so",
-           precompile_execution_file = joinpath(pkgdir(TensorCategories), "computations", "center_paper", "paper_code_listings.jl"),
-           cpu_target = "znver2"
-       )
-```
-
-Then create the executable script `~/bin/tc-znver2`:
-
-```bash
-#!/bin/bash
-
-exec julia \
-    --project="$HOME/julia-envs/rel" \
-    --sysimage="$HOME/julia-sysimages/TC-sysimage-0.6.0-znver2.so" \
-    "$@"
-```
-
-Check out the [SLURM Quick Start User Guide](https://slurm.schedmd.com/quickstart.html) and the [SLURM Reference Sheet](https://docs.nesi.org.nz/Getting_Started/Cheat_Sheets/Slurm-Reference_Sheet). You can find an [example SLURM script](https://github.com/TensorCategories/TensorCategories.jl/blob/master/computations/center_paper/anyonwiki_db_check.slurm) in the repository.
