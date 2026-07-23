@@ -69,7 +69,8 @@ This section is only relevant for HPC environments with inhomogeneous hardware. 
 For a SLURM cluster you can log into a node from a partition `PART` and output the Julia CPU target name as follows:
 
 ```bash
-srun --partition=PART --nodes=1 --ntasks=1 --cpus-per-task=1 --time=00:00:30 --mem=8G julia -e 'println(Sys.CPU_NAME)'
+srun --partition=PART --nodes=1 --ntasks=1 --cpus-per-task=1 --time=00:00:30 --mem=8G \
+julia -e 'println(Sys.CPU_NAME)'
 ```
 
 For the [RPTU HPC 'Elwetritsch'](https://hpc.rz.rptu.de/elwetritsch/hardware.shtml) we get the following:
@@ -170,10 +171,10 @@ julia> Pkg.add("PackageCompiler")
 Now, we create the sysimage:
 
 ```julia-repl
-julia> using PackageCompiler, TensorCategories, Oscar
+julia> using PackageCompiler, TensorCategories
 
 julia> create_sysimage(
-           ["TensorCategories", "Oscar"],
+           ["TensorCategories"];
            sysimage_path = "$JULIA_DIR/sysimages/TC-sysimage-0.6.0.so",
            precompile_execution_file = joinpath(pkgdir(TensorCategories), "computations", "center_paper", "paper_code_listings.jl"),
            cpu_target = "$JULIA_CPU_TARGET"
@@ -187,7 +188,7 @@ The `precompile_execution_file` file is a file with instructions that are "repre
 The compilation takes around 1 hour and the sysimage file size is about 3GB. On an HPC you should compile on a node. Request a node with:
 
 ```bash
-salloc --time=03:00:00 --partition=PART --mem=32G
+salloc --time=03:00:00 --partition=PART --ntasks=1 --cpus-per-task=16 --mem=32G
 ```
 
 Then run the above compilation.
