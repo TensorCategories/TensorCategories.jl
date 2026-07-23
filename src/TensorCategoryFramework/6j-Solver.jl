@@ -56,13 +56,20 @@ function _number_of_variables_in_pentagon_equations(C::SixJCategory)
     sum(int_dim(End(x ⊗ y ⊗ z)) for x ∈ S, y ∈ S, z ∈ S)
 end
 
+# UT: This function caused an issue starting with OSCAR 1.8 since evaluation of 
+# polynomials was recently reworked in AbstractAlgebra/Nemo and now has such a 
+# method as well:
+# https://github.com/Nemocas/AbstractAlgebra.jl/pull/2364 
+#
+# Generally, such a function should also not be here, we'd expect this to be in
+# OSCAR.
+#
+# function (f::QQMPolyRingElem)(x...)
+#     coeffs = coefficients(f)
+#     exps = exponents(f)
 
-function (f::QQMPolyRingElem)(x...)
-    coeffs = coefficients(f)
-    exps = exponents(f)
-
-    return sum([Rational(c)* *((x.^e)...) for (c,e) ∈ zip(coeffs, exps)])
-end
+#     return sum([Rational(c)* *((x.^e)...) for (c,e) ∈ zip(coeffs, exps)])
+# end
 
 function split_ideal(I::MPolyIdeal)
     polys = filter(e -> e != 0, unique!(gens(I)))
