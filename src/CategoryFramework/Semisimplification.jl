@@ -115,7 +115,28 @@ function is_negligible(f::Morphism)
 end
 
 function ==(f::SemisimplifiedMorphism, g::SemisimplifiedMorphism)
-    is_negligible(f-g)
+    domain(f) == domain(g) && codomain(f) == codomain(g) && is_negligible(f-g)
+end
+
+# Coordinates in the quotient are determined by the trace pairing, rather than
+# by matrices of representatives that may differ by a negligible morphism.
+function express_in_basis(f::SemisimplifiedMorphism,
+                          B::Vector{SemisimplifiedMorphism})
+    F = base_ring(f)
+    all(b -> domain(b) == domain(f) && codomain(b) == codomain(f), B) ||
+        throw(ArgumentError(
+            "basis morphisms must have the same domain and codomain"))
+    if isempty(B)
+        is_negligible(f) ||
+            throw(ArgumentError("morphism is not in the empty span"))
+        return elem_type(F)[]
+    end
+    G = basis(Hom(object(codomain(f)), object(domain(f))))
+    M = matrix(F, length(B), length(G),
+        [F(tr(morphism(b) ∘ g)) for b in B, g in G])
+    v = matrix(F, 1, length(G),
+        [F(tr(morphism(f) ∘ g)) for g in G])
+    collect(solve(M, v; side = :left))[:]
 end
 
 
@@ -184,6 +205,8 @@ function id(X::SemisimplifiedObject)
 end
 
 function matrix(f::SemisimplifiedMorphism)
+    # This is a representative upstairs, not faithful quotient coordinates.
+    # Use express_in_basis for computations in the quotient Hom space.
     matrix(morphism(f))
 end
 
@@ -263,7 +286,15 @@ function coev(X::SemisimplifiedObject)
     morphism(dom, cod, c)
 end
 
-(F::Ring)(f::SemisimplifiedMorphism) = F(morphism(f))
+function (F::Ring)(f::SemisimplifiedMorphism)
+    # Negligible maps vanish in the quotient. For a nonzero endomorphism, solve
+    # against the quotient identity rather than inspecting its representative.
+    # Etingof--Ostrik, arXiv:1801.04409v4, Definition 2.1 and Proposition 2.4.
+    is_zero(f) && return zero(F)
+    domain(f) == codomain(f) ||
+        throw(ArgumentError("scalar conversion requires an endomorphism"))
+    F(only(express_in_basis(f, [id(domain(f))])))
+end
 
 #=----------------------------------------------------------
     Printing 

@@ -127,6 +127,37 @@ function audit_jordan_representation(C, n)
     Representation(C, gens(base_group(C)), [J])
 end
 
+# Semisimplification quotients Hom spaces by negligible morphisms; see
+# Etingof--Ostrik, arXiv:1801.04409v4, Definition 2.1 and Proposition 2.4.
+@testset "Semisimplification scalar coordinates" begin
+    F = GF(5)
+    R = representation_category(F, cyclic_group(5))
+    J2 = audit_jordan_representation(R, 2)
+    Q = Semisimplification(R)
+    X = semisimplify(J2, Q)
+    generator = matrix(J2(gens(base_group(R))[1]))
+    f = semisimplify(morphism(J2, J2, generator), Q)
+
+    # End(J2)=F5[N]/(N^2), and tr(Nh)=0 for every h. Thus [N]=0 and
+    # the group generator [1+N] is the quotient identity.
+    @test f == id(X)
+    @test express_in_basis(f, [id(X)]) == [F(1)]
+    @test F(f) == F(id(X)) == F(1)
+    n = f - id(X)
+    @test is_zero(n) && F(n) == F(0)
+    @test F(F(3) * id(X) + n) == F(3)
+
+    P = semisimplify(audit_jordan_representation(R, 5), Q)
+    # Every endomorphism of J5 has trace divisible by five, so J5 becomes zero.
+    @test F(id(P)) == F(0)
+
+    U, inc, proj = direct_sum(X, X)
+    # Projection onto one summand is not a scalar endomorphism of X⊕X.
+    @test_throws ArgumentError F(inc[1] ∘ proj[1])
+    # A nonzero map between different objects has no scalar value.
+    @test_throws ArgumentError F(inc[1])
+end
+
 # A representation morphism is an intertwiner; see Etingof et al.,
 # Introduction to Representation Theory (2011), Definition 1.13.
 @testset "Representation morphism validation" begin
