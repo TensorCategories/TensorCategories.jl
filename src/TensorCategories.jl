@@ -335,6 +335,7 @@ export MonadModuleMorphism
 export MonadModules
 export monoidal_natural_transformations
 export monoidal_structure
+export monoidal_structure_candidates, autoequivalence_candidates
 export monoidal_structures  
 export monoidal_functor
 export monoidal_functor_axiom
