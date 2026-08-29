@@ -143,6 +143,7 @@ export complex_embeddings
 export complex_matrix_to_hsv
 export compose 
 export composition_power
+export composition_factors
 export convolution_category 
 export coproduct 
 export cyclic_group_3cocycle 

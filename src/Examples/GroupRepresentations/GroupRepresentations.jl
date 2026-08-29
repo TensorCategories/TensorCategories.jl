@@ -509,8 +509,8 @@ end
 """
     decompose(σ::GroupRepresentation)
 
-Decompose the representation into a direct sum of simple objects. Return a
-list of tuples with simple objects and multiplicities.
+Decompose the representation into a direct sum of indecomposable objects.
+Return a list of tuples with indecomposable objects and multiplicities.
 """
 #=  =# function decompose(σ::GroupRepresentation)
     F = base_ring(σ)
@@ -535,25 +535,49 @@ end
 #     [x for (x,k) ∈ decompose(ρ)]
 # end
 
-function simple_subobjects(σ::GroupRepresentation)
+"""
+    composition_factors(σ::GroupRepresentation)
+
+Return simple composition factors with their Jordan--Hölder multiplicities.
+These are subquotients, not necessarily subobjects or direct summands.
+"""
+function composition_factors(σ::GroupRepresentation)
     F = base_ring(σ)
-    if int_dim(σ) == 0 return [] end
+    if int_dim(σ) == 0 return Tuple{GroupRepresentation,Int}[] end
     G = σ.group
 
     if order(G) == 1 return [(one(parent(σ)),int_dim(σ))] end
 
     M = to_gap_module(σ,F)
-    ret = []
+    ret = Tuple{GroupRepresentation,Int}[]
+    # GAP Reference Manual 69.7-11: CollectedFactors records frequencies.
     facs = GAP.Globals.MTX.CollectedFactors(M)
-    d = int_dim(σ)
     for m ∈ facs
         imgs = [matrix(F,[F(n[i,j]) for i ∈ 1:length(n), j ∈ 1:length(n)]) for n ∈ m[1].generators]
-        ret = [ret; Representation(parent(σ),gens(G),imgs, check = false)]
+        push!(ret,(Representation(parent(σ),gens(G),imgs,check=false),Int(m[2])))
     end
     ret
 end
 
-is_simple(σ::GroupRepresentation) = length(simple_subobjects(σ)) == 1
+"""
+    simple_subobjects(σ::GroupRepresentation)
+
+Return the simple isomorphism types in the socle, without multiplicities.
+"""
+function simple_subobjects(σ::GroupRepresentation)
+    [S for (S,_) in composition_factors(σ) if int_dim(Hom(S,σ)) != 0]
+end
+
+function is_simple(σ::GroupRepresentation)
+    int_dim(σ) == 0 && return false
+    int_dim(σ) == 1 && return true
+    order(base_group(σ)) == 1 && return false
+    base_ring(σ) isa FinField || throw(ArgumentError(
+        "representation irreducibility currently requires a finite base field"))
+    # GAP Reference Manual 69.5-1: test irreducibility itself; one factor
+    # type does not imply that a module has composition length one.
+    Bool(GAP.Globals.MTX.IsIrreducible(to_gap_module(σ,base_ring(σ))))
+end
 
 function regular_representation(C::GroupRepresentationCategory)
     G = base_group(C)

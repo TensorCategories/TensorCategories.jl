@@ -339,6 +339,37 @@ function audit_jordan_representation(C, n)
     Representation(C, gens(base_group(C)), [J])
 end
 
+# Jordan--Hölder factors, socle types, and indecomposable summands are
+# different notions; see EGNO (2015), §1.5, and GAP Reference Manual 69.5/69.7.
+@testset "Representation simplicity and composition factors" begin
+    R = representation_category(GF(5),cyclic_group(5))
+    J1, J2 = audit_jordan_representation(R,1), audit_jordan_representation(R,2)
+    @test is_simple(J1)
+    # J2 is a nonsplit length-two extension with only one factor type.
+    @test !is_simple(J2) && !is_simple(J1 ⊕ J1)
+    cf = composition_factors(J2)
+    @test length(cf) == 1 && cf[1][2] == 2 && int_dim(cf[1][1]) == 1
+    soc = simple_subobjects(J2)
+    @test length(soc) == 1 && int_dim(only(soc)) == 1
+
+    T = representation_category(GF(5),cyclic_group(1))
+    @test only(simple_subobjects(one(T) ⊕ one(T))) isa GroupRepresentation
+
+    R2 = representation_category(GF(2),cyclic_group(3))
+    W = Representation(R2,gens(base_group(R2)),[matrix(GF(2),[0 1;1 1])])
+    # x²+x+1 is irreducible: a simple need not be absolutely simple.
+    @test is_simple(W) && int_dim(End(W)) == 2
+
+    F3 = GF(3)
+    G = matrix_group([matrix(F3,[1 1;0 1]),matrix(F3,[1 0;0 -1])])
+    RG = representation_category(F3,G)
+    Y = Representation(RG,gens(G),matrix.(gens(G)))
+    @test length(composition_factors(Y)) == 2
+    S = only(simple_subobjects(Y))
+    # The sign socle embeds, while the trivial head is only a quotient.
+    @test int_dim(Hom(S,Y)) == 1 && int_dim(Hom(Y,S)) == 0
+end
+
 # Semisimplification quotients Hom spaces by negligible morphisms; see
 # Etingof--Ostrik, arXiv:1801.04409v4, Definition 2.1 and Proposition 2.4.
 @testset "Semisimplification scalar coordinates" begin
