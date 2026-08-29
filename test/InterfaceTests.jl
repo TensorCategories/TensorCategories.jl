@@ -296,6 +296,26 @@ end
     @test c ∘ of == zero_morphism(domain(of),C)
 end
 
+# Hom(X,-) is covariant by postcomposition, while Hom(-,X) is a functor on
+# C^op by precomposition; see EGNO (2015), §1.1.
+@testset "Hom-functor variance" begin
+    V = VectorSpaces(QQ)
+    U, A, B = [VectorSpaceObject(V,n) for n in 1:3]
+    f = morphism(U,A,matrix(QQ,1,2,[1,2]))
+    g = morphism(A,B,matrix(QQ,2,3,[1,0,2,0,1,3]))
+    H = Hom(U,:)
+    @test H(g)(f) == g ∘ f
+    @test H(g ∘ f) == H(g) ∘ H(f)
+    @test H(id(A)) == id(H(A))
+
+    O = opposite_category(V)
+    of, og = O(f), O(g)
+    K = Hom(:,B)
+    @test K(of)(g) == g ∘ f
+    @test K(of ∘ og) == K(of) ∘ K(og)
+    @test domain(K) == O && is_additive(K) && is_linear(K)
+end
+
 # Maschke's theorem gives semisimplicity when the characteristic does not
 # divide |G|; see EGNO (2015), Remark 4.2.14. Fusion additionally requires
 # splitting; see Mäurer--Thiel, arXiv:2406.13438v2, Section 2.1.

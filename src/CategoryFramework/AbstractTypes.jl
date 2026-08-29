@@ -153,21 +153,45 @@ struct HomFunctor <: AbstractFunctor
     mor_map
 end
 
+# Turn composition on a Hom space into its represented linear map.
+function _hom_linear_map(H::AbstractHomSpace, L::AbstractHomSpace, action)
+    K = base_ring(H)
+    M = zero_matrix(K,int_dim(H),int_dim(L))
+    for (i,h) in enumerate(basis(H))
+        c = express_in_basis(action(h),basis(L))
+        for j in eachindex(c)
+            M[i,j] = c[j]
+        end
+    end
+    morphism(H,L,M)
+end
+
 function Hom(X::Object,::Colon)
-    K = base_ring(parent(X))
-    C = VectorSpaces(K)
-    obj_map = Y -> Hom(X,Y)
-    mor_map = f -> g -> g ∘ f
-    return HomFunctor(parent(X),C,obj_map,mor_map)
+    C = parent(X)
+    obj_map = Y -> begin
+        parent(Y) == C ||
+            throw(ArgumentError("object outside the Hom functor domain"))
+        Hom(X,Y)
+    end
+    mor_map = f -> _hom_linear_map(obj_map(domain(f)),obj_map(codomain(f)),
+                                    h -> f ∘ h)
+    HomFunctor(C,VectorSpaces(base_ring(C)),obj_map,mor_map)
 end
 
 function Hom(::Colon,X::Object)
-    K = base_ring(parent(X))
-    C = VectorSpaces(K)
-    obj_map = Y -> Hom(Y,X)
-    mor_map = g -> f -> g ∘ f
-    return HomFunctor(OppositeCategory(parent(X)),C,obj_map,mor_map)
+    C = op(parent(X))
+    obj_map = Y -> begin
+        parent(Y) == C || throw(ArgumentError(
+            "contravariant Hom expects an object in the opposite category"))
+        Hom(object(Y),X)
+    end
+    mor_map = f -> _hom_linear_map(obj_map(domain(f)),obj_map(codomain(f)),
+                                    h -> h ∘ morphism(f))
+    HomFunctor(C,VectorSpaces(base_ring(X)),obj_map,mor_map)
 end
+
+is_additive(F::HomFunctor) = is_additive(domain(F))
+is_linear(F::HomFunctor) = is_linear(domain(F))
 
 # function Hom(X::SetObject,::Colon)
 #     obj_map = Y -> Hom(X,Y)
