@@ -191,6 +191,7 @@ function id(ρ::GroupRepresentation)
 end
 
 function ==(ρ::GroupRepresentation, τ::GroupRepresentation)
+    parent(ρ) == parent(τ) || return false
     if ρ.m == 0 || τ.m == 0
         return ρ.m == 0 && τ.m == 0
     elseif order(ρ.group) == 1
@@ -222,7 +223,7 @@ end
 Check whether σ and τ are isomorphic. If true return the isomorphism.
 """
 #=  =# function is_isomorphic(σ::GroupRepresentation, τ::GroupRepresentation)
-    @assert parent(σ) == parent(τ) "Mismatching parents"
+    parent(σ) == parent(τ) || return false, nothing
 
     if int_dim(σ) != int_dim(τ) return false, nothing end
     if int_dim(σ) == 0 return true, zero_morphism(σ,τ) end
