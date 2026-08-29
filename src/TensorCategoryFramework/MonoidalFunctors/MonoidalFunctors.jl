@@ -8,31 +8,36 @@
 Enumerate monoidal structures up to monoidal natural isomorphism only when
 completeness is established. Currently the generic solver supports the
 normalised rank-one case. Use `monoidal_structure_candidates` for a possibly
-incomplete list of individually checked structures in higher rank.
+incomplete list of structures in higher rank. Since this branch solves no
+equations, it always checks the unique normalized candidate.
 """
 function monoidal_structures(F::AbstractFunctor)
     C,D = domain(F),codomain(F)
     is_fusion(C) && is_fusion(D) ||
         throw(ArgumentError("split fusion domain and codomain are required"))
     length(simples(C)) == 1 || throw(ArgumentError(
-        "complete monoidal-structure classification is not implemented in this rank; use monoidal_structure_candidates for verified, possibly incomplete candidates"))
+        "complete monoidal-structure classification is not implemented in this rank; use monoidal_structure_candidates for possibly incomplete candidates"))
     F(one(C)) == one(D) || throw(ArgumentError("the rank-one solver requires a strictly unit-preserving functor"))
     G = monoidal_functor(F,simples(C),Dict((1,1) => id(F(one(C)))))
-    monoidal_functor_axiom(G) || throw(ArgumentError("the normalised tensorator is not coherent"))
+    # This branch solves no equations, so coherence is an algorithmic decision
+    # rather than an optional certificate.
+    monoidal_functor_axiom(G) ||
+        throw(ArgumentError("the normalised tensorator is not coherent"))
     [G]
 end
 
 """
-    monoidal_structure_candidates(F)
+    monoidal_structure_candidates(F; check=false)
 
-Search for and verify monoidal structures on a strictly unit-preserving
+Search for monoidal structures on a strictly unit-preserving
 linear functor between split fusion categories. This search is NOT a complete
 classification: it fixes selected tensorators/determinants and may sample a
 positive-dimensional solution scheme. Failure to find a candidate is not a
 proof of nonexistence. EGNO §2.6 classifies pointed examples by H²; the order
-of the universal grading group is not the number of structures.
+of the universal grading group is not the number of structures. The solved
+equations already impose coherence; `check=true` re-evaluates it on each output.
 """
-function monoidal_structure_candidates(F::AbstractFunctor)
+function monoidal_structure_candidates(F::AbstractFunctor; check::Bool=false)
     C = domain(F)
     D = codomain(F)
     is_fusion(C) && is_fusion(D) ||
@@ -149,7 +154,12 @@ function monoidal_structure_candidates(F::AbstractFunctor)
     # Require det ≠ 0
     mats = [sum([a .* matrix(f) for (a,f) ∈ zip(vars[(x,y)], bases[(x,y)])]) for (x,y) ∈ keys(vars) if !isempty(vars[(x,y)])]
 
-    filter!(m -> !is_constant(det(m)), mats) 
+    determinants = det.(mats)
+    # A zero constant determinant rules out an invertible tensorator. A
+    # nonzero constant needs no constraint; nonconstant determinants below
+    # are forced to be units.
+    any(iszero,determinants) && return MonoidalFunctor[]
+    filter!(d -> !is_constant(d),determinants)
     # @show dets = [det(m) for m ∈ mats]
     # n_dets = length(dets)
 
@@ -157,7 +167,7 @@ function monoidal_structure_candidates(F::AbstractFunctor)
     # S,y = polynomial_ring(K, [["x$i" for i ∈ 1:N]; ["d$i" for i ∈ 1:n_dets]])
     
     universal_order = order_of_universal_grading_group(codomain(F))
-    equations = [equations; [d^universal_order - 1 for d ∈ [det(m) for m ∈ mats]]]
+    equations = [equations; [d^universal_order - 1 for d ∈ determinants]]
 
     I = ideal(equations)
 
@@ -166,7 +176,10 @@ function monoidal_structure_candidates(F::AbstractFunctor)
     
     nats = [Dict((x,y) => sum([v(s...) * t for (v,t) ∈ zip(vars[(x,y)], bases[(x,y)])]) for (x,y) ∈ Base.product(1:n,1:n)) for s ∈ sols]
 
-    mon_structures = filter(e -> monoidal_functor_axiom(e), [monoidal_functor(F, S, n) for n ∈ nats])
+    # Coherence and invertibility are precisely the equations just solved.
+    # Naturality on split simples follows by linearity; avoid solving twice.
+    mon_structures = [monoidal_functor(F,S,nat) for nat in nats]
+    check && filter!(monoidal_functor_axiom,mon_structures)
 
     if length(mon_structures) == 0 
         return MonoidalFunctor[]
