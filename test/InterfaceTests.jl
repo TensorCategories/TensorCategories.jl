@@ -390,6 +390,23 @@ end
     @test base_ring(matrix(only(B))) === base_ring(only(B))
 end
 
+# Schur's lemma has no converse in a nonsemisimple category. In the abelian
+# arrow category, k --id→ k is a brick but contains the proper subobject 0→k.
+@testset "Simplicity in the arrow category" begin
+    V = VectorSpaces(GF(5))
+    A = ArrowCategory(V)
+    U = one(V)
+    E = ArrowObject(A,id(U))
+    S = ArrowObject(A,zero_morphism(zero(V),U))
+    T = ArrowObject(A,zero_morphism(U,zero(V)))
+    @test int_dim(End(E)) == 1
+    @test !is_simple(E)
+    @test is_simple(S) && is_simple(T)
+    @test !is_simple(zero(A))
+    @test object_type(A) == ArrowObject &&
+          TensorCategories.morphism_type(A) == ArrowMorphism
+end
+
 # Semisimplification quotients Hom spaces by negligible morphisms; see
 # Etingof--Ostrik, arXiv:1801.04409v4, Definition 2.1 and Proposition 2.4.
 @testset "Semisimplification scalar coordinates" begin
