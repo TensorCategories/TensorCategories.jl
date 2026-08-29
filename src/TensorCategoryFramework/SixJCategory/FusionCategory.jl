@@ -116,7 +116,9 @@ end
 # Invalidate derived values, but preserve lazy F/R-symbol providers.
 function _invalidate_sixj_structure!(C::SixJCategory)
     if isdefined(C,:__attrs)
-        for key in (:smatrix,:modular,:spherical,:is_spherical,:is_unitary)
+        for key in (:smatrix,:smatrix_by_objects,:twists_current,
+                    :modular,:spherical,:is_spherical,:is_unitary,
+                    :multiplication_table)
             delete!(getfield(C,:__attrs),key)
         end
     end
@@ -358,6 +360,7 @@ end
 function set_twist!(F::SixJCategory, t)
     _invalidate_sixj_structure!(F)
     F.twist = t
+    set_attribute!(F,:twists_current,true)
 end
 
 @doc raw""" 
@@ -595,9 +598,19 @@ function r_symbol(C::SixJCategory, i::Int, j::Int, k::Int)
     return C.braiding[i,j,k]
 end
 
-# Relabelling must first detach deferred providers that close over the old
-# labels. It also needs every old F block in order to permute intermediate
-# fusion channels, including blocks of dimension greater than one.
+# Capture the old array and provider rather than the category being mutated.
+# Assigned blocks are reused, while missing blocks remain deferred.
+function _sixj_symbol_reader(data, provider)
+    function read(indices...)
+        if !isassigned(data,indices...)
+            data[indices...] = provider(indices...)
+        end
+        data[indices...]
+    end
+end
+
+# Some consumers, such as coefficient reduction through an unspecified
+# embedding, genuinely require every structural block at once.
 function _materialize_sixj_symbols!(C::SixJCategory)
     n = rank(C)
     for i in 1:n,j in 1:n,k in 1:n,l in 1:n
@@ -876,24 +889,37 @@ function pivotal(X::SixJObject)
     return morphism(X,X,mats)
 end
 
-function twists(C::SixJCategory)
-    # if isdefined(C, :twist)
-    #     return C.twist
-    # end
+"""
+    twists(C::SixJCategory; check=false)
+
+Return the twist scalars of the supplied braided pivotal structure. The
+structure is assumed valid; `check=true` verifies pivotal coherence. Values
+are cached until structural data are changed through a setter.
+"""
+function twists(C::SixJCategory; check::Bool=false)
+    check && !is_pivotal(C) &&
+        throw(ArgumentError("a pivotal structure is required"))
+    get_attribute(C,:twists_current,false) && return C.twist
     K = base_ring(C)
+    # theta_X = u_X^{-1}j_X (EGNO, Section 8.10). On a split simple both
+    # maps are scalars, so divide their coefficients directly.
+    C.twist = [C.pivotal[i] / K(drinfeld_morphism(X))
+               for (i,X) in enumerate(simples(C))]
+    set_attribute!(C,:twists_current,true)
+    C.twist
+end
 
-    if is_spherical(C)
-        t = [dim(X) * inv(K(tr(inv(braiding(X,X))))) for X in simples(C)]
-        C.twist = t
-        return t
+# The cache key records the ordered object coordinates. Setters invalidate the
+# cache, and a copy prevents callers from corrupting the stored matrix.
+function smatrix(C::SixJCategory, objects=simples(C))
+    all(X -> parent(X) === C,objects) ||
+        throw(ArgumentError("objects outside the category"))
+    key = Tuple(Tuple(X.components) for X in objects)
+    cache = get_attribute!(() -> Dict{Tuple,MatElem}(),C,:smatrix_by_objects)
+    S = get!(cache,key) do
+        invoke(smatrix,Tuple{Category,typeof(objects)},C,objects)
     end
-
-    if is_pivotal(C)
-        t = [K(inv(drinfeld_morphism(X)) ∘ pivotal(X)) for X in simples(C)]
-        C.twist = t
-        return t
-    end
-    throw(ErrorException("Cannot compute twists"))
+    deepcopy(S)
 end
 
 function twist(X::SixJObject)
@@ -1151,37 +1177,55 @@ end
     sort_simples!(C::SixJCategory, order::Vector{Int})
 
 Relabel simple `order[i]` as `i`, transporting the intermediate fusion-channel
-bases as well as the outer F- and R-symbol indices. Existing objects and
-functors are not transported and should not be reused after this mutation.
+bases as well as the outer F- and R-symbol indices. Deferred symbols remain
+deferred. Existing objects and functors are not transported and should not be
+reused after this mutation.
 """
 function sort_simples!(C::SixJCategory, order::Vector{Int})
     n = C.rank
     sort(order) == collect(1:n) ||
         throw(ArgumentError("order must be a permutation of the simple labels"))
-    _materialize_sixj_symbols!(C)
+    order = copy(order)
     N = C.tensor_product
-    ass = Array{MatElem,4}(undef,n,n,n,n)
-    for i in 1:n,j in 1:n,k in 1:n,l in 1:n
-        a,b,c,d = order[[i,j,k,l]]
+    old_ass = C.ass
+    readF = _sixj_symbol_reader(old_ass,
+                                get_attribute(C,:six_j_symbol,nothing))
+    transportedF = function(i,j,k,l)
+        a,b,c,d = order[i],order[j],order[k],order[l]
         rows = _fusion_channel_permutation(
             [N[a,b,e]*N[e,c,d] for e in 1:n],order)
         cols = _fusion_channel_permutation(
             [N[b,c,f]*N[a,f,d] for f in 1:n],order)
-        ass[i,j,k,l] = C.ass[a,b,c,d][rows,cols]
+        readF(a,b,c,d)[rows,cols]
+    end
+    ass = Array{MatElem,4}(undef,n,n,n,n)
+    for I in CartesianIndices(ass)
+        i,j,k,l = Tuple(I)
+        isassigned(old_ass,order[i],order[j],order[k],order[l]) || continue
+        ass[I] = transportedF(i,j,k,l)
+    end
+    if isdefined(C,:braiding)
+        old_R = C.braiding
+        readR = _sixj_symbol_reader(old_R,get_attribute(C,:r_symbol,nothing))
+        transportedR = (i,j,k) -> readR(order[i],order[j],order[k])
+        R = Array{MatElem,3}(undef,n,n,n)
+        for I in CartesianIndices(R)
+            i,j,k = Tuple(I)
+            isassigned(old_R,order[i],order[j],order[k]) || continue
+            R[I] = transportedR(i,j,k)
+        end
+        C.braiding = R
+        set_attribute!(C,:r_symbol,transportedR)
     end
     C.tensor_product = N[order,order,order]
     C.ass = ass
+    set_attribute!(C,:six_j_symbol,transportedF)
     C.simples_names = C.simples_names[order]
 
     isdefined(C, :one) && (C.one = C.one[order])
     isdefined(C, :pivotal) && (C.pivotal = C.pivotal[order])
-    isdefined(C, :braiding) && (C.braiding = [C.braiding[i,j,k] for i ∈ order, j ∈ order, k ∈ order])
     isdefined(C, :twist) && (C.twist = C.twist[order])
     _invalidate_sixj_structure!(C)
-    if isdefined(C,:__attrs)
-        delete!(C.__attrs,:six_j_symbol)
-        delete!(C.__attrs,:r_symbol)
-    end
     return C
 end
 
@@ -1330,10 +1374,16 @@ Return the category ``C⊗K``.
 """
 function extension_of_scalars(C::SixJCategory, L::Ring;
                               embedding = _scalar_extension_embedding(base_ring(C),L))
-    _materialize_sixj_symbols!(C)
-    D = six_j_category(L,copy(C.tensor_product),copy(simples_names(C)))
+    # Avoid placeholder associators and do not force deferred structural data.
+    D = SixJCategory()
+    D.base_ring = L
+    D.rank = rank(C)
+    D.tensor_product = copy(C.tensor_product)
+    D.simples_names = copy(simples_names(C))
     isdefined(C,:name) && set_name!(D,C.name)
-    D.ass = [matrix(L,size(a)...,embedding.(collect(a))) for a in C.ass]
+    if isdefined(C,:ass)
+        D.ass = _transport_sixj_array!(D,C,:ass,:six_j_symbol,L,embedding)
+    end
     if isdefined(C,:one)
         D.one = copy(C.one)
     end
@@ -1342,13 +1392,25 @@ function extension_of_scalars(C::SixJCategory, L::Ring;
         L isa Union{ArbField,AcbField} && (D.pivotal = L.(D.pivotal))
     end
     if isdefined(C,:braiding)
-        D.braiding = [matrix(L,size(a)...,embedding.(collect(a)))
-                      for a in C.braiding]
+        D.braiding = _transport_sixj_array!(D,C,:braiding,:r_symbol,L,embedding)
     end
-    if isdefined(C,:twist)
-        D.twist = embedding.(C.twist)
+    if get_attribute(C,:twists_current,false)
+        set_twist!(D,embedding.(C.twist))
     end
     D
+end
+
+function _transport_sixj_array!(D,C,field,key,L,embedding)
+    data = getfield(C,field)
+    read = _sixj_symbol_reader(data,get_attribute(C,key,nothing))
+    convert_matrix = a -> matrix(L,size(a)...,embedding.(collect(a)))
+    out = similar(data)
+    for I in CartesianIndices(data)
+        isassigned(data,Tuple(I)...) || continue
+        out[I] = convert_matrix(data[I])
+    end
+    set_attribute!(D,key,(indices...) -> convert_matrix(read(indices...)))
+    out
 end
 
 complex_embedding_of_base_ring(C::SixJCategory) = C.embedding

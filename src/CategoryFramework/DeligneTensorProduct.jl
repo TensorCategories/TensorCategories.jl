@@ -38,10 +38,12 @@ function tensor_product(C::SixJCategory, D::SixJCategory, names1::Vector{String}
 
   
 
-    CD = six_j_category(F, mult, ["$s ⊠ $t" for t ∈ T, s ∈ S][:])
+    CD = six_j_category(F, ["$s ⊠ $t" for t ∈ T, s ∈ S][:])
 
     N = n*m
-    set_tensor_product!(CD, mult)
+    # Associators are installed below. Avoid constructing and immediately
+    # discarding the identity placeholder array from set_tensor_product!.
+    CD.tensor_product = mult
 
     if implicit_data
         function _six_j_symbol(i,j,k,l) 

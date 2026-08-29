@@ -51,6 +51,17 @@ end
     cached = smatrix(I)
     cached[1,1] = 100
     @test smatrix(I) == fresh
+    cache = get_attribute(I,:smatrix_by_objects)
+    cached_S = only(values(cache))
+    @test smatrix(I) == fresh && only(values(cache)) === cached_S
+
+    # EGNO Section 8.10 gives theta=u^-1*j. Pivotal setters invalidate both
+    # twist and S caches; recomputation must reflect the new pivotal sign.
+    t = copy(TensorCategories.twists(I))
+    @test TensorCategories.twists(I) === I.twist
+    set_pivotal!(I,L.([1,1,1]))
+    @test TensorCategories.twists(I) == t .* L.([1,1,-1])
+    @test smatrix(I) == S
 
     # Multiplying one non-unit F-matrix by two violates the pentagon.
     J = ising_category(L)
@@ -100,16 +111,29 @@ end
 
     # QQ has canonical maps to Acb and QQBar; neither requires choosing a
     # number-field embedding, even when the source symbols are still lazy.
-    E = extension_of_scalars(lazy(),AcbField(64))
+    source = lazy()
+    Fcalls,Rcalls = Ref(0),Ref(0)
+    Fprovider = get_attribute(source,:six_j_symbol)
+    Rprovider = get_attribute(source,:r_symbol)
+    set_attribute!(source,:six_j_symbol,
+                   (indices...) -> (Fcalls[] += 1; Fprovider(indices...)))
+    set_attribute!(source,:r_symbol,
+                   (indices...) -> (Rcalls[] += 1; Rprovider(indices...)))
+    E = extension_of_scalars(source,AcbField(64))
+    @test Fcalls[] == Rcalls[] == 0
+    @test !isassigned(E.ass,2,2,2,2)
+    @test !isassigned(E.braiding,2,2,1)
     @test multiplication_table(E) == multiplication_table(eager)
     @test pentagon_axiom(E) && hexagon_axiom(E)
     E = extension_of_scalars(lazy(),QQBarField())
     @test pentagon_axiom(E) && hexagon_axiom(E)
 
-    # A provider closes over the old labels, so relabelling must materialize
-    # it before mutating the fusion rules.
+    # Relabelling wraps the provider with the label and channel permutations;
+    # it need not evaluate unrelated blocks.
     E = lazy()
     TensorCategories.sort_simples!(E,[4,2,1,3])
+    @test !isassigned(E.ass,2,2,2,2)
+    @test !isassigned(E.braiding,2,2,1)
     @test pentagon_axiom(E) && hexagon_axiom(E)
 
     # For a number field, choose the image of its primitive element once and
