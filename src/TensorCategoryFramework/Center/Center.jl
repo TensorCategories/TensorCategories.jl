@@ -78,10 +78,12 @@ end
 #=----------------------------------------------------------
     Framework checks 
 ----------------------------------------------------------=#
-is_multifusion(C::CenterCategory) =
-    is_semisimple(C) && is_multifusion(category(C))
 is_semisimple(C::CenterCategory) = dim(category(C)) != 0 && is_semisimple(category(C))
-is_modular(C::CenterCategory) = is_semisimple(C) && is_fusion(category(C))
+is_weak_multifusion(C::CenterCategory) =
+    is_semisimple(C) && is_weak_multifusion(category(C))
+is_multifusion(C::CenterCategory) =
+    is_weak_multifusion(C) && all(S -> int_dim(End(S)) == 1,simples(C))
+is_modular(C::CenterCategory) = is_fusion(C)
 is_braided(C::CenterCategory) = true
 is_rigid(C::CenterCategory) = is_rigid(category(C))
 is_ring(C::CenterCategory) = is_ring(category(C))
@@ -91,6 +93,7 @@ is_weakly_fusion(C::CenterCategory) = dim(category(C)) != 0
 
 function is_fusion(C::CenterCategory) 
     get_attribute!(C, :is_fusion) do 
+        is_multifusion(C) || return false
         dim(category(C)) == 0 && return false 
         if base_ring(C) isa Union{ArbField,AcbField} 
             overlaps(dim(C), sum(squared_norm(object(x)) for x ∈ simples(C)))
@@ -1075,8 +1078,17 @@ end
 Extend the scalars of the center category C such that it is split semisimple after karoubian closure.
 If the flag `absolute` is set `false` the extension field is chosen to be a relative numberfield that includes the original field as is.
 The splitting field is not minimal in general and usually chosen to be a cyclotomic extension of the base field.
+Over a finite field, split the simple objects over one finite extension. This
+does not make a nonsemisimple center semisimple; use `split(objects)` to split
+a finite family without enumerating all ambient simples.
 """
 function split(C::CenterCategory; absolute = true)
+    if is_finite(base_ring(C))
+        result = split(simples(C))
+        result.category.simples = unique_simples(
+            [X for dec in result.decompositions for (X,_) in dec])
+        return result.category,result.embedding
+    end
     Ends = End.(simples(C))
     K = base_ring(C)
 
@@ -1430,7 +1442,9 @@ inner_product(f::CenterMorphism, g::CenterMorphism) = inner_product(morphism(f),
 function extension_of_scalars(C::CenterCategory, L::Field; embedding = nothing)
     K = base_ring(C)
     if embedding === nothing 
-        if typeof(K) == typeof(L)
+        if K isa FinField && L isa FinField
+            embedding = _scalar_extension_embedding(K,L)
+        elseif typeof(K) == typeof(L)
             embedding = is_subfield(base_ring(C), L)[2]
         else
             embedding = L 
@@ -1464,13 +1478,8 @@ function extension_of_scalars(C::CenterCategory, L::Field; embedding = nothing)
     if isdefined(C, :induction_gens)
         CL.induction_gens = [extension_of_scalars(is, L, category(CL),  embedding = embedding) for is ∈ C.induction_gens]
     end
-    if has_attribute(C, :multiplication_table)
-        set_attribute!(CL, :multiplication_table, multiplication_table(C))
-    end
-    if has_attribute(C, :multiplicity_spaces)
-        mults = Dict(k => extension_of_scalars(h, L, CL, embedding = embedding) for (k,h) in multiplicity_spaces(C))
-        set_attribute!(CL, :multiplicity_spaces, mults)
-    end
+    # Simple objects can split and change order after base change. Fusion and
+    # multiplicity-space caches indexed by the old simples must be recomputed.
 
     sort_simples_by_dimension!(CL)
     return CL
@@ -1484,19 +1493,23 @@ function _extension_of_scalars(C::CenterCategory, L::Field, cL::Category)
     CenterCategory(L,cL)
 end
 
-function extension_of_scalars(X::CenterObject, L::Field;  embedding = embedding(base_ring(X), L))
+function extension_of_scalars(X::CenterObject, L::Field;
+                              embedding=_scalar_extension_embedding(base_ring(X),L))
     extension_of_scalars(X,L,_extension_of_scalars(parent(X),L,embedding = embedding), embedding = embedding)
 end
 
-function extension_of_scalars(X::CenterObject, L::Field, CL::CenterCategory;  embedding = embedding(base_ring(X), L))
+function extension_of_scalars(X::CenterObject, L::Field, CL::CenterCategory;
+                              embedding=_scalar_extension_embedding(base_ring(X),L))
     CenterObject(CL, extension_of_scalars(object(X), L, category(CL), embedding = embedding), [extension_of_scalars(f, L, category(CL),  embedding = embedding) for f ∈ half_braiding(X)])
 end
 
-function extension_of_scalars(f::CenterMorphism, L::Field;  embedding = embedding(base_ring(f), L))
+function extension_of_scalars(f::CenterMorphism, L::Field;
+                              embedding=_scalar_extension_embedding(base_ring(f),L))
     extension_of_scalars(f, L, _extension_of_scalars(parent(f), L, embedding = embedding), embedding = embedding)
 end
 
-function extension_of_scalars(f::CenterMorphism, L::Field, CL::CenterCategory;  embedding = embedding(base_ring(f), L))
+function extension_of_scalars(f::CenterMorphism, L::Field, CL::CenterCategory;
+                              embedding=_scalar_extension_embedding(base_ring(f),L))
     dom = extension_of_scalars(domain(f), L, CL,  embedding = embedding)
     cod = extension_of_scalars(codomain(f), L, CL,  embedding = embedding)
     m = extension_of_scalars(morphism(f), L, category(CL),  embedding = embedding)
