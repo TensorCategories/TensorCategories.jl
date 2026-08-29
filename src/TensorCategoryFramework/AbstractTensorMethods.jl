@@ -7,8 +7,11 @@
 #---------------------------------------------------------
 
 
+tensor_product() = throw(ArgumentError(
+    "an empty tensor product requires a specified category"))
+
 function tensor_product(X::Object...)
-    if length(X) == 1 return X end
+    if length(X) == 1 return only(X) end
 
     Z = X[1]
     for Y ∈ X[2:end]

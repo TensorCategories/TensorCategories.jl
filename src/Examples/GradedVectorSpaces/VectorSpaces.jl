@@ -436,6 +436,13 @@ zero_morphism(V::VectorSpaceObject,W::VectorSpaceObject) = morphism(V,W, zero(ma
 
 function express_in_basis(f::VectorSpaceMorphism, B::Vector{<:VectorSpaceMorphism})
     F = base_ring(f)
+    if isempty(B)
+        is_zero(f) || throw(ArgumentError(
+            "a nonzero morphism is not in the span of an empty basis"))
+        return elem_type(F)[]
+    end
+    all(b -> domain(b) == domain(f) && codomain(b) == codomain(f), B) ||
+        throw(ArgumentError("basis morphisms must have the same endpoints"))
     if typeof(F) <: Union{AcbField, ComplexField, ArbField}
         return express_in_basis_numeric(f,B)
     end
