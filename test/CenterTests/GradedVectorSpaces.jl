@@ -25,6 +25,11 @@ Z2 = center(V2)
     @test int_dim(H) == 2
     @test all(domain(f) == X && codomain(f) == Y && size(matrix(f)) == (1,2)
               for f in basis(H))
+    # The half-braiding condition is linear in the underlying map. Building
+    # its coefficient matrix directly must give the same two-dimensional Hom.
+    Hlinear = TensorCategories.hom_by_linear_equations(X,Y)
+    @test int_dim(Hlinear) == 2
+    @test all(domain(f) == X && codomain(f) == Y for f in basis(Hlinear))
 
 end
 

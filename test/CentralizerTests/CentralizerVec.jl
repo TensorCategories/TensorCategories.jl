@@ -33,6 +33,9 @@ VecH = graded_vector_spaces(F,H,c)
     @test int_dim(HXY) == 2
     @test all(domain(f) == X && codomain(f) == Y && size(matrix(f)) == (1,2)
               for f in basis(HXY))
+    Hlinear = TensorCategories.hom_by_linear_equations(X,Y)
+    @test int_dim(Hlinear) == 2
+    @test all(domain(f) == X && codomain(f) == Y for f in basis(Hlinear))
 end
 
 

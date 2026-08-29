@@ -763,24 +763,27 @@ function hom_by_adjunction(X::CentralizerObject, Y::CentralizerObject)
     # Y_Homs = Y_Homs[candidates]
     
 
-    M = zero_matrix(base_ring(C),0,*(size(matrix(zero_morphism(X,Y)))...))
-
-    mors = CentralizerMorphism[]
-
-    # Relative induction also uses shared caches; collect serially and
-    # deterministically.
-    for i ∈ findall(==(true), candidates)
-        s, X_s, s_Y = S[i], X_Homs[i], Y_Homs[i]
-        Is = relative_induction(s, Z.subcategory_simples, parent_category = Z)
-
-        B = induction_right_adjunction(X_s, X, Is)
-        B2 = induction_adjunction(s_Y, Y, Is)
-
-        # Take all combinations
-        B3 = [h ∘ b for b ∈ B, h in B2][:]
-        append!(mors, B3)
-        # Build basis
+    indices = findall(candidates)
+    # Populate induction caches serially, then compose independent skeletal
+    # matrix maps in parallel.
+    adjunctions = map(indices) do i
+        Is = relative_induction(S[i],Z.subcategory_simples,parent_category=Z)
+        (induction_right_adjunction(X_Homs[i],X,Is),
+         induction_adjunction(Y_Homs[i],Y,Is))
     end
+    parts = Vector{Vector{CentralizerMorphism}}(undef,length(indices))
+    function compose_batch(k)
+        B,B2 = adjunctions[k]
+        parts[k] = CentralizerMorphism[h ∘ b for b in B for h in B2]
+    end
+    if object(X) isa SixJObject && object(Y) isa SixJObject
+        @threads for k in eachindex(indices)
+            compose_batch(k)
+        end
+    else
+        foreach(compose_batch,eachindex(indices))
+    end
+    mors = reduce(vcat,parts)
     
     mats = matrix.(mors)
     M = transpose(matrix(base_ring(C), hcat(hcat([collect(m)[:] for m in mats]...))))
@@ -813,33 +816,24 @@ function hom_by_linear_equations(X::CentralizerObject, Y::CentralizerObject)
         return HomSpace(X,Y, CentralizerMorphism[])
     end 
 
-    Fx,poly_basis = polynomial_ring(F,n)
-    
-    eqs = []
+    blocks = MatElem[]
 
     S = parent(X).subcategory_simples
 
     for (s,γₛ,λₛ) ∈ zip(S,half_braiding(X), half_braiding(Y))
         Hs = Hom(object(X)⊗s, s⊗object(Y))
-        base = basis(Hs)
-        if length(base) == 0
+        if length(Hs) == 0
             continue
         end
-        eq_i = [zero(Fx) for _ ∈ 1:length(base)]
-        for (f,a) ∈ zip(B,poly_basis)
-            coeffs = express_in_basis((id(s)⊗f)∘γₛ - λₛ∘(f⊗id(s)), base)
-            eq_i = eq_i .+ (a .* coeffs)
+        block = zero_matrix(F,length(Hs),n)
+        for (j,f) in enumerate(B)
+            block[:,j] = express_in_basis(
+                (id(s)⊗f)∘γₛ - λₛ∘(f⊗id(s)),Hs)
         end
-        
-        eqs = [eqs; eq_i]
-
+        push!(blocks,block)
     end
 
-    M = zero(matrix_space(F,length(eqs),n))
-
-    for (i,e) ∈ zip(1:length(eqs),eqs)
-        M[i,:] = [coeff(e, a) for a ∈ poly_basis]
-    end
+    M = isempty(blocks) ? zero_matrix(F,0,n) : reduce(vcat,blocks)
 
     N = nullspace(M)[2]
 
