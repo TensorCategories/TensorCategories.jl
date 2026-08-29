@@ -1,6 +1,9 @@
 using TensorCategories
 using Oscar,Test
 
+# This file is the authoritative default test entry point.  Only files reached
+# by an active include below contribute coverage; commented-out includes and
+# other scripts under test/ remain dormant even if they contain @testsets.
 
 @testset "Test Examples" begin
     include("VectorSpacesTest/VSTest.jl")
@@ -38,4 +41,3 @@ include("GroupActionsTests/EquivariantizationTests.jl")
 include("Anyonwiki/AnyonwikiTest.jl")
 
 #include("CoherentSheaves/ConvolutionCategoryTests.jl")
-

@@ -46,7 +46,10 @@ References:
 I = ising_category() 
 G = cyclic_group(2)
 aut = autoequivalences(I)
-#  Compute the autoequivalences of the Ising category. There are 2, the identity functor and the identity functor with alternative monoidal structure.
+# For this fixed presentation the current search returns two coherent monoidal
+# structures on the identity underlying functor.  The assertions validate those
+# returned structures and their count as a regression fixture; they do not by
+# themselves prove that the search classifies every tensor autoequivalence.
 @testset "Autoequivalences of Ising category" begin
 
     @test length(aut) == 2
@@ -94,6 +97,10 @@ monoidal_str = Dict(
 
 T = gtensor_action(I, elements(G), [a,b], monoidal_str)
 
+# A categorical C₂-action requires coherent tensor functors together with
+# multiplication constraints satisfying the group-action associativity law.
+# is_tensor_action checks those equations.  The remaining dimensions record
+# the monoidal-natural-transformation spaces for this particular Ising fixture.
 @testset "GTensorAction on Ising category" begin    
 
     @test is_tensor_action(T) 
@@ -111,6 +118,10 @@ end
 
 GI = gcrossed_product(I,T)
 
+# The crossed product C⋊ C₂ has tensor product determined by the action and
+# its multiplication constraints.  Their coherence must make its associator
+# satisfy the pentagon; see P. Etingof, S. Gelaki, D. Nikshych, and
+# V. Ostrik, Tensor Categories, AMS (2015), Section 4.15.
 @testset "G-crossed product of Ising category with ℤ₂" begin
     @test pentagon_axiom(GI)
 end
