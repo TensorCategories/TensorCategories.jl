@@ -379,6 +379,17 @@ end
     @test dim(VectorSpaceObject(V,6)) == GF(5)(1)
 end
 
+# Deduplication must preserve categorical parents and coefficient fields; it
+# mutates only its temporary list, never the contained morphisms.
+@testset "Identity-preserving deduplication" begin
+    C = graded_vector_spaces(GF(5),cyclic_group(2))
+    f = id(C[one(base_group(C))])
+    B = TensorCategories.unique_without_hash([f,f])
+    @test length(B) == 1
+    @test parent(only(B)) === C
+    @test base_ring(matrix(only(B))) === base_ring(only(B))
+end
+
 # Semisimplification quotients Hom spaces by negligible morphisms; see
 # Etingof--Ostrik, arXiv:1801.04409v4, Definition 2.1 and Proposition 2.4.
 @testset "Semisimplification scalar coordinates" begin
