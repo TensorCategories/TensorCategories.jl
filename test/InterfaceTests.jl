@@ -121,6 +121,30 @@ end
     @test h ∘ inc[2] == F(3) * id(U)
 end
 
+# A scalar multiple is an equality M=cN over the common matrix base ring.
+# The coefficient must be selected using a nonzero entry of N, and conversion
+# of categorical scalars must land in the ring requested by the caller.
+@testset "Scalar-multiple fallbacks" begin
+    F = GF(5)
+    N = matrix(F, [0 1; 0 0])
+    I = identity_matrix(F, 2)
+    # E12 is not scalar; its nonzero off-diagonal entry faces a zero entry of I.
+    @test TensorCategories.is_scalar_multiple(N, I) == (false, nothing)
+    @test TensorCategories.is_scalar_multiple(zero_matrix(F, 2, 2), I) ==
+          (true, F(0))
+    @test TensorCategories.is_scalar_multiple(F(3) * N, N) == (true, F(3))
+    # Matrix equality, hence scalar-multiple equality, requires equal shapes.
+    @test TensorCategories.is_scalar_multiple(I, identity_matrix(F, 1)) ==
+          (false, nothing)
+
+    C = six_j_category(F, ones(Int, 1, 1, 1), ["1"])
+    set_one!(C, [1])
+    L = GF(5, 2)
+    # The previous fallback returned an F5 element despite being called as L(f).
+    c = L(F(3) * id(one(C)))
+    @test c == L(3) && parent(c) === L
+end
+
 # Maschke's theorem gives semisimplicity when the characteristic does not
 # divide |G|; see EGNO (2015), Remark 4.2.14. Fusion additionally requires
 # splitting; see Mäurer--Thiel, arXiv:2406.13438v2, Section 2.1.
