@@ -330,6 +330,38 @@ function audit_pointed_c3()
     C,z
 end
 
+function audit_pointed_c2()
+    N = zeros(Int,2,2,2)
+    N[1,1,1] = N[1,2,2] = N[2,1,2] = N[2,2,1] = 1
+    C = six_j_category(QQ,N,["1","g"])
+    set_one!(C,1)
+    set_braiding!(C,[identity_matrix(QQ,N[i,j,k])
+                     for i in 1:2,j in 1:2,k in 1:2])
+    C
+end
+
+# A skeletal morphism is a block matrix in the actual Hom space. In
+# particular, Schur's lemma gives Hom(1,g)=0 in split Vec_C2 (EGNO Lemma
+# 1.5.2); malformed blocks must not manufacture an isomorphism between them.
+@testset "Skeletal morphisms respect their Hom spaces" begin
+    C = audit_pointed_c2()
+    @test int_dim(Hom(C[1],C[2])) == 0
+    @test_throws ArgumentError morphism(C[1],C[2],
+        [identity_matrix(QQ,1),zero_matrix(QQ,0,0)])
+    @test_throws ArgumentError morphism(C[1],C[1],[identity_matrix(QQ,1)])
+    L = GF(5)
+    @test_throws ArgumentError morphism(C[1],C[1],
+        [identity_matrix(L,1),zero_matrix(L,0,0)])
+
+    # Matrices act on row vectors, so Hom(1⊕1,1) has a 2-by-1 unit block.
+    f = morphism(C[1]⊕C[1],C[1],
+        [matrix(QQ,2,1,[1,2]),zero_matrix(QQ,0,0)])
+    @test id(C[1]) ∘ f == f
+    @test int_dim(Hom(domain(f),codomain(f))) == 2
+    @test iszero(morphism(C[1],C[2],
+        [zero_matrix(QQ,1,0),zero_matrix(QQ,0,1)]))
+end
+
 # EGNO Proposition 2.6.1 identifies tensor structures on the identity of a
 # pointed category with group 2-cocycles modulo coboundaries.  Consequently a
 # finite algebraic search must not present its output as a complete list unless
