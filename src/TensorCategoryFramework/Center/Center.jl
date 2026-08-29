@@ -104,6 +104,19 @@ is_linear(C::CenterCategory) = true
 is_monoidal(C::CenterCategory) = true
 is_spherical(C::CenterCategory) = is_spherical(category(C))
 
+function is_simple(X::CenterObject)
+    C = parent(X)
+    is_semisimple(C) && return invoke(is_simple,Tuple{Object},X)
+    # A central subobject is in particular a subobject after forgetting the
+    # half-braiding, so a simple underlying object implies a simple center one.
+    is_simple(object(X)) && return true
+    if isdefined(C,:simples)
+        return any(S -> is_isomorphic(X,S)[1],C.simples)
+    end
+    # Do not trigger ambient simple enumeration for a local query.
+    invoke(is_simple,Tuple{Object},X)
+end
+
 is_monomorphism(f::CenterMorphism) = is_monomorphism(morphism(f))
 is_epimorphism(f::CenterMorphism) = is_epimorphism(morphism(f))
 
@@ -443,6 +456,8 @@ function decompose(X::CenterObject)
 
     if isdefined(C, :simples) && is_semisimple(C)
         return decompose_by_simples(X,simples(C))
+    elseif is_finite(K)
+        return _decompose_finite_center(X)
     else
         try
             return decompose_by_endomorphism_ring(X)
@@ -617,6 +632,9 @@ Check if ```X≃Y```. Return ```(true, m)``` where ```m```is an isomorphism if t
 else return ```(false,nothing)```.
 """
 function is_isomorphic(X::CenterObject, Y::CenterObject)
+    if is_finite(base_ring(X))
+        return _is_isomorphic_finite_center(X,Y)
+    end
     # TODO: Fix This. How to compute a central isomorphism?
 
     if ! is_isomorphic(object(X),object(Y))[1]
