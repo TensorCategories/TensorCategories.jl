@@ -44,3 +44,24 @@ end
     @test all(is_central.(simples(Z3)))
     @test all([int_dim(End(s)) == 1 for s in simples(Z3)])
 end
+
+# A change of basis in each multiplicity space transports both F- and
+# R-symbols. They must use the same bases for the pentagon and hexagon to refer
+# to one braided category; see EGNO (2015), Sections 2.4, 4.9, and 8.1.
+@testset "Shared center multiplicity-space bases" begin
+    S = simples(Z)
+    H = TensorCategories.multiplicity_spaces(Z)
+    @test TensorCategories.multiplicity_spaces(Z,S) === H
+    @test TensorCategories.six_j_symbols(Z,copy(S);homs=H) ==
+          TensorCategories.six_j_symbols_of_construction(Z,copy(S);homs=H)
+
+    W = skeletonize(Z)
+    @test pentagon_axiom(W) && hexagon_axiom(W)
+
+    R = reverse(S)
+    HR = TensorCategories.multiplicity_spaces(Z,R)
+    @test all(int_dim(get(HR,(i,j,k),
+                          HomSpace(R[i]⊗R[j],R[k],CenterMorphism[]))) ==
+              int_dim(Hom(R[i]⊗R[j],R[k]))
+              for i in eachindex(R),j in eachindex(R),k in eachindex(R))
+end
