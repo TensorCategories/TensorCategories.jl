@@ -26,7 +26,11 @@ struct GroupRepresentationMorphism <: RepresentationMorphism
 end
 
 is_tensor(::GroupRepresentationCategory) = true
+# The ordinary flip is equivariant for the diagonal action in every
+# characteristic, so Rep(G) is symmetric monoidal.
+is_braided(::GroupRepresentationCategory) = true
 is_weak_fusion(C::GroupRepresentationCategory) = is_semisimple(C)
+is_weak_multifusion(C::GroupRepresentationCategory) = is_weak_fusion(C)
 function is_fusion(C::GroupRepresentationCategory)
     get_attribute!(C, :fusion) do
         is_weak_fusion(C) && all(X -> int_dim(End(X)) == 1, simples(C))

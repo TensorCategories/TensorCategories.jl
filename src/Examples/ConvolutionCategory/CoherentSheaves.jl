@@ -19,6 +19,8 @@ struct CohSheafMorphism <: Morphism
 end
 
 is_multitensor(::CohSheaves) = true
+# The tensor product is pointwise on stalk representations and is symmetric.
+is_braided(::CohSheaves) = true
 is_multifusion(C::CohSheaves) = mod(order(C.group),characteristic(base_ring(C))) != 0
 
 #-----------------------------------------------------------------

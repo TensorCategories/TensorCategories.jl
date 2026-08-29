@@ -46,6 +46,9 @@ end
     Abelian structure 
 ----------------------------------------------------------=#
 is_abelian(C::ArrowCategory) = is_abelian(category(C))
+is_linear(C::ArrowCategory) = is_linear(category(C))
+# Finite-dimensional arrows over Vec are representations of the A2 quiver.
+is_krull_schmidt(C::ArrowCategory) = category(C) isa VectorSpaces
 
 matrix(f::ArrowMorphism) = diagonal_matrix(matrix(f.left), matrix(f.right))
 

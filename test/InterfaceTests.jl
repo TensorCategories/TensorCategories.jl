@@ -1,6 +1,64 @@
 # Generic interface regressions. References and counterexamples are recorded
 # with the testsets that use them.
 
+struct UndeclaredAuditCategory <: Category end
+@attributes mutable struct DeclaredAuditCategory <: Category end
+struct MultifusionShortcutAuditCategory <: Category end
+TensorCategories.is_multifusion(::MultifusionShortcutAuditCategory) = true
+TensorCategories.is_fusion(::MultifusionShortcutAuditCategory) =
+    error("the fusion predicate must not be needed here")
+
+# Structural predicates record axioms supplied by an implementation. The mere
+# presence of a generic method does not establish an axiom. The fusion/weak
+# fusion convention is Mäurer--Thiel, arXiv:2406.13438v2, Section 2.1; weak
+# multifusion and multifusion are the corresponding variants without a simple
+# unit object.
+@testset "Declared categorical structures" begin
+    C = UndeclaredAuditCategory()
+    # Previously these two queries called each other indefinitely.
+    @test !is_additive(C) && !is_abelian(C) && !is_linear(C) && !is_monoidal(C)
+
+    D = DeclaredAuditCategory(Dict{Symbol, Any}(
+        :additive => true,
+        :rigid => true,
+        :spherical => false,
+        :krull_schmidt => true,
+    ))
+    # Additivity does not imply k-linearity, and every property reads its own
+    # declaration rather than the unrelated spherical flag.
+    @test is_additive(D) && !is_linear(D)
+    @test TensorCategories.is_rigid(D) && TensorCategories.is_krull_schmidt(D)
+
+    S = DeclaredAuditCategory(Dict{Symbol, Any}(:spherical => true))
+    # Spherical structure is rigid monoidal structure, but does not by itself
+    # assert the finiteness hypotheses used for Krull--Schmidt decomposition.
+    @test TensorCategories.is_rigid(S) && is_monoidal(S)
+    @test !TensorCategories.is_krull_schmidt(S)
+
+    W = DeclaredAuditCategory(Dict{Symbol, Any}(:weak_fusion => true))
+    @test is_weak_fusion(W) && is_weak_multifusion(W) && is_semisimple(W)
+    @test !is_fusion(W) && !is_multifusion(W)
+
+    M = DeclaredAuditCategory(Dict{Symbol, Any}(:multifusion => true))
+    @test is_multifusion(M) && is_weak_multifusion(M) && is_semisimple(M)
+    @test !is_fusion(M) && !is_weak_fusion(M) && is_split_semisimple(M)
+
+    # Multifusion already implies weak multifusion and semisimplicity. Checking
+    # the stronger fusion condition caused recursive centralizer decomposition.
+    M0 = MultifusionShortcutAuditCategory()
+    @test is_weak_multifusion(M0) && is_semisimple(M0)
+
+    F = DeclaredAuditCategory(Dict{Symbol, Any}(:fusion => true))
+    @test is_fusion(F) && is_multifusion(F)
+    @test is_weak_fusion(F) && is_weak_multifusion(F)
+    @test is_split_semisimple(F)
+
+    V = vector_spaces(QQ)
+    @test is_braided(V) && is_additive(id(V)) && is_linear(id(V))
+    A = ArrowCategory(V)
+    @test is_linear(A) && TensorCategories.is_krull_schmidt(A)
+end
+
 # Maschke's theorem gives semisimplicity when the characteristic does not
 # divide |G|; see EGNO (2015), Remark 4.2.14. Fusion additionally requires
 # splitting; see Mäurer--Thiel, arXiv:2406.13438v2, Section 2.1.
@@ -9,6 +67,7 @@
     # x^2+x+1 is irreducible over F2, so the two-dimensional simple has
     # endomorphism field F4: this category is weak fusion but not fusion.
     @test is_semisimple(R) && is_weak_fusion(R)
+    @test is_braided(R)
     @test !is_split_semisimple(R) && !is_fusion(R)
     @test is_fusion(representation_category(GF(5), cyclic_group(2)))
     M = representation_category(GF(3), cyclic_group(3))
