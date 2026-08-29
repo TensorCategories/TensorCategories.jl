@@ -11,7 +11,8 @@ mutable struct AdditiveNaturalTransformation <: NaturalTransformation
 end
 
 function AdditiveNaturalTransformation(F::AbstractFunctor, G::AbstractFunctor, indecs::Vector{<:Object}, maps::Vector{<:Pair})
-    maps = [x ∈ keys(maps) ? maps[x] : zero_morphism(F(x),G(x)) for x ∈ indecs]
+    components = Dict(maps)
+    maps = [get(components,x,zero_morphism(F(x),G(x))) for x ∈ indecs]
     AdditiveNaturalTransformation(F,G,indecs,maps)
 end
 
@@ -27,26 +28,20 @@ end
 ----------------------------------------------------------=#
 
 function compose(η::AdditiveNaturalTransformation...)
+    isempty(η) && throw(ArgumentError("at least one natural transformation is required"))
     length(η) == 1 && return η[1]
+    all(codomain(η[i]) == domain(η[i+1]) for i in 1:length(η)-1) ||
+        throw(ArgumentError("natural transformations are not composable"))
     AdditiveNaturalTransformation(
         domain(η[1]),
         codomain(η[end]),
         indecomposables(η[1]),
-        [compose([e.maps[i] for e ∈ η]...) for i ∈ 1:length(indecomposables(η[1]))]
+        [compose([e(X) for e ∈ η]...) for X ∈ indecomposables(η[1])]
     )
 end
 
 function inv(η::AdditiveNaturalTransformation)
-    try 
-        return AdditiveNaturalTransformation(
-            domain(η),
-            codomain(η),
-            indecomposables(η),
-            inv.(η.maps)
-        )
-    catch
-        error("Not invertible")
-    end
+    AdditiveNaturalTransformation(codomain(η),domain(η),indecomposables(η),inv.(η.maps))
 end
 
 # function getindex(η::AdditiveNaturalTransformation, X::Object)
@@ -81,7 +76,7 @@ function (η::AdditiveNaturalTransformation)(X::Object)
     _,_,i,p = direct_sum_decomposition(X, indecs)
     F,G = domain(η), codomain(η)
     
-    sum([G(iᵢ) ∘ η(domain(iᵢ)) ∘ F(pᵢ) for (iᵢ,pᵢ) ∈ zip(i,p)])
+    sum((G(iᵢ) ∘ η(domain(iᵢ)) ∘ F(pᵢ) for (iᵢ,pᵢ) ∈ zip(i,p)); init=zero_morphism(F(X),G(X)))
 end
 
 function *(x, η::AdditiveNaturalTransformation)
@@ -94,121 +89,77 @@ function *(x, η::AdditiveNaturalTransformation)
 end
 
 function +(η::AdditiveNaturalTransformation, ν::AdditiveNaturalTransformation)
+    domain(η) == domain(ν) && codomain(η) == codomain(ν) ||
+        throw(ArgumentError("natural transformations have different functor endpoints"))
     S = indecomposables(η)
-    T = indecomposables(ν)
-
-    if S == T
-        return AdditiveNaturalTransformation(
-            domain(η),
-            codomain(η),
-            S,
-            η.maps .+ ν.maps
-        )
-    end
-
-    error("Not implemented")
+    AdditiveNaturalTransformation(domain(η),codomain(η),S,[η(X)+ν(X) for X in S])
 end
 
 function ==(η::AdditiveNaturalTransformation, ν::AdditiveNaturalTransformation)
-    all(is_zero.(f-g for (f,g) ∈ zip(η.maps, ν.maps)))
+    domain(η) == domain(ν) && codomain(η) == codomain(ν) || return false
+    S,T = indecomposables(η),indecomposables(ν)
+    length(S) == length(η.maps) && length(T) == length(ν.maps) || return false
+    # Checking both families avoids zip truncation and permits reordered families.
+    all(η(X) == ν(X) for X in union(S,T))
 end
 
 #=----------------------------------------------------------
     Compute natural transformations 
 ----------------------------------------------------------=#
 
-function Nat(F::AbstractFunctor, G::AbstractFunctor)
-    @assert domain(F) == domain(G)
-    @assert codomain(F) == codomain(G)
-
-    if is_additive(F) && is_additive(G)
-        nats = additive_natural_transformations(F,G)
-        return NaturalTransformations(F,G,nats, VectorSpaces(base_ring(domain(F))))
-    end
-
-    @error("Cannot compute natural transformations")
+function Nat(F::AbstractFunctor, G::AbstractFunctor; indecomposables=nothing)
+    domain(F) == domain(G) && codomain(F) == codomain(G) ||
+        throw(ArgumentError("functors must have the same domain and codomain"))
+    is_additive(F) && is_additive(G) ||
+        throw(ArgumentError("the natural-transformation solver requires additive functors"))
+    nats = additive_natural_transformations(F,G,indecomposables)
+    NaturalTransformations(F,G,nats,VectorSpaces(base_ring(codomain(F))))
 end
 
-function additive_natural_transformations(F::AbstractFunctor, G::AbstractFunctor, indecs = nothing)
-    
+function additive_natural_transformations(F::AbstractFunctor, G::AbstractFunctor, indecs=nothing)
+    domain(F) == domain(G) && codomain(F) == codomain(G) ||
+        throw(ArgumentError("functors must have the same domain and codomain"))
     C = domain(F)
-    K = base_ring(C)
-    if indecs === nothing 
-        indecs = indecomposables(C)
-    end
-
-    nats = NaturalTransformation[]
-
-    for g ∈ group_indecomposables(indecs)
-        # Bases for f: X → Y
-        bases = [basis(Hom(s,t)) for s ∈ g, t ∈ g]
-
-        # Bases for natural transform ηₓ: F(X) → G(X)
-        nat_bases = [basis(Hom(F(s),G(s))) for s ∈ g]
-
-        # Bases for coefficient comparison
-        comp_bases = [basis(Hom(F(s), G(t))) for s ∈ g, t ∈ g]
-
-        n = length(g)
-        ns = length.(nat_bases)
-        
-        sum(ns) == 0 && continue
-
-        Kx,x = polynomial_ring(K,sum(ns))
-
-        x_blocks = [[popfirst!(x) for _ ∈ b] for b ∈ nat_bases]
-
-        eqs = eltype(Kx)[]
-
-        for (i,j) ∈ zip(1:n,1:n)
-            B = bases[i,j]
-            comp_B = comp_bases[i,j]
-    
-            xa,xb = x_blocks[[i,j]]
-            nata,natb = nat_bases[[i,j]]
-
-            e = [zero(Kx) for _ ∈ comp_B]
-            
-            for f ∈ B
-                Gf,Ff = G(f),F(f)
-                for (a,η) ∈ zip(xa, nata)
-                    coeffs_a = express_in_basis(Gf ∘ η, comp_B)
-                    e = e .+ (a .* coeffs_a) 
-                end
-                for (b,σ) ∈ zip(xb, natb)
-                    coeffs_b = express_in_basis(σ ∘ Ff, comp_B)
-                    e = e .- (b .* coeffs_b)
+    K = base_ring(codomain(F))
+    base_ring(C) == K || throw(ArgumentError("the solver currently requires functors over the same base field"))
+    indecs === nothing && (indecs = indecomposables(C))
+    all(X -> parent(X) == C,indecs) || throw(ArgumentError("generators outside the functor domain"))
+    # EGNO, §1.1: G(f)η_X = η_Y F(f) for EVERY f:X→Y. The old solver
+    # only checked endomorphisms and summed their constraints. On Rep(A2)
+    # it incorrectly allowed independent scalars on the three indecomposables.
+    nat_bases = [basis(Hom(F(X),G(X))) for X in indecs]
+    offsets = cumsum([0;length.(nat_bases)])
+    nvars = last(offsets)
+    rows = Vector{elem_type(K)}[]
+    for (i,X) in enumerate(indecs), (j,Y) in enumerate(indecs)
+        B = basis(Hom(F(X),G(Y)))
+        for f in basis(Hom(X,Y))
+            M = zero_matrix(K,length(B),nvars)
+            for (l,η) in enumerate(nat_bases[i])
+                coeffs = express_in_basis(G(f) ∘ η,B)
+                for k in eachindex(coeffs)
+                    M[k,offsets[i]+l] += coeffs[k]
                 end
             end
-
-            eqs = eltype(Kx)[eqs; e]
+            for (l,η) in enumerate(nat_bases[j])
+                coeffs = express_in_basis(η ∘ F(f),B)
+                for k in eachindex(coeffs)
+                    M[k,offsets[j]+l] -= coeffs[k]
+                end
+            end
+            append!(rows,[collect(M[k,:])[:] for k in 1:number_of_rows(M)])
         end
-        
-        x = union(x_blocks...)
-        m = [coeff(e,a) for a ∈ x, e ∈ eqs]
-        M = matrix(K, size(m,1), size(m,2), m)
-
-        d,N = nullspace(M)
-
-        solution_cols = [collect(c) for c ∈ eachcol(collect(N))]
-        solutions = []
-
-        for c ∈ solution_cols
-            c_blocks = [[popfirst!(c) for _ ∈ b] for b ∈ nat_bases]
-            maps = [sum(a .* B) for (a,B) ∈ zip(c_blocks, nat_bases)]
-            push!(solutions, maps)
-        end
-        
-        new_nats = [AdditiveNaturalTransformation(
-            F,
-            G,
-            indecs,
-            [x ∈ g ? popfirst!(T) : zero_morphism(F(x),G(x)) for x ∈ indecs]
-        ) for T ∈ solutions]
-        nats = [nats; new_nats]
     end
-
-    return nats
+    # nullspace takes equations in ROWS and unknowns in COLUMNS.
+    M = zero_matrix(K,length(rows),nvars)
+    for i in eachindex(rows),j in 1:nvars
+        M[i,j] = rows[i][j]
+    end
+    d,N = nullspace(M)
+    NaturalTransformation[AdditiveNaturalTransformation(F,G,indecs,
+        [sum((N[offsets[i]+j,l]*b for (j,b) in enumerate(B));
+             init=zero_morphism(F(indecs[i]),G(indecs[i])) )
+         for (i,B) in enumerate(nat_bases)]) for l in 1:d]
 end
 
 function group_indecomposables(indecs::Vector{T}) where T <: Object
