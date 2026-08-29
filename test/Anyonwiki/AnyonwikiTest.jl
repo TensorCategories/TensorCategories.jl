@@ -1,12 +1,19 @@
-
-
+# These are integration checks for the packaged AnyonWiki data and loaders;
+# the database itself is the fixture, not an independently proved oracle.
+# See https://anyonwiki.org/docs for its scope and conventions.  A fusion
+# category associator must satisfy the pentagon identity, while a pivotal
+# structure must be a monoidal identification with the double dual; see
+# P. Etingof, S. Gelaki, D. Nikshych, and V. Ostrik, Tensor Categories,
+# AMS (2015), Definition 2.2.8 and Section 4.7.
 @testset "AnyonWiki" begin 
 
     keys = anyonwiki_keys(4)
     
     @testset "Construction Categories" begin
 
-        # test random categories 
+        # A random sample checks that exact database entries load as coherent
+        # pivotal categories.  Random sampling is smoke coverage, not an
+        # exhaustive validation of all keys or all pentagon equations.
         for k in rand(keys, 10)
             C = anyonwiki(k...)
             @test randomized_pentagon_axiom(C, 3)
@@ -14,7 +21,8 @@
         end
     end
 
-    # Test center loading 
+    # Stored center data must still define coherent associators after loading.
+    # This test does not recompute these centers from the source categories.
     @testset "Centers of anyonwiki" begin
 
         # Test loading of random simple centers
@@ -24,11 +32,15 @@
         end
     end
 
+    # Keep one fixed rank-five entry in addition to the random rank-at-most-four
+    # sample so the suite always exercises a larger exact fixture.
     @testset "Rank 5"   begin
         C = anyonwiki(5,1,0,1,3,1,2)
         @test randomized_pentagon_axiom(C, 3)
     end
 
+    # These counts describe the packaged database index.  They are a data-file
+    # regression contract, not a theorem about classification or completeness.
     @testset "Misc" begin
         @test length(anyonwiki_keys(5)) == 279
         @test length(anyonwiki_keys(5, "unitary")) == 56
@@ -39,6 +51,10 @@ end
     Test the computation of centers of the anyonwiki
 ----------------------------------------------------------=#
 
+# Objects of the Drinfeld center carry coherent half-braidings and form a
+# monoidal category; see EGNO, Definition 7.13.1.  Splitting and skeletonizing
+# should transport this monoidal structure.  These tests sample pentagon
+# equations after each operation and do not compare a complete center oracle.
 @testset "AnyonWiki Center" begin
     keys = anyonwiki_keys(3)
     @testset "Rank < 4: Computation" begin
@@ -53,6 +69,8 @@ end
         end
     end
 
+    # This companion check only loads the stored center fixtures; it separates
+    # loader failures from failures in center computation and skeletonization.
     @testset "Loading" begin
         for k in rand(keys, 3)
             C = anyonwiki_center(k...)
@@ -65,6 +83,9 @@ end
     load anyonwiki with other fields
 ----------------------------------------------------------=#
 
+# Scalar conversion should preserve the polynomial pentagon relations in exact
+# target fields.  QQBar and GF(17) are exact here; AcbField uses ball arithmetic,
+# so its randomized pentagon result is numerical evidence rather than a proof.
 @testset "AnyonWiki with other fields" begin
     @testset "QQBar" begin
         C = anyonwiki(QQBarField(), 3,1,0,1,2,1,1)
@@ -82,9 +103,13 @@ end
     end
 end
 
-# Test saving and loading 
+# The save/load tests check that a reloaded fixture still satisfies sampled
+# pentagon equations.  They do not assert equality of all source and target
+# labels, coefficients, pivotal data, or braiding data.
 @testset "Saving and loading" begin
 
+    # Numeric export passes through finite-precision ball approximations, hence
+    # this assertion is a compatibility check at the requested precision.
     @testset "Numeric" begin
         mktempdir() do path
 
@@ -98,6 +123,8 @@ end
         end
     end
 
+    # Symbolic export retains exact coefficients; the current assertion still
+    # checks only sampled coherence of the result, not a field-by-field diff.
     @testset "Symbolic" begin
         mktempdir() do path
             C = anyonwiki(4,1,2,4,1,0,1)
