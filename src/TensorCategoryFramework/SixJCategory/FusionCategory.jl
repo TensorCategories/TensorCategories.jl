@@ -1154,12 +1154,13 @@ end
 
 Return the category ``C⊗K``.
 """
-function extension_of_scalars(C::SixJCategory, L::Ring; embedding = embedding(base_ring(C), L))
+function extension_of_scalars(C::SixJCategory, L::Ring;
+                              embedding = _scalar_extension_embedding(base_ring(C),L))
 
     try
         D = six_j_category(L, C.tensor_product, simples_names(C))
 
-        set_name!(D, C.name)
+        isdefined(C, :name) && set_name!(D, C.name)
         
         if isdefined(C, :ass)
             D.ass = [matrix(L, size(a)..., embedding.(collect(a))) for a ∈ C.ass]
@@ -1181,9 +1182,8 @@ function extension_of_scalars(C::SixJCategory, L::Ring; embedding = embedding(ba
             D.braiding = [matrix(L, size(a)..., embedding.(collect(a))) for a ∈ C.braiding]
         end
         if isdefined(C, :twist) 
-            D.twist = f.(C.twist)
+            D.twist = embedding.(C.twist)
         end
-        set_name!(D, C.name)
 
         if L isa NumField && isdefined(C, :embedding) 
             emb = getfield(C, :embedding) 
@@ -1201,7 +1201,13 @@ end
 
 complex_embedding_of_base_ring(C::SixJCategory) = C.embedding
 
-function extension_of_scalars(C::SixJCategory, K::FqField)
+function extension_of_scalars(C::SixJCategory, K::FqField; embedding=nothing)
+    if embedding !== nothing || is_finite(base_ring(C))
+        e = embedding === nothing ?
+            _scalar_extension_embedding(base_ring(C),K) : embedding
+        return invoke(extension_of_scalars,Tuple{SixJCategory,Ring},C,K;
+                      embedding=e)
+    end
     denom = if base_ring(C) == QQ 
         lcm([isempty(m) ? ZZ(1) : lcm(denominator.(collect(m))[:]) for m ∈ C.ass][:])
     else 
@@ -1283,7 +1289,8 @@ end
 
 Return the category ``C⊗K``.
 """
-function extension_of_scalars(m::SixJMorphism, L::Ring, CL::SixJCategory; embedding = embedding(base_ring(m), L))
+function extension_of_scalars(m::SixJMorphism, L::Ring, CL::SixJCategory;
+                              embedding = _scalar_extension_embedding(base_ring(m),L))
     try 
         if CL === nothing
             CL = extension_of_scalars(parent(m), L, embedding = embedding)

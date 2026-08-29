@@ -145,6 +145,39 @@ end
     @test c == L(3) && parent(c) === L
 end
 
+# Scalar extension applies one chosen field embedding to objects and every
+# Hom-space basis morphism. For finite fields these embeddings are controlled
+# by Frobenius; see K. Conrad, Finite Fields, Section 5,
+# https://kconrad.math.uconn.edu/blurbs/galoistheory/finitefields.pdf.
+@testset "Finite-field Hom scalar extension" begin
+    F = GF(5)
+    C = six_j_category(F, ones(Int, 1, 1, 1), ["1"])
+    set_one!(C, [1])
+    TensorCategories.set_twist!(C, [F(2)])
+    U = one(C)
+    L = GF(5, 2)
+    CL = extension_of_scalars(C, L)
+    # Optional metadata is transported only when present, along the same map.
+    @test getfield(CL, :twist) == [L(2)] && !isdefined(CL, :name)
+    HL = extension_of_scalars(Hom(U, U), L, CL)
+    @test int_dim(HL) == 1
+    @test only(basis(HL)) == id(domain(HL))
+    @test parent(domain(HL)) === CL
+
+    F9, L81 = GF(3, 2), GF(3, 4)
+    D = six_j_category(F9, ones(Int, 1, 1, 1), ["1"])
+    set_one!(D, [1])
+    e = Oscar.embed(F9, L81)
+    DL = extension_of_scalars(D, L81; embedding=e)
+    a = gen(F9)
+    H = HomSpace(one(D), one(D), [a * id(one(D))])
+    H1 = extension_of_scalars(H, L81, DL; embedding=e)
+    H2 = extension_of_scalars(H, L81, DL; embedding=x -> e(x)^3)
+    # Frobenius x↦x³ is the nontrivial F3-automorphism of F9.
+    @test matrix(only(basis(H1)))[1,1] == e(a)
+    @test matrix(only(basis(H2)))[1,1] == e(a)^3
+end
+
 # Maschke's theorem gives semisimplicity when the characteristic does not
 # divide |G|; see EGNO (2015), Remark 4.2.14. Fusion additionally requires
 # splitting; see Mäurer--Thiel, arXiv:2406.13438v2, Section 2.1.

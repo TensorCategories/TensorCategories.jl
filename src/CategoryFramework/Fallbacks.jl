@@ -127,7 +127,8 @@ Return the tensor product object.
 ⊗(X::Object, K::Field) = extension_of_scalars(X,K)
 ⊗(f::Morphism, K::Field) = extension_of_scalars(f,K)
 
-function extension_of_scalars(H::AbstractHomSpace, L::Field, CL::Category; embedding = embedding(base_ring(H),L)) 
+function extension_of_scalars(H::AbstractHomSpace, L::Field, CL::Category;
+                              embedding = _scalar_extension_embedding(base_ring(H),L))
     HomSpace(
         extension_of_scalars(domain(H), L, CL, embedding = embedding),
         extension_of_scalars(codomain(H), L, CL, embedding = embedding),
