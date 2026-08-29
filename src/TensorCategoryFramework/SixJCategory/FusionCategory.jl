@@ -1580,18 +1580,22 @@ end
     Unitary
 ----------------------------------------------------------=#    
 
+"""
+    is_unitary(C::SixJCategory)
+
+Whether the supplied exact structure is certified unitary in its stored bases.
+`false` also covers coefficient fields without such a certificate; it does not
+prove that no unitary realization exists.
+"""
 function is_unitary(C::SixJCategory)
     get_attribute!(C, :is_unitary) do 
-        if base_ring(C) isa Union{QQField, NumField, FqField}
+        if base_ring(C) isa Union{QQField,NumField,FqField,ArbField,
+                                  AcbField,ComplexField}
             return false
         end
 
         !is_spherical(C) && return false
-        if base_ring(C) isa Union{ArbField, AcbField}
-            !all([overlaps(fpdim(s), dim(s)) for s ∈ simples(C)]) && return false
-        else
-            !all([fpdim(s) == dim(s) for s ∈ simples(C)]) && return false
-        end
+        !all(fpdim(s) == dim(s) for s in simples(C)) && return false
 
         for x ∈ simples(C), y ∈ simples(C), z ∈ simples(C) 
             !is_unitary(associator(x,y,z)) && return false 
@@ -1601,8 +1605,35 @@ function is_unitary(C::SixJCategory)
 end
 
 function is_unitary(f::SixJMorphism)
+    base_ring(f) isa Union{ArbField,AcbField,ComplexField} &&
+        throw(ArgumentError("approximate coefficients cannot certify unitarity; use is_unitary_numeric"))
     !is_invertible(f) && return false
     f ∘ dagger(f) == id(codomain(f))    
+end
+
+"""
+    is_unitary_numeric(f::SixJMorphism)
+    is_unitary_numeric(C::SixJCategory)
+
+Test compatibility of ball enclosures with the unitarity equations in the
+stored bases. This is numerical evidence, not an exact certificate or a test
+for the existence of another unitary gauge.
+"""
+function is_unitary_numeric(f::SixJMorphism)
+    base_ring(f) isa Union{ArbField,AcbField} ||
+        throw(ArgumentError("ball coefficients required"))
+    domain(f).components == codomain(f).components || return false
+    overlaps(f ∘ dagger(f),id(codomain(f))) &&
+        overlaps(dagger(f) ∘ f,id(domain(f)))
+end
+
+function is_unitary_numeric(C::SixJCategory)
+    base_ring(C) isa Union{ArbField,AcbField} ||
+        throw(ArgumentError("ball coefficients required"))
+    is_spherical(C) || return false
+    S = simples(C)
+    all(s -> overlaps(fpdim(s),dim(s)),S) || return false
+    all(is_unitary_numeric(associator(x,y,z)) for x in S,y in S,z in S)
 end
 
 function dagger(f::SixJMorphism)
