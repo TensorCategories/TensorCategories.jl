@@ -1544,12 +1544,9 @@ end
 
 function twist(X::CenterObject)
     u = _drinfeld_morphism(X)
-    
-    B,k = is_scalar_multiple(matrix(spherical(object(X))), matrix(u))
-
-    !B && error("Something went wrong")
-
-    return k
+    # EGNO §8.10: theta_X = u_X^-1 j_X is an endomorphism, including on
+    # direct sums with different simple twist eigenvalues.
+    morphism(X,X,inv(u) ∘ spherical(object(X)))
 end
 
 

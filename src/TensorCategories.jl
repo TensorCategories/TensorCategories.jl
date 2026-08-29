@@ -479,6 +479,7 @@ export tr
 export trivial_3_cocylce 
 export trivial_fusion_category
 export twist
+export twist_scalar
 export twists
 export twisted_graded_vector_spaces
 export twisted_graded_vector_spaces 

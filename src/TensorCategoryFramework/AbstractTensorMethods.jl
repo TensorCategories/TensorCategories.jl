@@ -308,9 +308,35 @@ function tmatrix(C::Category, objects = simples(C))
     K = base_ring(C)
     # EGNO, §8.13: T consists of twist eigenvalues. In pointed Z3,
     # tr(c_{g,g*}) gives ζ² whereas θ_g=ζ (RSW, §5.3.3).
-    values = [is_scalar_multiple(matrix(twist(X)),matrix(id(X))) for X in objects]
-    all(first,values) || throw(ArgumentError("T requires objects with scalar twists"))
-    diagonal_matrix([K(last(v)) for v in values])
+    diagonal_matrix(elem_type(K)[twist_scalar(X) for X in objects])
+end
+
+"""
+    twist_scalar(X::Object)
+
+Return the scalar of `twist(X)` when it is uniquely a scalar endomorphism.
+Reject the zero object and nonscalar twists, while `twist(X)` itself always
+remains the structural endomorphism defined on every object.
+"""
+function twist_scalar(X::Object)
+    f = twist(X)
+    domain(f) == codomain(f) == X ||
+        throw(ArgumentError("twist must be an endomorphism"))
+    M,I = matrix(f),matrix(id(X))
+    iszero(I) &&
+        throw(ArgumentError("the twist scalar of the zero object is not unique"))
+    if base_ring(X) isa Union{ArbField,AcbField} &&
+       I == identity_matrix(base_ring(X),number_of_rows(I))
+        # Avoid widening ball radii by multiplying the candidate by I.
+        a = M[1,1]
+        all(i == j ? Base.isequal(M[i,j],a) : iszero(M[i,j])
+            for i in 1:number_of_rows(M),j in 1:number_of_columns(M)) ||
+            throw(ArgumentError("the represented twist is not a scalar matrix"))
+        return a
+    end
+    ok,a = is_scalar_multiple(M,I)
+    ok || throw(ArgumentError("object has a nonscalar twist"))
+    base_ring(X)(a)
 end
 
 
