@@ -52,6 +52,24 @@ end
     @test dim.(simples(C)) == olddims[perm]
     TensorCategories.sort_simples!(C,invperm(perm))
     @test C.ass == oldF
+    # Complete ten-index F dictionaries must retain the multiplicity-two
+    # channel under a numerical CSV round trip, with unit label 3 after the
+    # chosen permutation.
+    TensorCategories.sort_simples!(C,perm)
+    embedding = first(complex_embeddings(base_ring(C)))
+    mktempdir() do dir
+        f = joinpath(dir,"su3-F.csv")
+        r = joinpath(dir,"su3-R.csv")
+        numeric_symbols_to_csv(f,Dict(k => embedding(v,128)
+                                      for (k,v) in TensorCategories.F_symbols(C)))
+        numeric_symbols_to_csv(r,Dict(k => embedding(v,128)
+                                      for (k,v) in R_symbols(C)))
+        D = load_numeric_fusion_category(f,r,AcbField(64);
+                                         pivotal=embedding.(C.pivotal))
+        @test multiplication_table(D) == multiplication_table(C)
+        @test D.one == C.one
+        @test pentagon_axiom(D) && hexagon_axiom(D)
+    end
 end
 
 # Rowell--Stong--Wang, arXiv:0712.1377v4, pp. 3--4 and Section 5.3.2.

@@ -124,3 +124,62 @@ end
     E = extension_of_scalars(B,QQBarField();embedding=embedding)
     @test E.ass == D.ass && E.pivotal == D.pivotal
 end
+
+# Complete F-symbol paths determine the fusion multiplicities and tensor unit
+# independently of label order (EGNO Sections 4.6 and 4.9). The chosen pivotal
+# structure is additional data and must be preserved or supplied explicitly.
+@testset "CSV preserves labels, unit, and pivotal data" begin
+    N = zeros(Int,2,2,2)
+    N[1,1,1] = N[1,2,2] = N[2,1,2] = N[2,2,1] = 1
+    C = six_j_category(QQ,N,["1","g"])
+    set_one!(C,1)
+    set_braiding!(C,[identity_matrix(QQ,N[i,j,k])
+                     for i in 1:2,j in 1:2,k in 1:2])
+    set_name!(C,"Vec_C2")
+    TensorCategories.sort_simples!(C,[2,1])
+    set_spherical!(C,QQ.([-1,1]))
+    I = ising_category(AcbField(128))
+    TensorCategories.sort_simples!(I,[3,1,2])
+    K = AcbField(64)
+
+    mktempdir() do dir
+        # Exact package files include the non-first unit and chosen pivotal
+        # character; their loader must not reconstruct from label 1.
+        save_fusion_category(C,dir,"relabeled-c2")
+        D = load_fusion_category(joinpath(dir,"relabeled-c2"))
+        @test multiplication_table(D) == multiplication_table(C)
+        @test D.one == C.one && D.pivotal == C.pivotal
+
+        for (j,A) in enumerate((C,I))
+            f = joinpath(dir,"F$j.csv")
+            r = joinpath(dir,"R$j.csv")
+            P = AcbField(128)
+            original = TensorCategories.F_symbols(A)
+            numeric_symbols_to_csv(f,Dict(k => P(v) for (k,v) in original))
+            numeric_symbols_to_csv(r,Dict(k => P(v) for (k,v) in R_symbols(A)))
+            for with_R in (false,true)
+                D = with_R ?
+                    load_numeric_fusion_category(f,r,K;pivotal=A.pivotal) :
+                    load_numeric_fusion_category(f,K;pivotal=A.pivotal)
+                @test multiplication_table(D) == multiplication_table(A)
+                @test D.one == A.one
+                loaded = TensorCategories.F_symbols(D)
+                @test Set(keys(loaded)) == Set(keys(original))
+                @test all(overlaps(loaded[k],P(v)) for (k,v) in original)
+                @test D.pivotal == K.(A.pivotal) && is_pivotal(D)
+                @test pentagon_axiom(D)
+                with_R && @test hexagon_axiom(D)
+            end
+            @test_throws ArgumentError load_numeric_fusion_category(f,K;unit=1)
+            if j == 1
+                # Omitting one admissible scalar block makes the associator
+                # incomplete even when its numerical value would be zero.
+                incomplete = Dict(k => P(v) for (k,v) in original)
+                delete!(incomplete,[1,1,1,1,2,2])
+                bad = joinpath(dir,"incomplete.csv")
+                numeric_symbols_to_csv(bad,incomplete)
+                @test_throws ArgumentError load_numeric_fusion_category(bad,K)
+            end
+        end
+    end
+end

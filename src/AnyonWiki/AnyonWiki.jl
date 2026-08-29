@@ -82,14 +82,17 @@ function anyonwiki(K::FqField,i,j,k,l,m,n,o)
     extension_of_scalars(C,K)
 end
 
-function multiplication_table_from_F_symbols(ass::Array{<:MatElem,4})
+function multiplication_table_from_F_symbols(ass::Array{<:MatElem,4}; unit=1)
     # Build multiplication_table
     N, = size(ass)
 
     mult = zeros(Int,N,N,N)
     
-    for i ∈ 1:N, j ∈ 1:N, k ∈ 1:N 
-        mult[i,j,k] = size(ass[1,i,j,k])[1]
+    weights = unit isa Integer ? [Int(i == unit) for i in 1:N] : unit
+    length(weights) == N && all(>=(0),weights) && any(>(0),weights) ||
+        throw(ArgumentError("invalid tensor-unit multiplicities"))
+    for i ∈ 1:N, j ∈ 1:N, k ∈ 1:N
+        mult[i,j,k] = sum(weights[u]*size(ass[u,i,j,k],1) for u in 1:N)
     end
     return mult
 end
@@ -128,7 +131,10 @@ function anyonwiki_center_artifact_path(i,j,k,l,m,n,o)
 end
 
 function dict_to_associator(ass::Dict)
-    N = length(filter(e -> all(e[[1,2]] .== 1), keys(ass)))
+    isempty(ass) && throw(ArgumentError("an F-symbol dictionary must be nonempty"))
+    # Every simple label appears among the four object indices, independently
+    # of where the unit is listed or whether the first simple is invertible.
+    N = maximum(maximum(k[1:4]) for k in keys(ass))
     dict_to_associator(N, parent(first(ass)[2]), ass)
 end
 
@@ -146,7 +152,8 @@ function dict_to_associator(N::Int, K::Field, ass::Dict)
         end
         D = groups[[a,b,c,d]]
         abc_d = collect(keys(D))
-        l = Int(sqrt(length(abc_d)))
+        l = isqrt(length(abc_d))
+        l^2 == length(abc_d) || throw(ArgumentError("incomplete square F-symbol block"))
         if length(first(keys(ass))) == 6 
             abc_d = sort(abc_d, by = v -> v[[6,5]])
         else
@@ -185,7 +192,8 @@ function group_dict_keys_by(f::Function, D::Dict)
 end
 
 function dict_to_braiding(ass::Dict)
-    N = length(filter(e -> all(e[1] == 1), keys(ass)))
+    isempty(ass) && throw(ArgumentError("an R-symbol dictionary must be nonempty"))
+    N = maximum(maximum(k[1:3]) for k in keys(ass))
     dict_to_braiding(N, parent(first(ass)[2]), ass)
 end
 
@@ -195,7 +203,8 @@ function dict_to_braiding(N::Int, K::Field, braid::Dict)
 
     for a ∈ 1:N, b ∈ 1:N, c ∈ 1:N
         ab_c = filter(e -> e[[1,2,3]] == [a,b,c], collect(keys(braid)))
-        l = Int(sqrt(length(ab_c)))
+        l = isqrt(length(ab_c))
+        l^2 == length(ab_c) || throw(ArgumentError("incomplete square R-symbol block"))
         sort!(ab_c)
         M = matrix(K,l,l, [braid[v] for v ∈ ab_c])
         braiding_array[a,b,c] = transpose(M)
@@ -370,7 +379,7 @@ function load_fusion_category(file::String)
     P_symbols = include(joinpath(file, "$(name)_P_symbols"))
     P_symbols = [K == QQ ? K(P_symbols[k]...) : K(P_symbols[k]) for k ∈ sort(collect(keys(P_symbols)))]
 
-    C = six_j_category(K,  multiplication_table_from_F_symbols(F_symbols))
+    C = six_j_category(K, multiplication_table_from_F_symbols(F_symbols; unit=one))
     set_associator!(C, F_symbols)
     set_pivotal!(C, P_symbols)
 

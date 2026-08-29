@@ -5,6 +5,7 @@
 const database_path = joinpath(@__DIR__,"src/SixJCategoryDatabase/")
 
 function save_object(s::SerializerState, C::SixJCategory)
+    _materialize_sixj_symbols!(C)
     save_data_dict(s) do 
 
         save_typed_object(s, base_ring(C), :base_ring)
