@@ -240,6 +240,26 @@ end
     end
 end
 
+# A linear map Hom(X,Y)→Hom(X,Z) acts on row-coordinate vectors. Its
+# represented matrix must preserve the Hom endpoints and coefficient field.
+@testset "Linear maps between Hom spaces" begin
+    V = VectorSpaces(QQ)
+    X, Y, Z = (VectorSpaceObject(V,n) for n in 1:3)
+    H, L = Hom(X,Y), Hom(X,Z)
+    A = matrix(QQ,2,3,[1,2,3,4,5,6])
+    T = morphism(H,L,A)
+    for i in 1:2
+        expected = sum((A[i,j]*b for (j,b) in enumerate(basis(L)));
+                       init=zero_morphism(X,Z))
+        @test T(basis(H)[i]) == expected
+    end
+    @test_throws ArgumentError T(only(basis(Hom(Y,X))))
+    @test_throws ArgumentError morphism(H,L,matrix(GF(5),2,3,[1,2,3,4,0,1]))
+    ordinary = morphism(VectorSpaceObject(V,1),VectorSpaceObject(V,1),
+                        identity_matrix(QQ,1))
+    @test_throws ArgumentError ordinary(id(X))
+end
+
 # Maschke's theorem gives semisimplicity when the characteristic does not
 # divide |G|; see EGNO (2015), Remark 4.2.14. Fusion additionally requires
 # splitting; see Mäurer--Thiel, arXiv:2406.13438v2, Section 2.1.
