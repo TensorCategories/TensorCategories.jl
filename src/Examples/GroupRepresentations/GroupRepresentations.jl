@@ -4,12 +4,9 @@
 
     function GroupRepresentationCategory(G::Group, F::Field) 
         C = new(G,F)
-        if characteristic(F) !== 0 && rem(order(G), characteristic(F)) == 0 
-            set_attribute!(C, :semisimple, false)
-            set_attribute!(C, :tensor, true)
-        else
-            set_attribute!(C, :fusion, true)
-        end
+        set_attribute!(C, :semisimple,
+            characteristic(F) == 0 || rem(order(G), characteristic(F)) != 0)
+        set_attribute!(C, :tensor, true)
         C
     end
 end
@@ -29,7 +26,13 @@ struct GroupRepresentationMorphism <: RepresentationMorphism
 end
 
 is_tensor(::GroupRepresentationCategory) = true
-is_fusion(C::GroupRepresentationCategory) = mod(order(C.group),characteristic(base_ring(C))) != 0
+is_weak_fusion(C::GroupRepresentationCategory) = is_semisimple(C)
+function is_fusion(C::GroupRepresentationCategory)
+    get_attribute!(C, :fusion) do
+        is_weak_fusion(C) && all(X -> int_dim(End(X)) == 1, simples(C))
+    end
+end
+is_split_semisimple(C::GroupRepresentationCategory) = is_fusion(C)
 
 function Base.hash(C::GroupRepresentationCategory, h::UInt)
     hash((C.group, C.base_ring), h)

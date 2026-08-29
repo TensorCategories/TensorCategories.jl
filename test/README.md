@@ -6,7 +6,7 @@ comprehensive behavior.
 
 | Suite | Intended use | Current coverage |
 | --- | --- | --- |
-| `quick` | Every push and pull request | Finite-dimensional vector spaces, skeletal fusion arithmetic, and exact associator coherence for the Ising and `I2(5)` fixtures. |
+| `quick` | Every push and pull request | Finite-dimensional vector spaces, skeletal fusion arithmetic, exact associator coherence, and bounded categorical-interface regressions. |
 | `full` | Locally before releases or substantial mathematical changes | The quick checks plus examples, group representations, centers, centralizers, module categories, group actions, equivariantization, and AnyonWiki. |
 
 From the repository root:

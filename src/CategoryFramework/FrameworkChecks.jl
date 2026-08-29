@@ -34,7 +34,7 @@ end
 function is_split_semisimple(C::Category)
     is_fusion(C) && return true
     is_semisimple(C) && all(s -> int_dim(End(s)) == 1, simples(C))
-end 
+end
 
 function is_tensor(C::Category) 
     if is_fusion(C)
@@ -275,7 +275,7 @@ function object_type(C::Category)
             end
         end
     end
-end 
+end
 
 function morphism_type(C::Category)
     morphism_types = all_subtypes(Morphism)
@@ -287,4 +287,4 @@ function morphism_type(C::Category)
             end
         end
     end
-end 
+end

@@ -25,6 +25,8 @@ end
     include("SixJCategoryTests/RingCatTests.jl")
 end
 
+include("InterfaceTests.jl")
+
 @testset "Test Module Categories" begin
     include("ModuleCategoryTests/ModulesTest.jl")
     include("ModuleCategoryTests/AlgebraTests.jl")
