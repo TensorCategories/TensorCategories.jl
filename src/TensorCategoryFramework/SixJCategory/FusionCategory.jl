@@ -157,7 +157,8 @@ end
     set_associator!(F::SixJCategory, i::Int, j::Int, k::Int, l::Int, ass::MatElem) 
     set_associator!(F::SixJCategory, i::Int, j::Int, k::Int, l::Int, m::Int, n::Int, v::RingElem) 
 
-Set the ``F``-symbols of ``F``.
+Set the ``F``-symbols of ``F``. Pass `check=true` to validate normalized unit
+associators; supplied data are trusted by default.
 """
 # SixJCategory uses strictly normalised unit associators (see associator).
 # Reject conflicting input instead of silently discarding a supplied F=2
@@ -173,38 +174,47 @@ function _check_normalised_unit_associator(C::SixJCategory,i,j,k,M)
     nothing
 end
 
-function set_associator!(F::SixJCategory,ass)
-    for i in 1:F.rank,j in 1:F.rank,k in 1:F.rank,l in 1:F.rank
-        # An unassigned entry may be supplied later by :six_j_symbol.
-        isassigned(ass,i,j,k,l) || continue
-        _check_normalised_unit_associator(F,i,j,k,ass[i,j,k,l])
+function set_associator!(F::SixJCategory,ass; check::Bool=false)
+    if check
+        for i in 1:F.rank,j in 1:F.rank,k in 1:F.rank,l in 1:F.rank
+            isassigned(ass,i,j,k,l) || continue
+            _check_normalised_unit_associator(F,i,j,k,ass[i,j,k,l])
+        end
     end
     _invalidate_sixj_structure!(F)
     F.ass = ass
 end
 
-function set_associator!(F::SixJCategory, i::Int, j::Int, k::Int, ass::Vector{<:MatElem})
+function set_associator!(F::SixJCategory, i::Int, j::Int, k::Int,
+                         ass::Vector{<:MatElem}; check::Bool=false)
     _invalidate_sixj_structure!(F)
-    foreach(M -> _check_normalised_unit_associator(F,i,j,k,M),ass)
+    check && foreach(M -> _check_normalised_unit_associator(F,i,j,k,M),ass)
     F.ass[i,j,k,:] = ass
 end
 
-function set_associator!(F::SixJCategory, i::Int, j::Int, k::Int, l::Int, ass::MatElem)
+function set_associator!(F::SixJCategory, i::Int, j::Int, k::Int, l::Int,
+                         ass::MatElem; check::Bool=false)
     _invalidate_sixj_structure!(F)
-    _check_normalised_unit_associator(F,i,j,k,ass)
+    check && _check_normalised_unit_associator(F,i,j,k,ass)
     F.ass[i,j,k,l] = ass
 end
 
-function set_associator!(F::SixJCategory, i::Int, j::Int, k::Int, l::Int, ass::Array{T,N}) where {T,N}
-    _invalidate_sixj_structure!(F)
-    set_associator!(F,i,j,k,l,matrix(base_ring(F), (N > 1 ? size(ass) : (1,1))..., ass))
+function set_associator!(F::SixJCategory, i::Int, j::Int, k::Int, l::Int,
+                         ass::Array{T,N}; check::Bool=false) where {T,N}
+    set_associator!(F,i,j,k,l,
+        matrix(base_ring(F),(N > 1 ? size(ass) : (1,1))...,ass);check)
 end
 
-function set_associator!(F::SixJCategory, i::Int, j::Int, k::Int, l::Int, m::Int, n::Int, v::RingElem) 
-    _invalidate_sixj_structure!(F)
-    M = deepcopy(F.ass[i,j,k,l])
-    M[m,n] = v
-    set_associator!(F,i,j,k,l,M)
+function set_associator!(F::SixJCategory, i::Int, j::Int, k::Int, l::Int,
+                         m::Int, n::Int, v::RingElem; check::Bool=false)
+    if check
+        M = deepcopy(F.ass[i,j,k,l])
+        M[m,n] = v
+        set_associator!(F,i,j,k,l,M;check=true)
+    else
+        _invalidate_sixj_structure!(F)
+        F.ass[i,j,k,l][m,n] = v
+    end
 end
 
 @doc raw""" 
@@ -218,10 +228,13 @@ function set_pivotal!(F::SixJCategory, sp)
     F.pivotal = sp
 end
 
-function set_spherical!(C::SixJCategory,sp)
-    base_ring(C) isa Union{ArbField,AcbField,ComplexField} && throw(ArgumentError(
-        "a checked spherical setter requires exact coefficients; set_pivotal! is explicitly unchecked"))
-    is_spherical(C,sp) || throw(ArgumentError("not a spherical pivotal structure"))
+function set_spherical!(C::SixJCategory,sp; check::Bool=false)
+    if check
+        base_ring(C) isa Union{ArbField,AcbField,ComplexField} &&
+            throw(ArgumentError("a checked spherical setter requires exact coefficients"))
+        is_spherical(C,sp) ||
+            throw(ArgumentError("not a spherical pivotal structure"))
+    end
     set_pivotal!(C,base_ring(C).(sp))
 end
 
@@ -258,13 +271,16 @@ end
 """
     set_canonical_spherical!(C::SixJCategory; embedding=nothing)
 
-Set and verify a spherical structure whose dimensions are the FP dimensions.
+Set the canonical spherical structure of a pseudounitary category whose
+dimensions are the FP dimensions. Pass `check=true` to verify the resulting
+pivotal and spherical identities before storing it.
 This requires exact characteristic-zero coefficients. For a number field,
 specify the complex embedding that determines positivity. Failure preserves
 the previous pivotal data. Existence is not automatic; see EGNO Proposition
 9.5.1.
 """
-function set_canonical_spherical!(C::SixJCategory; embedding=nothing)
+function set_canonical_spherical!(C::SixJCategory; embedding=nothing,
+                                  check::Bool=false)
     K = base_ring(C)
     K isa Union{ArbField,AcbField,ComplexField} &&
         throw(ArgumentError("canonical spherical certification requires exact coefficients"))
@@ -286,7 +302,7 @@ function set_canonical_spherical!(C::SixJCategory; embedding=nothing)
     finally
         set_pivotal!(C,old)
     end
-    set_spherical!(C,candidate)
+    set_spherical!(C,candidate;check)
     copy(C.pivotal)
 end
 
@@ -307,14 +323,15 @@ end
     set_one!(F::SixJCategory, v::Vector{Int})
     set_one!(F::SixJCategory, i::Int)   
 
-Set the unit of ``F``.
+Set the unit of ``F``. Pass `check=true` to scan stored associators for the
+normalized unit constraint.
 """
-function set_one!(F::SixJCategory,v::Vector)
+function set_one!(F::SixJCategory,v::Vector; check::Bool=false)
     length(v) == rank(F) && all(c -> c isa Integer && c >= 0,v) ||
         throw(ArgumentError("invalid unit multiplicities"))
     # Unit-normalised associators must be valid even when the unit is set
     # AFTER an entire array of F-symbols (the usual constructor order).
-    if sum(v) == 1 && isdefined(F,:ass)
+    if check && sum(v) == 1 && isdefined(F,:ass)
         u = findfirst(!iszero,v)
         for i in 1:rank(F),j in 1:rank(F),k in 1:rank(F),l in 1:rank(F)
             if u in (i,j,k)
@@ -329,9 +346,9 @@ function set_one!(F::SixJCategory,v::Vector)
     F.one = copy(v)
 end
 
-function set_one!(F::SixJCategory,i::Int)
+function set_one!(F::SixJCategory,i::Int; check::Bool=false)
     1 <= i <= rank(F) || throw(ArgumentError("unit index out of range"))
-    set_one!(F,[Int(k == i) for k in 1:rank(F)])
+    set_one!(F,[Int(k == i) for k in 1:rank(F)];check)
 end
 
 function set_ribbon!(F::SixJCategory, r)
@@ -845,8 +862,8 @@ function simple_objects_ev(X::SixJObject)
     return inv(factor) * unscaled_ev
 end
 
-function spherical(X::SixJObject)
-    @req is_spherical(parent(X)) "Not spherical"
+function spherical(X::SixJObject; check::Bool=false)
+    check && !is_spherical(parent(X)) && throw(ArgumentError("Not spherical"))
     pivotal(X)
 end
 
