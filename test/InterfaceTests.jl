@@ -370,6 +370,15 @@ end
     @test int_dim(Hom(S,Y)) == 1 && int_dim(Hom(Y,S)) == 0
 end
 
+# Finite-dimensional vector spaces are simple exactly in integer dimension
+# one. Categorical dimension is reduced modulo the characteristic.
+@testset "Vector-space simplicity in positive characteristic" begin
+    V = VectorSpaces(GF(5))
+    @test is_simple(VectorSpaceObject(V,1))
+    @test !is_simple(VectorSpaceObject(V,6))
+    @test dim(VectorSpaceObject(V,6)) == GF(5)(1)
+end
+
 # Semisimplification quotients Hom spaces by negligible morphisms; see
 # Etingof--Ostrik, arXiv:1801.04409v4, Definition 2.1 and Proposition 2.4.
 @testset "Semisimplification scalar coordinates" begin

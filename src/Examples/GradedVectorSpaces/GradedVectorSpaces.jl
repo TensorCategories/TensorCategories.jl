@@ -410,7 +410,9 @@ function isgraded(X::GVSObject, Y::GVSObject, m::MatElem)
     true
 end
 
-is_simple(V::VectorSpaceObject) = dim(V) == 1
+# Categorical dimension is a field element and can vanish or wrap in positive
+# characteristic; simplicity of a vector space uses its integer dimension.
+is_simple(V::VectorSpaceObject) = int_dim(V) == 1
 
 @doc raw""" 
 
