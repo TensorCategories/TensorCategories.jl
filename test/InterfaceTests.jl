@@ -104,6 +104,23 @@ end
     @test !is_isomorphic(zero(R11), zero(R13))[1]
 end
 
+# Finite coproducts in an additive category are biproducts; see EGNO (2015),
+# Section 1.2. The symbolic operator returns the object, while `coproduct`
+# also returns the universal injections.
+@testset "Coproduct operator" begin
+    F = GF(5)
+    C = six_j_category(F, ones(Int, 1, 1, 1), ["1"])
+    set_one!(C, [1])
+    U = one(C)
+    @test ∐(U, U) == U ⊕ U
+
+    V, inc = coproduct(U, U)
+    h = morphism(V, U, [matrix(F, 2, 1, [2, 3])])
+    # The copairing [2*id,3*id] is characterized by its restrictions.
+    @test h ∘ inc[1] == F(2) * id(U)
+    @test h ∘ inc[2] == F(3) * id(U)
+end
+
 # Maschke's theorem gives semisimplicity when the characteristic does not
 # divide |G|; see EGNO (2015), Remark 4.2.14. Fusion additionally requires
 # splitting; see Mäurer--Thiel, arXiv:2406.13438v2, Section 2.1.
