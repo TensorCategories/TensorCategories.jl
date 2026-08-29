@@ -41,6 +41,17 @@ end
     @test all(pentagon_axiom(W,X,Y,Z) for W in S,X in S,Y in S,Z in S)
     @test hexagon_axiom(C)
     @test is_pivotal(C)
+    # Relabeling must transport the multiplicity-two intermediate channel in
+    # 8⊗8. Outer-index permutation alone changes this F-matrix and destroys
+    # coherence; Appendix B supplies the exact F/R oracle used here.
+    perm = [2,4,1,3]
+    oldF = copy(C.ass)
+    olddims = dim.(S)
+    TensorCategories.sort_simples!(C,perm)
+    @test pentagon_axiom(C) && hexagon_axiom(C)
+    @test dim.(simples(C)) == olddims[perm]
+    TensorCategories.sort_simples!(C,invperm(perm))
+    @test C.ass == oldF
 end
 
 # Rowell--Stong--Wang, arXiv:0712.1377v4, pp. 3--4 and Section 5.3.2.

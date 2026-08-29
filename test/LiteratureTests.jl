@@ -57,3 +57,25 @@ end
     set_associator!(J,3,3,3,3,2*J.ass[3,3,3,3])
     @test !pentagon_axiom(J)
 end
+
+# Rowell--Stong--Wang, arXiv:0712.1377v4, Section 5.3.4: the nontrivial
+# F(sigma,sigma,sigma;sigma) block is a Hadamard matrix divided by sqrt(2).
+# Swapping the unit and fermion therefore also swaps its intermediate-channel
+# rows and columns; permuting only the four outer labels breaks the pentagon.
+@testset "Relabeling transports Ising fusion channels" begin
+    K,_ = cyclotomic_field(16)
+    C = ising_category(K)
+    p = [2,1,3]
+    dims = dim.(simples(C))
+    S = smatrix(C)
+    F = copy(C.ass)
+    TensorCategories.sort_simples!(C,p)
+    @test pentagon_axiom(C) && hexagon_axiom(C) && is_pivotal(C)
+    @test dim.(simples(C)) == dims[p]
+    @test smatrix(C) == S[p,p]
+
+    TensorCategories.sort_simples!(C,invperm(p))
+    @test C.ass == F
+    @test_throws ArgumentError TensorCategories.sort_simples!(C,[1,1,3])
+    @test C.ass == F
+end

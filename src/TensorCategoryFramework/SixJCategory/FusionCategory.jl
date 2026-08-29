@@ -63,6 +63,22 @@ object_type(::SixJCategory) = SixJObject
 
 function morphism(X::SixJObject, Y::SixJObject, m)
     _check_sixj_parents(X, Y)
+    C = parent(X)
+    n = rank(C)
+    all(Z -> length(Z.components) == n && all(>=(0),Z.components), (X,Y)) ||
+        throw(ArgumentError("invalid skeletal object multiplicities"))
+    m isa AbstractVector && length(m) == n ||
+        throw(ArgumentError("one matrix block per simple object is required"))
+    # In the row-vector convention, block i has one row per copy in the
+    # source and one column per copy in the target.
+    for i in 1:n
+        m[i] isa MatElem ||
+            throw(ArgumentError("morphism blocks must be matrices"))
+        size(m[i]) == (X.components[i],Y.components[i]) ||
+            throw(ArgumentError("block $i has the wrong dimensions for its endpoints"))
+        base_ring(m[i]) === base_ring(C) ||
+            throw(ArgumentError("morphism blocks must use the category's coefficient field"))
+    end
     SixJMorphism(X, Y, m)
 end
 
@@ -532,9 +548,25 @@ end
 function r_symbol(C::SixJCategory, i::Int, j::Int, k::Int)
     if ! isassigned(C.braiding, i,j,k)
         r_symbol = get_attribute(C, :r_symbol)
-        C.braiding[i,j,k,l] = r_symbol(i,j,k) 
+        C.braiding[i,j,k] = r_symbol(i,j,k)
     end
     return C.braiding[i,j,k]
+end
+
+# Relabelling must first detach deferred providers that close over the old
+# labels. It also needs every old F block in order to permute intermediate
+# fusion channels, including blocks of dimension greater than one.
+function _materialize_sixj_symbols!(C::SixJCategory)
+    n = rank(C)
+    for i in 1:n,j in 1:n,k in 1:n,l in 1:n
+        six_j_symbol(C,i,j,k,l)
+    end
+    if is_braided(C)
+        for i in 1:n,j in 1:n,k in 1:n
+            r_symbol(C,i,j,k)
+        end
+    end
+    C
 end
 
 function (K::AcbField)(f::SixJMorphism)
@@ -1073,24 +1105,47 @@ function simples(C::SixJCategory)
 end
 
 
+"""
+    sort_simples!(C::SixJCategory, order::Vector{Int})
+
+Relabel simple `order[i]` as `i`, transporting the intermediate fusion-channel
+bases as well as the outer F- and R-symbol indices. Existing objects and
+functors are not transported and should not be reused after this mutation.
+"""
 function sort_simples!(C::SixJCategory, order::Vector{Int})
-    C.tensor_product = [C.tensor_product[i,j,k] for i ∈ order, j ∈ order, k ∈ order]
-
     n = C.rank
-   
-
-    C.ass = C.ass[order,order,order,order]
-    # for i ∈ 1:n, j ∈ 1:n, k ∈ 1:n, l ∈ 1:n 
-    #     C.ass[order[[i,j,k,l]]...] = ass[i,j,k,l]
-    # end
-    
+    sort(order) == collect(1:n) ||
+        throw(ArgumentError("order must be a permutation of the simple labels"))
+    _materialize_sixj_symbols!(C)
+    N = C.tensor_product
+    ass = Array{MatElem,4}(undef,n,n,n,n)
+    for i in 1:n,j in 1:n,k in 1:n,l in 1:n
+        a,b,c,d = order[[i,j,k,l]]
+        rows = _fusion_channel_permutation(
+            [N[a,b,e]*N[e,c,d] for e in 1:n],order)
+        cols = _fusion_channel_permutation(
+            [N[b,c,f]*N[a,f,d] for f in 1:n],order)
+        ass[i,j,k,l] = C.ass[a,b,c,d][rows,cols]
+    end
+    C.tensor_product = N[order,order,order]
+    C.ass = ass
     C.simples_names = C.simples_names[order]
 
     isdefined(C, :one) && (C.one = C.one[order])
     isdefined(C, :pivotal) && (C.pivotal = C.pivotal[order])
     isdefined(C, :braiding) && (C.braiding = [C.braiding[i,j,k] for i ∈ order, j ∈ order, k ∈ order])
     isdefined(C, :twist) && (C.twist = C.twist[order])
+    _invalidate_sixj_structure!(C)
+    if isdefined(C,:__attrs)
+        delete!(C.__attrs,:six_j_symbol)
+        delete!(C.__attrs,:r_symbol)
+    end
     return C
+end
+
+function _fusion_channel_permutation(sizes,order)
+    offsets = cumsum([0; sizes])
+    [r for e in order for r in offsets[e]+1:offsets[e+1]]
 end
 
 function sort_simples_by_dimension!(C::SixJCategory)
