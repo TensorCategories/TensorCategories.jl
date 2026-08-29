@@ -79,3 +79,48 @@ end
     @test_throws ArgumentError TensorCategories.sort_simples!(C,[1,1,3])
     @test C.ass == F
 end
+
+# EGNO Section 4.6: Deligne products transport associators and braidings
+# componentwise. Deferred storage is an implementation detail, so exporting,
+# relabelling, or extending scalars must give the same structural maps as the
+# eager construction.
+@testset "Deferred structural data and coefficient transport" begin
+    N = zeros(Int,2,2,2)
+    N[1,1,1] = N[1,2,2] = N[2,1,2] = N[2,2,1] = 1
+    C = six_j_category(QQ,N,["1","g"])
+    set_one!(C,1)
+    set_braiding!(C,[identity_matrix(QQ,N[i,j,k])
+                     for i in 1:2,j in 1:2,k in 1:2])
+    eager = tensor_product(C,C)
+    lazy() = tensor_product(C,C,String[],String[],true)
+
+    D = lazy()
+    @test TensorCategories.F_symbols(D) == TensorCategories.F_symbols(eager)
+    @test R_symbols(D) == R_symbols(eager)
+
+    # QQ has canonical maps to Acb and QQBar; neither requires choosing a
+    # number-field embedding, even when the source symbols are still lazy.
+    E = extension_of_scalars(lazy(),AcbField(64))
+    @test multiplication_table(E) == multiplication_table(eager)
+    @test pentagon_axiom(E) && hexagon_axiom(E)
+    E = extension_of_scalars(lazy(),QQBarField())
+    @test pentagon_axiom(E) && hexagon_axiom(E)
+
+    # A provider closes over the old labels, so relabelling must materialize
+    # it before mutating the fusion rules.
+    E = lazy()
+    TensorCategories.sort_simples!(E,[4,2,1,3])
+    @test pentagon_axiom(E) && hexagon_axiom(E)
+
+    # For a number field, choose the image of its primitive element once and
+    # evaluate every coefficient through that exact homomorphism.
+    R,x = polynomial_ring(QQ,"x")
+    L,r = number_field(x^2-2,"r")
+    B = ising_category(L,r)
+    embedding = complex_embedding(L,sqrt(AcbField(128)(2)))
+    D = extension_of_scalars(B,QQBarField(),embedding)
+    @test pentagon_axiom(D)
+    @test dim(D[3]) == sqrt(QQBarField()(2))
+    E = extension_of_scalars(B,QQBarField();embedding=embedding)
+    @test E.ass == D.ass && E.pivotal == D.pivotal
+end

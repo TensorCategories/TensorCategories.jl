@@ -60,9 +60,13 @@ function extension_of_scalars(R::AbstractAssociativeAlgebra, F::Ring)
 end
 
 # Oscar uses `embed` for finite fields and `embedding` for the other exact
-# field types supported here.
-_scalar_extension_embedding(K,L) = K isa FinField && L isa FinField ?
-    Oscar.embed(K,L) : embedding(K,L)
+# field types. The rational field has its canonical map into every
+# characteristic-zero coefficient field.
+function _scalar_extension_embedding(K,L)
+    K === L && return identity
+    K === QQ && characteristic(L) == 0 && return L
+    K isa FinField && L isa FinField ? Oscar.embed(K,L) : embedding(K,L)
+end
 
 ⊗(F::Ring, R::AbstractAssociativeAlgebra) = extension_of_scalars(R,F)
 ⊗(R::AbstractAssociativeAlgebra, F::Ring) = extension_of_scalars(R,F)

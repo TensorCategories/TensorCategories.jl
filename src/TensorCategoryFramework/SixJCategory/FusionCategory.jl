@@ -1288,47 +1288,25 @@ Return the category ``C⊗K``.
 """
 function extension_of_scalars(C::SixJCategory, L::Ring;
                               embedding = _scalar_extension_embedding(base_ring(C),L))
-
-    try
-        D = six_j_category(L, C.tensor_product, simples_names(C))
-
-        isdefined(C, :name) && set_name!(D, C.name)
-        
-        if isdefined(C, :ass)
-            D.ass = [matrix(L, size(a)..., embedding.(collect(a))) for a ∈ C.ass]
-        end
-        if isdefined(C, :one)
-            D.one = C.one
-        end
-        if isdefined(C, :pivotal)
-            D.pivotal = embedding.(C.pivotal)
-            # D.pivotal = [L(1) for i ∈ 1:rank(C)]
-            # D.pivotal = [embedding(dim(C[i])) * inv(dim(D[i])) for i ∈ 1:rank(C)]
-
-            # If L is a numeric Field we need to make sure, that the precision is set right
-            if L isa Union{ArbField, AcbField}
-                D.pivotal = L.(D.pivotal)
-            end
-        end
-        if  isdefined(C, :braiding)
-            D.braiding = [matrix(L, size(a)..., embedding.(collect(a))) for a ∈ C.braiding]
-        end
-        if isdefined(C, :twist) 
-            D.twist = embedding.(C.twist)
-        end
-
-        if L isa NumField && isdefined(C, :embedding) 
-            emb = getfield(C, :embedding) 
-            _embeddings = complex_embeddings(L)
-
-            # Note: If K == QQ the embedding numberfield is a NumField of degree 1, and base_ring(C) == QQ
-            K = number_field(emb)
-            D.embedding = _embeddings[findfirst(e -> overlaps(e(embedding(gen(base_ring(C)))), emb(gen(K))), _embeddings)]
-        end
-        return D
-    catch 
-        error("Extension of scalars not possible")
+    _materialize_sixj_symbols!(C)
+    D = six_j_category(L,copy(C.tensor_product),copy(simples_names(C)))
+    isdefined(C,:name) && set_name!(D,C.name)
+    D.ass = [matrix(L,size(a)...,embedding.(collect(a))) for a in C.ass]
+    if isdefined(C,:one)
+        D.one = copy(C.one)
     end
+    if isdefined(C,:pivotal)
+        D.pivotal = embedding.(C.pivotal)
+        L isa Union{ArbField,AcbField} && (D.pivotal = L.(D.pivotal))
+    end
+    if isdefined(C,:braiding)
+        D.braiding = [matrix(L,size(a)...,embedding.(collect(a)))
+                      for a in C.braiding]
+    end
+    if isdefined(C,:twist)
+        D.twist = embedding.(C.twist)
+    end
+    D
 end
 
 complex_embedding_of_base_ring(C::SixJCategory) = C.embedding
@@ -1340,6 +1318,7 @@ function extension_of_scalars(C::SixJCategory, K::FqField; embedding=nothing)
         return invoke(extension_of_scalars,Tuple{SixJCategory,Ring},C,K;
                       embedding=e)
     end
+    _materialize_sixj_symbols!(C)
     denom = if base_ring(C) == QQ 
         lcm([isempty(m) ? ZZ(1) : lcm(denominator.(collect(m))[:]) for m ∈ C.ass][:])
     else 
@@ -1393,13 +1372,47 @@ function complex_embeddings(C::SixJCategory)
 end
 
 
-function extension_of_scalars(C::SixJCategory, K::QQBarField, e::AbsSimpleNumFieldEmbedding = complex_embeddings(base_ring(C))[1])
-    if base_ring(C) == QQ 
-        to_qqbar = QQBarField()
-    else
-        to_qqbar = x -> guess(QQBarField(), e(x,2048), maximum([1,degree(x)]))
-    end   
-    extension_of_scalars(C,K, embedding = to_qqbar)
+function extension_of_scalars(C::SixJCategory, K::QQBarField; embedding=nothing)
+    if embedding isa AbsSimpleNumFieldEmbedding
+        return extension_of_scalars(C,K,embedding)
+    end
+    if embedding !== nothing || base_ring(C) isa Union{QQField,QQBarField}
+        e = embedding === nothing ? K : embedding
+        return invoke(extension_of_scalars,Tuple{SixJCategory,Ring},C,K;
+                      embedding=e)
+    end
+    e = isdefined(C,:embedding) ? C.embedding :
+        first(complex_embeddings(base_ring(C)))
+    extension_of_scalars(C,K,e)
+end
+
+function extension_of_scalars(C::SixJCategory, K::QQBarField,
+                              e::AbsSimpleNumFieldEmbedding)
+    number_field(e) === base_ring(C) ||
+        throw(ArgumentError("embedding has the wrong source field"))
+    invoke(extension_of_scalars,Tuple{SixJCategory,Ring},C,K;
+           embedding=_qqbar_embedding(e))
+end
+
+# Choose one algebraic image of the primitive element using the certified
+# complex embedding, then evaluate every coefficient through that same root.
+# This gives a field homomorphism rather than independent algebraic guesses.
+function _qqbar_embedding(e::AbsSimpleNumFieldEmbedding)
+    L = number_field(e)
+    K = QQBarField()
+    a = gen(L)
+    candidates = roots(K,minpoly(a))
+    for prec in (64,128,256,512,1024,2048,4096)
+        image = e(a,prec)
+        A = AcbField(prec)
+        matches = filter(r -> overlaps(image,A(r)),candidates)
+        if length(matches) == 1
+            r = only(matches)
+            return x -> foldr((c,y) -> K(c)+r*y,coefficients(L(x));
+                              init=K(0))
+        end
+    end
+    throw(ArgumentError("could not isolate the specified number-field embedding"))
 end
 
 """ 
@@ -1656,7 +1669,7 @@ function F_symbols(C::SixJCategory)
 
     for (a,b,c,d) ∈ collect(Base.product(1:N, 1:N, 1:N, 1:N))
 
-        sym = collect(C.ass[a,b,c,d])[:]
+        sym = collect(six_j_symbol(C,a,b,c,d))[:]
   
         for e in 1:N, f in 1:N 
             if mult[a,b,e] * mult[e,c,d] * mult[b,c,f] * mult[a,f,d] == 0 
@@ -1749,7 +1762,7 @@ function R_symbols(C::SixJCategory)
     mult = multiplication_table(C)
 
     for (a,b,c) ∈ collect(Base.product(1:N, 1:N, 1:N))
-        sym = collect(C.braiding[a,b,c])[:]
+        sym = collect(r_symbol(C,a,b,c))[:]
 
         if mult[a,b,c] == 0 
             continue 
