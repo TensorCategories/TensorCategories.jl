@@ -1,5 +1,9 @@
 using TensorCategories, Oscar
 
+# This is an exploratory exact S-matrix calculation, not an active test: it is
+# not included by test/runtests.jl and contains no @test assertion.  The
+# literature matrices below are therefore currently unused as regression
+# oracles; converting them into tests should be a separate reviewed change.
 # To speed up computation compute the equivalent centre category category
 I = I2subcategory(5)
 C = center(I)
