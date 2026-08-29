@@ -331,6 +331,54 @@ end
     @test !is_weak_fusion(M) && !is_fusion(M)
 end
 
+# Exact ordinary-characteristic representations exercise a different backend
+# from the finite-field MeatAxe. See EGNO (2015), Section 2.3, Lemma 1.5.2,
+# and Example 8.1.2.
+@testset "Ordinary group representations over QQ" begin
+    G = symmetric_group(3)
+    C = representation_category(QQ,G)
+    U = one(C)
+    # The trivial representation exists over any field; constructing it must
+    # not require a generating set for the infinite matrix group GL(1,QQ).
+    @test int_dim(Hom(U,U)) == 1
+    @test is_braided(C) && is_braided(representation_category(GF(3),G))
+    @test Representation(C,g -> identity_matrix(QQ,1)) == U
+
+    # Biproducts with zero have exactly two injections and projections in
+    # either order, and their diagonal terms resolve the identity.
+    for (A,B) in ((U,zero(C)),(zero(C),U))
+        D,i,p = direct_sum(A,B)
+        @test length(i) == length(p) == 2
+        @test i[1]∘p[1] + i[2]∘p[2] == id(D)
+    end
+
+    # The standard two-dimensional representation is the sum-zero subspace
+    # of the permutation representation on three letters.
+    P = Representation(C,gens(G),[
+        matrix(QQ,3,3,[Int(j == i^g) for i in 1:3,j in 1:3])
+        for g in gens(G)])
+    aug = morphism(P,U,matrix(QQ,3,1,[1,1,1]))
+    X,inc = kernel(aug)
+    @test int_dim(X) == 2 && is_simple(X) && int_dim(End(X)) == 1
+    @test is_zero(aug ∘ inc) && int_dim(Hom(U,X)) == 0
+
+    # Character theory gives std tensor std = 1 + sign + std, so Schur's
+    # lemma gives a three-dimensional endomorphism algebra.
+    @test int_dim(End(X⊗X)) == 3
+    ok,f = is_isomorphic(U⊕X,X⊕U)
+    @test ok && inv(f) ∘ f == id(U⊕X)
+
+    # QQ[C3] has a nonsplit simple QQ(zeta_3), whose endomorphism field has
+    # dimension two over QQ rather than one.
+    H = cyclic_group(3)
+    D = representation_category(QQ,H)
+    Y = Representation(D,gens(H),[matrix(QQ,2,2,[0,1,-1,-1])])
+    @test int_dim(End(Y)) == 2 && is_simple(Y)
+    # Enumeration needs a rational/Schur-index-aware backend; importing GAP's
+    # absolutely irreducible list over a different field would be incorrect.
+    @test_throws ArgumentError simples(C)
+end
+
 function audit_jordan_representation(C, n)
     J = identity_matrix(base_ring(C), n)
     for i in 1:n-1
