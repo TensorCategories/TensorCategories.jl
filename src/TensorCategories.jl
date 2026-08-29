@@ -409,6 +409,7 @@ export Restriction
 export reverse_braiding
 export right_action
 export right_dim
+export right_ev, right_coev
 export right_dual 
 export right_inverse
 export right_module 

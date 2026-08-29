@@ -138,7 +138,17 @@ end
 #-------------------------------------------------------
 
 left_dual(X::Object) = dual(X)
-right_dual(X::Object) = dual(X)
+# A chosen LEFT dual is not automatically a chosen right dual. A pivotal
+# isomorphism transports the left duality of X* to a right duality of X.
+# EGNO §2.10 and §4.7. Backends without such data must supply right_dual.
+function right_dual(X::Object)
+    j = pivotal(X)
+    domain(j) == X && codomain(j) == dual(dual(X)) && is_invertible(j) ||
+        throw(ArgumentError("right duality requires a pivotal isomorphism or a category-specific implementation"))
+    dual(X)
+end
+right_ev(X::Object) = ev(dual(X)) ∘ (pivotal(X) ⊗ id(dual(X)))
+right_coev(X::Object) = (id(dual(X)) ⊗ inv(pivotal(X))) ∘ coev(dual(X))
 
 dual(f::Morphism) = left_dual(f)
 
@@ -187,6 +197,7 @@ function left_trace(f::Morphism)
     if V == W
         return ev(left_dual(V)) ∘ ((pivotal(V)∘f) ⊗ id(left_dual(V))) ∘ coev(V)
     end
+    W == dual(dual(V)) || throw(ArgumentError("left trace expects X → X or X → X**"))
     return ev(left_dual(V)) ∘ (f ⊗ id(left_dual(V))) ∘ coev(V)
 end
 
@@ -194,18 +205,13 @@ end
 
     right_trace(f::Morphism)
 
-Compute the right trace of a morphism ``X → ∗∗X`` or if the category is
-pivotal of a morphism ``X → X``.
+Compute the right pivotal trace of an endomorphism. The pivotal structure
+need not be spherical; its inverse appears in the right coevaluation.
 """
 function right_trace(f::Morphism)
-    return left_trace(dual(f))
-
-    V = domain(f)
-    W = codomain(f)
-    dV = right_dual(V)
-    _,i = is_isomorphic(left_dual(dV),V)
-    _,j = is_isomorphic(right_dual(V), left_dual(right_dual(dV)))
-    return (ev(right_dual(dV))) ∘ (j⊗(f∘i)) ∘ coev(right_dual(V))
+    X = domain(f)
+    codomain(f) == X || throw(ArgumentError("right_trace expects an endomorphism"))
+    ev(X) ∘ (id(dual(X)) ⊗ f) ∘ right_coev(X)
 end
 
 function squared_norm(X::Object)
@@ -252,7 +258,7 @@ function right_dim(X::Object)
         incls = [basis(Hom(𝟙ᵢ, one(C)))[1] for 𝟙ᵢ ∈ 𝟙]
         projs = [basis(Hom(one(C), 𝟙ᵢ))[1] for 𝟙ᵢ ∈ 𝟙]
 
-        return sum([base_ring(X)(p∘right_trace(pivotal(X))∘i) for p ∈ projs, i ∈ incls][:])
+        return sum([base_ring(X)(p∘right_trace(id(X))∘i) for p ∈ projs, i ∈ incls][:])
     end
     error("No dimension defined")
 end 
@@ -269,28 +275,15 @@ dim(C::Category) = sum(squared_norm(s) for s ∈ simples(C))
 
 Compute the S-matrix as defined in [EGNO](https://math.mit.edu/~etingof/egnobookfinal.pdf).
 """
-function smatrix(C::Category, simples = simples(C))
+function smatrix(C::Category, objects = simples(C))
     @assert is_semisimple(C) "Category has to be semisimple"
-
-    if hasfield(typeof(C), :__attrs) 
-        return get_attribute!(C, :smatrix) do
-            F = base_ring(C)
-            m = [tr(braiding(s,t)∘braiding(t,s)) for s ∈ simples, t ∈ simples]
-            try
-                return matrix(F,[F(n) for n ∈ m])
-            catch
-            end
-            return matrix(F,m)
-        end
-    end
-
-    F = base_ring(C)
-    m = [tr(braiding(s,t)∘braiding(t,s)) for s ∈ simples, t ∈ simples]
-    try
-        return matrix(F,[F(n) for n ∈ m])
-    catch
-    end
-    return matrix(F,m)
+    all(X -> parent(X) == C,objects) || throw(ArgumentError("objects outside the category"))
+    # Do not cache an argument-dependent matrix under a single category key:
+    # a [1] restriction used to poison every later full S-matrix computation.
+    # Recompute also after changes of pivotal/braided structure.
+    K = base_ring(C)
+    matrix(K,length(objects),length(objects),
+        [K(tr(braiding(X,Y) ∘ braiding(Y,X))) for X in objects,Y in objects])
 end
 
 """ 
@@ -308,14 +301,18 @@ function normalized_smatrix(C::Category, simples = simples(C))
     #         d = -d
     #     end
     # end
-    return d * smatrix(C)
+    return d * smatrix(C,simples)
 end
 
-function tmatrix(C::Category, simples = simples(C))
-    F=base_ring(C)
-    T=[1//dim(S)*F(tr(braiding(S,dual(S)))) for S in simples]
-    return diagonal_matrix(T)
+function tmatrix(C::Category, objects = simples(C))
+    K = base_ring(C)
+    # EGNO, §8.13: T consists of twist eigenvalues. In pointed Z3,
+    # tr(c_{g,g*}) gives ζ² whereas θ_g=ζ (RSW, §5.3.3).
+    values = [is_scalar_multiple(matrix(twist(X)),matrix(id(X))) for X in objects]
+    all(first,values) || throw(ArgumentError("T requires objects with scalar twists"))
+    diagonal_matrix([K(last(v)) for v in values])
 end
+
 
 #-------------------------------------------------------
 # decomposition morphism
@@ -513,10 +510,12 @@ function is_pivotal(C::Category)
         return is_pivotal_numeric(C)
     end
 
+    all(X -> is_invertible(pivotal(X)),simples(C)) || return false
     all([pivotal(x)⊗pivotal(y) == double_dual_monoidal_structure(x,y) ∘ pivotal(x ⊗ y) for x ∈ simples(C), y ∈ simples(C)])
 end 
 
-function is_pivotal_numeric(C::Category) 
+function is_pivotal_numeric(C::Category)
+    all(X -> is_invertible(pivotal(X)),simples(C)) || return false
     all([overlaps(matrix(pivotal(x)⊗pivotal(y)), matrix(double_dual_monoidal_structure(x,y) ∘ pivotal(x ⊗ y))) for x ∈ simples(C), y ∈ simples(C)])
 end
 
