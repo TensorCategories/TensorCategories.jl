@@ -78,9 +78,10 @@ end
 #=----------------------------------------------------------
     Framework checks 
 ----------------------------------------------------------=#
-is_multifusion(C::CenterCategory) = is_multifusion(category(C))
+is_multifusion(C::CenterCategory) =
+    is_semisimple(C) && is_multifusion(category(C))
 is_semisimple(C::CenterCategory) = dim(category(C)) != 0 && is_semisimple(category(C))
-is_modular(C::CenterCategory) = is_fusion(category(C)) 
+is_modular(C::CenterCategory) = is_semisimple(C) && is_fusion(category(C))
 is_braided(C::CenterCategory) = true
 is_rigid(C::CenterCategory) = is_rigid(category(C))
 is_ring(C::CenterCategory) = is_ring(category(C))
