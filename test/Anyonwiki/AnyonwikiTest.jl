@@ -119,6 +119,16 @@ end
     @testset "Numeric" begin
         mktempdir() do path
 
+            # CSV rows are ordered lexicographically by symbol labels. These
+            # dyadic coefficients are exactly representable at this precision.
+            K = AcbField(64)
+            scalars = Dict([2, 1] => K(3//2, 5//4), [1, 2] => K(-2), [1, 1] => K(0, -1))
+            scalar_file = joinpath(path, "scalar-symbols.csv")
+            numeric_symbols_to_csv(scalar_file, scalars)
+            labels = [parse.(Int, split(line, ", ")[1:2]) for line in readlines(scalar_file)]
+            @test labels == [[1, 1], [1, 2], [2, 1]]
+            @test numeric_symbols_from_csv(scalar_file, K) == scalars
+
             C = anyonwiki(4,1,2,4,1,0,1)
             
             num_F_symbs = numeric_F_symbols(C, precision = 64)
