@@ -415,3 +415,66 @@ end
     @test left_inverse(k) ∘ k == id(K)
     @test c ∘ right_inverse(c) == id(C)
 end
+
+# For an indecomposable X over a finite field, End(X)/rad End(X) is a finite
+# division algebra and hence a finite field (Wedderburn). Its relative degree
+# is the extension degree needed for absolute indecomposability. The radical
+# itself must be retained; compare Krause, arXiv:1410.2822v1, Section 4, and
+# K. Conrad, Finite Fields, Section 5.
+@testset "Splitting finite families over finite fields" begin
+    R = representation_category(GF(2),cyclic_group(3))
+    W = Representation(R,gens(base_group(R)),[matrix(GF(2),[0 1;1 1])])
+    @test is_simple(W) && int_dim(End(W)) == 2
+    @test_throws ArgumentError split(W;max_degree=1)
+    @test_throws ArgumentError split(Object[])
+    @test_throws ArgumentError split(W;max_degree=0)
+
+    result = split(W)
+    @test order(result.field) == 4 && result.extension_degree == 2
+    @test result.absolutely_indecomposable
+    dec = only(result.decompositions)
+    @test length(dec) == 2
+    @test all(int_dim(End(X)) == 1 && m == 1 for (X,m) in dec)
+    rebuilt = reduce(⊕,[X for (X,m) in dec for _ in 1:m])
+    ok,iso = is_isomorphic(only(result.objects),rebuilt)
+    @test ok && inv(iso) ∘ iso == id(only(result.objects))
+    @test iso ∘ inv(iso) == id(rebuilt)
+    f = extension_of_scalars(id(W),result.field,result.category;
+                             embedding=result.embedding)
+    @test f == id(only(result.objects))
+
+    # No extension is introduced for zero or already absolutely split input.
+    @test split(one(R)).category === R
+    zero_result = split(zero(R))
+    @test zero_result.extension_degree == 1
+    @test isempty(only(zero_result.decompositions))
+    @test base_ring(W) === GF(2)
+
+    # Over F4, the two-dimensional C5-character splits over the relative
+    # quadratic extension F16, not over a newly chosen prime-field model.
+    R4 = representation_category(GF(4),cyclic_group(5))
+    W4 = first(X for X in simples(R4) if int_dim(X) == 2)
+    result4 = split(W4)
+    @test order(result4.field) == 16 && result4.extension_degree == 2
+    @test length(only(result4.decompositions)) == 2
+
+    # J2 for C3 in characteristic three is already absolutely indecomposable:
+    # its two-dimensional End algebra has a nilpotent radical and residue F3.
+    R3 = representation_category(GF(3),cyclic_group(3))
+    J2 = literature_jordan_representation(R3,2)
+    nilpotent_result = split(J2)
+    @test nilpotent_result.category === R3
+    @test int_dim(End(only(nilpotent_result.objects))) == 2
+
+    # Scalar extension also respects the tensor-power and semisimplification
+    # wrappers used to study bounded tensor-generated subcategories.
+    T = tensor_power_category(W)
+    Q = Semisimplification(T)
+    X = semisimplify(indecomposables(T,1)[2],Q)
+    wrapped = split(X)
+    @test length(only(wrapped.decompositions)) == 2
+    @test all(int_dim(End(Y)) == 1 for (Y,_) in only(wrapped.decompositions))
+    g = extension_of_scalars(id(X),wrapped.field,wrapped.category;
+                             embedding=wrapped.embedding)
+    @test g == id(only(wrapped.objects))
+end

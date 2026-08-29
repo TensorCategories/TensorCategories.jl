@@ -63,6 +63,34 @@ function representation_category(G::Group)
     return representation_category(abelian_closure(QQ)[1], G)
 end
 
+function extension_of_scalars(C::GroupRepresentationCategory,L::Field;
+                              embedding=_scalar_extension_embedding(base_ring(C),L))
+    representation_category(L,base_group(C))
+end
+
+function extension_of_scalars(X::GroupRepresentation,L::Field,
+                              D::GroupRepresentationCategory=
+                                  extension_of_scalars(parent(X),L);
+                              embedding=_scalar_extension_embedding(base_ring(X),L))
+    base_ring(D) == L && base_group(D) == base_group(X) ||
+        throw(ArgumentError("incompatible target representation category"))
+    int_dim(X) == 0 && return zero(D)
+    G = base_group(X)
+    generators = order(G) == 1 ? elements(G) : gens(G)
+    matrices = [matrix(L,int_dim(X),int_dim(X),
+                       embedding.(collect(matrix(X(g))))) for g in generators]
+    Representation(D,generators,matrices)
+end
+
+function extension_of_scalars(f::GroupRepresentationMorphism,L::Field,
+                              D::GroupRepresentationCategory=
+                                  extension_of_scalars(parent(f),L);
+                              embedding=_scalar_extension_embedding(base_ring(f),L))
+    morphism(extension_of_scalars(domain(f),L,D;embedding),
+             extension_of_scalars(codomain(f),L,D;embedding),
+             matrix(L,size(matrix(f))...,embedding.(collect(matrix(f)))))
+end
+
 """
     Representation(G::Group, pre_img::Vector, img::Vector)
 
