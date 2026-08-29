@@ -203,6 +203,24 @@ end
     @test_throws ArgumentError C[e] ⊗ D[a]
 end
 
+# Hom spaces are vector spaces (EGNO (2015), Section 1.2): zero has the unique
+# empty coordinate vector in the zero subspace, while a nonzero vector is not
+# in that span. A one-factor tensor product is the factor itself.
+@testset "Zero coordinates and unary tensor products" begin
+    V = VectorSpaces(QQ)
+    U = one(V)
+    empty_basis = VectorSpaceMorphism[]
+    @test express_in_basis(zero_morphism(U,U), empty_basis) == QQFieldElem[]
+    @test_throws ArgumentError express_in_basis(id(U), empty_basis)
+    @test tensor_product(U) === U
+    @test_throws ArgumentError tensor_product()
+
+    X, Y = VectorSpaceObject(V,2), VectorSpaceObject(V,3)
+    @test isempty(basis([zero_morphism(X,Y)]))
+    @test_throws ArgumentError express_in_basis(
+        zero_morphism(X,Y), [zero_morphism(Y,X)])
+end
+
 # Maschke's theorem gives semisimplicity when the characteristic does not
 # divide |G|; see EGNO (2015), Remark 4.2.14. Fusion additionally requires
 # splitting; see Mäurer--Thiel, arXiv:2406.13438v2, Section 2.1.

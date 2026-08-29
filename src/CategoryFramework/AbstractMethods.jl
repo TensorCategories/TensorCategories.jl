@@ -889,8 +889,9 @@ end
 ----------------------------------------------------------=#
 
 function basis(mors::Vector{<:Morphism})
-    if length(mors) ≤ 1
-        return mors
+    isempty(mors) && return mors
+    if length(mors) == 1
+        return is_zero(only(mors)) ? empty(mors) : mors
     end
 
     X = domain(mors[1])
