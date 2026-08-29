@@ -937,11 +937,15 @@ function basis(mors::Vector{<:Morphism})
 
     Mrref = hnf(M)
     
-    base = morphism_type(C)[]
+    base = empty(mors)
     mats_morphisms = morphism.(mats)
 
     for k ∈ 1:rank(Mrref)
-        coeffs = express_in_basis(morphism(transpose(matrix(base_ring(C), size(mats[1])..., Mrref[k,:]))), mats_morphisms)
+        # Matrices were flattened column by column. Reconstruct the same
+        # rectangular shape instead of transposing source and target.
+        row_matrix = matrix(base_ring(C),
+            reshape(collect(Mrref[k,:])[:], size(mats[1])))
+        coeffs = express_in_basis(morphism(row_matrix), mats_morphisms)
         f = sum([m*bi for (m,bi) ∈ zip(coeffs, mors)])
         push!(base, f)
     end
