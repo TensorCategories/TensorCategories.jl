@@ -17,6 +17,15 @@ Z2 = center(V2)
     @test length(simples(Z)) == 4
     @test length(simples(Z2)) == 7
 
+    # Hom_Z(1,1⊕1) has dimension two, represented by 1×2 matrices. The
+    # adjunction basis reduction must preserve those endpoints (EGNO §9.2).
+    X = one(Z)
+    Y = X ⊕ X
+    H = Hom(X,Y)
+    @test int_dim(H) == 2
+    @test all(domain(f) == X && codomain(f) == Y && size(matrix(f)) == (1,2)
+              for f in basis(H))
+
 end
 
 # Splitting the C₃ centralizer representations separates its two-dimensional

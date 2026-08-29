@@ -765,9 +765,11 @@ function hom_by_adjunction(X::CentralizerObject, Y::CentralizerObject)
 
     M = zero_matrix(base_ring(C),0,*(size(matrix(zero_morphism(X,Y)))...))
 
-    mors = []
+    mors = CentralizerMorphism[]
 
-    @threads for i ∈ findall(==(true), candidates)
+    # Relative induction also uses shared caches; collect serially and
+    # deterministically.
+    for i ∈ findall(==(true), candidates)
         s, X_s, s_Y = S[i], X_Homs[i], Y_Homs[i]
         Is = relative_induction(s, Z.subcategory_simples, parent_category = Z)
 
@@ -776,7 +778,7 @@ function hom_by_adjunction(X::CentralizerObject, Y::CentralizerObject)
 
         # Take all combinations
         B3 = [h ∘ b for b ∈ B, h in B2][:]
-        mors = [mors; B3]
+        append!(mors, B3)
         # Build basis
     end
     
@@ -788,7 +790,9 @@ function hom_by_adjunction(X::CentralizerObject, Y::CentralizerObject)
     mats_morphisms = morphism.(mats)
 
     for k ∈ 1:rank(Mrref)
-        coeffs = express_in_basis(morphism(transpose(matrix(base_ring(C), size(mats[1])..., Mrref[k,:]))), mats_morphisms)
+        row_matrix = matrix(base_ring(C),
+            reshape(collect(Mrref[k,:])[:], size(mats[1])))
+        coeffs = express_in_basis(morphism(row_matrix), mats_morphisms)
         f = sum([m*bi for (m,bi) ∈ zip(coeffs, mors)])
         push!(base, f)
     end

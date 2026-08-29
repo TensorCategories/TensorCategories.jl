@@ -1235,7 +1235,9 @@ function hom_by_adjunction(X::CenterObject, Y::CenterObject)
 
     mors = CenterMorphism[]
 
-    @threads for i ∈ findall(==(true), candidates)
+    # Induction uses mutable caches, and appending to one shared vector is not
+    # thread safe. Accumulate deterministically.
+    for i ∈ findall(==(true), candidates)
         s, X_s, s_Y = S[i], X_Homs[i], Y_Homs[i]
         Is = induction(s, parent_category = Z)
         
@@ -1245,7 +1247,7 @@ function hom_by_adjunction(X::CenterObject, Y::CenterObject)
         # Take all combinations
         B3 = [h ∘ b for b ∈ B, h in B2][:]
         
-        mors = [mors; B3]
+        append!(mors, B3)
         # Build basis
     end
 
@@ -1289,7 +1291,10 @@ function hom_by_adjunction(X::CenterObject, Y::CenterObject)
     mats_morphisms = morphism.(mats)
 
     for k ∈ 1:rank(Mrref)
-        coeffs = express_in_basis(morphism(transpose(matrix(base_ring(C), size(mats[1])..., Mrref[k,:]))), mats_morphisms)
+        # Preserve the rectangular shape and column-major coordinate order.
+        row_matrix = matrix(base_ring(C),
+            reshape(collect(Mrref[k,:])[:], size(mats[1])))
+        coeffs = express_in_basis(morphism(row_matrix), mats_morphisms)
         f = sum([m*bi for (m,bi) ∈ zip(coeffs, mors)])
         push!(base, f)
     end

@@ -24,6 +24,15 @@ VecH = graded_vector_spaces(F,H,c)
     for s ∈ simps
         @test is_central(s)
     end
+
+    # The same rectangular-coordinate contract holds in a relative center;
+    # see Gelaki--Naidu--Nikshych (2009), Definition 2.1.
+    X = one(Z)
+    Y = X ⊕ X
+    HXY = Hom(X,Y)
+    @test int_dim(HXY) == 2
+    @test all(domain(f) == X && codomain(f) == Y && size(matrix(f)) == (1,2)
+              for f in basis(HXY))
 end
 
 
