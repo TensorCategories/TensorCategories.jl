@@ -513,4 +513,30 @@ end
     ok,f = is_isomorphic(X,Y)
     @test ok && inv(f) ∘ f == id(X) && f ∘ inv(f) == id(Y)
     @test !isdefined(Z,:simples)
+
+    family = split(X)
+    @test order(family.field) == 4 && family.extension_degree == 2
+    @test !isdefined(Z,:simples) && !isdefined(family.category,:simples)
+    @test length(only(family.decompositions)) == 2
+    @test all(is_central(S) && int_dim(End(S)) == 1
+              for (S,_) in only(family.decompositions))
+    fL = extension_of_scalars(id(X),family.field,family.category;
+                              embedding=family.embedding)
+    @test is_central(morphism(fL),domain(fL),codomain(fL))
+    @test fL == id(only(family.objects))
+
+    # Category-level extension intentionally enumerates all simples. The two
+    # nonsplit F4 endomorphism fields split, raising the rank from six to nine;
+    # a cached six-by-six fusion table therefore cannot be transported.
+    S = simples(Z;sort=false)
+    @test length(S) == 6
+    @test is_weak_multifusion(Z) && !is_multifusion(Z) && !is_fusion(Z)
+    @test size(multiplication_table(Z)) == (6,6,6)
+    D = extension_of_scalars(Z,GF(4))
+    @test length(simples(D)) == 9
+    @test is_multifusion(D) && is_fusion(D)
+    @test !has_attribute(D,:multiplication_table)
+    splitZ,_ = split(Z)
+    @test length(simples(splitZ)) == 9
+    @test all(int_dim(End(S)) == 1 for S in simples(splitZ))
 end
