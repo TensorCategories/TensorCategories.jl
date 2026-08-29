@@ -37,3 +37,27 @@
         @test pentagon_axiom(D) && hexagon_axiom(D)
     end
 end
+
+# Objects and morphisms carry coordinates relative to a particular skeletal
+# category. A joint round trip must therefore preserve the parent by identity,
+# as well as the endpoints and every matrix block of the linear map.
+@testset "Oscar serialization of SixJ objects and morphisms" begin
+    N = zeros(Int,2,2,2)
+    N[1,1,1] = N[1,2,2] = N[2,1,2] = N[2,2,1] = 1
+    C = six_j_category(QQ,N,["1","g"])
+    set_one!(C,1)
+    X = C[1] ⊕ C[1] ⊕ C[2]
+    f = morphism(X,X,[matrix(QQ,2,2,[1,2,3,4]),
+                      matrix(QQ,1,1,[5])])
+
+    mktempdir() do dir
+        file = joinpath(dir,"sixj-family.json")
+        Oscar.save(file,(C,X,f))
+        D,Y,g = Oscar.load(file)
+        @test parent(Y) === D
+        @test parent(domain(g)) === D && parent(codomain(g)) === D
+        @test Y.components == X.components
+        @test domain(g) == Y == codomain(g)
+        @test matrices(g) == matrices(f)
+    end
+end
