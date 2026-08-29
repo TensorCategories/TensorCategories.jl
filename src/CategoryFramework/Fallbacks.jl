@@ -254,18 +254,18 @@ function morphism_to_scalar(R::Ring, f::Morphism)
         m = matrix(f)
         b, k = is_scalar_multiple(m, matrix(id(domain(f))))
         if b 
-            return k
+            return R(k)
         end
     catch end
 
     B = basis(Hom(domain(f), codomain(f)))
     if length(B) == 0 
-        return 0
+        return zero(R)
     elseif length(B) == 1
         if domain(f) == codomain(f)
-            return express_in_basis(f,[id(domain(f))])[1]
+            return R(express_in_basis(f,[id(domain(f))])[1])
         else
-            return express_in_basis(f,B)[1]
+            return R(express_in_basis(f,B)[1])
         end
     end
 
@@ -277,10 +277,9 @@ function morphism_to_scalar(R::Ring, f::Morphism)
         end
         b,c = is_scalar_multiple(m, matrix(id(domain(f))))
         if b 
-            return c
+            return R(c)
         end
-    catch e
-        showerror(e)
+    catch
     end
     # m = collect(m)[m .!= 0]
     # if size(m) == (1,)
@@ -290,21 +289,15 @@ function morphism_to_scalar(R::Ring, f::Morphism)
 end
 
 function is_scalar_multiple(M::MatElem,N::MatElem)
-    n,m = size(M)
-    ind = findfirst(e -> M[e...] != 0 && M[e...] != 0, [(i,j) for i ∈ 1:n, j ∈ 1:m])
-    if ind === nothing return false, nothing end
-    i,j = Tuple(ind)
-    k = M[i,j] * inv(N[i,j])
-    for (a,b) ∈ zip(M,N)
-        if a == b == 0 
-            continue
-        elseif a == 0 || b == 0 
-            return false, nothing
-        elseif a * inv(b) != k
-            return false, nothing
-        end
+    size(M) == size(N) || return false,nothing
+    # Choose an entry of the denominator N. For M=E12 and N=I2, choosing
+    # the nonzero entry of M instead causes division by zero.
+    for i in 1:number_of_rows(N), j in 1:number_of_columns(N)
+        iszero(N[i,j]) && continue
+        k = M[i,j] * inv(N[i,j])
+        return M == k*N ? (true,k) : (false,nothing)
     end
-    return true,k
+    return iszero(M) ? (true,zero(base_ring(M))) : (false,nothing)
 end
 
 *(f::Morphism, x) = x*f
