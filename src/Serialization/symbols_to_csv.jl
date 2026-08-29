@@ -87,7 +87,7 @@ function _load_numeric_fusion_category(F::Dict, R, K; transpose=false,
     end
     C = six_j_category(K,N)
     set_associator!(C,transpose ? Oscar.transpose.(ass) : ass)
-    set_one!(C,u)
+    set_one!(C,u;check)
     if R !== nothing
         braid = dict_to_braiding(n,K,R)
         if check
