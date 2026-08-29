@@ -397,6 +397,7 @@ export pushout_product
 export QuantumZZRing
 export QuantumZZRingElem
 export QZZ
+export quotient_hom_dimension
 export R_symbols
 export radical
 export rand
@@ -476,6 +477,7 @@ export TensorPowerCategory
 export TensorPowerMorphism
 export TensorPowerObject
 export tmatrix 
+export trace_pairing
 export tr 
 export trivial_3_cocylce 
 export trivial_fusion_category

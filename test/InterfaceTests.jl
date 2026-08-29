@@ -420,6 +420,34 @@ end
     @test TensorCategories.randomized_pentagon_axiom(U,1)
 end
 
+# The negligible ideal is the radical of the opposite-Hom trace pairing;
+# see Etingof--Ostrik, arXiv:1801.04409v4, Definition 2.1. On a skeletal
+# biproduct, EGNO (2015), Proposition 4.7.3 gives the dimension-weighted block
+# trace used by the optimized implementation.
+@testset "Trace pairings and weighted skeletal traces" begin
+    F = GF(5)
+    C = six_j_category(F,ones(Int,1,1,1),["1"])
+    set_one!(C,[1])
+    X = one(C) ⊕ one(C) ⊕ one(C)
+    H = End(X)
+    @test all(tr(f) == TensorCategories.left_trace(f) for f in basis(H))
+    @test rank(trace_pairing(H,H)) == 9
+    @test quotient_hom_dimension(X) == 9
+    @test size(trace_pairing(zero(C),X)) == (0,0)
+    @test_throws ArgumentError trace_pairing(Hom(one(C),X),Hom(one(C),X))
+
+    N = zeros(Int,2,2,2)
+    N[1,1,1] = N[1,2,2] = N[2,1,2] = N[2,2,1] = 1
+    D = six_j_category(F,N,["1","g"])
+    set_one!(D,[1,0])
+    g = simples(D)[2]
+    Y = g ⊕ g ⊕ g
+    @test F(tr(id(Y))) == F(3)
+    set_pivotal!(D,F.([1,-1]))
+    @test tr(id(Y)) == TensorCategories.left_trace(id(Y))
+    @test F(tr(id(Y))) == F(-3)
+end
+
 @testset "Enclosure equality versus numerical overlap" begin
     K = ArbField(64)
     C = six_j_category(K,ones(Int,1,1,1))

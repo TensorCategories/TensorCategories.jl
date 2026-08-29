@@ -725,8 +725,17 @@ function +(f::SixJMorphism, g::SixJMorphism)
 end
 
 function tr(f::SixJMorphism)
-    # Make use of the fact that the trace is invariant under basis transformation.
-    return sum([left_trace(f[i]) for i ∈ 1:parent(f).rank])
+    domain(f) == codomain(f) ||
+        throw(ArgumentError("trace requires an endomorphism"))
+    C = parent(f)
+    result = zero_morphism(one(C),one(C))
+    # On the isotypic block S_i^n, the pivotal trace is the ordinary matrix
+    # trace times dim(S_i); see EGNO, Definition 4.7.1 and Proposition 4.7.3.
+    for (S,M) in zip(simples(C),matrices(f))
+        t = tr(M)
+        iszero(t) || (result += t*left_trace(id(S)))
+    end
+    result
 end
 
 """
