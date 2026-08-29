@@ -28,6 +28,7 @@ end
 end
 
 include("InterfaceTests.jl")
+include("TensorPowerTests.jl")
 include("SerializationTests/OscarSerializationTests.jl")
 include("LiteratureTests.jl")
 
