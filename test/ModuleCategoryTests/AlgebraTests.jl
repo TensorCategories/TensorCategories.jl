@@ -21,10 +21,10 @@ I = ising_category()
 # S. Gelaki, D. Nikshych, and V. Ostrik, Tensor Categories, AMS (2015),
 # Section 7.8, especially Definition 7.8.29.
 @testset "Algebras in Ising" begin 
-    algs = algebra_structures(I[1,2])
+    algs = algebra_structures(I[1,2];check=true)
     @test all(is_algebra.(algs))
 
-    algs2 = algebra_structures(I[1,3])
+    algs2 = algebra_structures(I[1,3];check=true)
     @test all(is_algebra.(algs2))
     @test !any(is_separable.(algs2))
 end

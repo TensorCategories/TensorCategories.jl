@@ -7,22 +7,33 @@
     algebra_structures(X::Object)
     algebra_structures(X::Object, unit::Morphism)
 
-Return a set of algebra objects over ``X``. An empty array is returned only if there are no algebra structures. If the algebr is not connected, i.e. ``Hom(𝟙,X) ≠ k``, then a unit should be provided.
+Return algebra-object candidates over ``X``. Gauge restrictions and sampling
+of positive-dimensional solution sets mean that this is not a complete
+classification, and empty output does not prove nonexistence. If the algebra
+is not connected, i.e. ``Hom(𝟙,X) ≠ k``, provide a unit. Pass
+`check=true` to re-evaluate associativity and the unit identities on the
+returned candidates; solved equations are trusted by default.
 """
-function algebra_structures(X::Object, unit = sum(basis(Hom(one(parent(X)), X))); show_dimension = false)
-    _algebra_structures(_algebra_structure_ideal, X, unit, show_dimension = show_dimension)
+function algebra_structures(X::Object,
+        unit=sum(basis(Hom(one(parent(X)),X)));
+        check::Bool=false,show_dimension=false)
+    _algebra_structures(_algebra_structure_ideal,X,unit;check,show_dimension)
 end
 
-function algebra_extensions(A::AlgebraObject, X::BiModuleObject)
+function algebra_extensions(A::AlgebraObject,X::BiModuleObject;
+        check::Bool=false)
     AX, (inclusion,), (projection,) = direct_sum(object(A),object(X))
 
     u = inclusion ∘ unit(A)
 
-    _algebra_structures(_algebra_structure_ideal, AX, u, subalgebra = A, extension = X, inclusion = inclusion, projection = projection, show_dimension = true)
+    _algebra_structures(_algebra_structure_ideal,AX,u;
+        subalgebra=A,extension=X,inclusion,projection,
+        show_dimension=true,check)
 end
 
-function separable_algebra_extensions(A::AlgebraObject, X::BiModuleObject)
-    [A for A ∈ algebra_extensions(A,X) if is_separable(A)]
+function separable_algebra_extensions(A::AlgebraObject,X::BiModuleObject;
+        check::Bool=false)
+    [B for B in algebra_extensions(A,X;check) if is_separable(B)]
 end
 
 @doc raw""" 
@@ -30,10 +41,15 @@ end
     separable_algebra_structures(X::Object)
     separable_algebra_structures(X::Object, unit::Morphism)
 
-Return a set of separable algebra objects over ``X``. An empty array is returned only if there are no algebra structures. If the algebr is not connected, i.e. ``Hom(𝟙,X) ≠ k``, then a unit should be provided.
+Return the separable candidates found by `algebra_structures`. This search is
+not a complete classification. Pass `check=true` to recheck the algebra
+identities before testing separability.
 """
-function separable_algebra_structures(X::Object, unit = Hom(one(parent(X)), X)[1]; show_dimension = false)
-    [A for A ∈ algebra_structures(X, unit, show_dimension = show_dimension) if is_separable(A)]
+function separable_algebra_structures(X::Object,
+        unit=Hom(one(parent(X)),X)[1];
+        check::Bool=false,show_dimension=false)
+    [A for A in algebra_structures(X,unit;show_dimension,check)
+       if is_separable(A)]
 
     # _algebra_structures(_separable_algebra_structure_ideal, X, unit, show_dimension = show_dimension)
 end
@@ -43,11 +59,16 @@ end
     commutative_algebra_structures(X::Object)
     commutative_algebra_structures(X::Object, unit::Morphism)
 
-Return a set of commutative algebra objects over ``X``. An empty array is returned only if there are no algebra structures. If the algebra is not connected, i.e. ``Hom(𝟙,X) ≠ k``, then a unit should be provided.
+Return the commutative algebra-object candidates found by the polynomial
+search. This is not a complete classification. Pass `check=true` to recheck
+the algebra identities on the returned candidates.
 """
-function commutative_algebra_structures(X::Object, unit = Hom(one(parent(X)), X)[1]; show_dimension = false)
+function commutative_algebra_structures(X::Object,
+        unit=Hom(one(parent(X)),X)[1];
+        check::Bool=false,show_dimension=false)
 
-    _algebra_structures(_commutative_algebra_structure_ideal, X, unit, show_dimension = show_dimension)
+    _algebra_structures(_commutative_algebra_structure_ideal,X,unit;
+                        show_dimension,check)
 end 
 
 @doc raw""" 
@@ -55,13 +76,20 @@ end
     etale_algebra_structures(X::Object)
     etale_algebra_structures(X::Object, unit::Morphism)
 
-Return a set of separable algebra objects over ``X``. An empty array is returned only if there are no algebra structures. If the algebr is not connected, i.e. ``Hom(𝟙,X) ≠ k``, then a unit should be provided.
+Return the separable commutative candidates found by
+`commutative_algebra_structures`. This is not a complete classification.
 """
-function etale_algebra_structures(X::Object, unit = Hom(one(parent(X)), X)[1]; show_dimension = false)
-    [A for A ∈ commutative_algebra_structures(X, unit, show_dimension = show_dimension) if is_separable(A)]
+function etale_algebra_structures(X::Object,
+        unit=Hom(one(parent(X)),X)[1];
+        check::Bool=false,show_dimension=false)
+    [A for A in commutative_algebra_structures(
+        X,unit;show_dimension,check) if is_separable(A)]
 end
 
-function _algebra_structures(structure_ideal::Function, X::Object, _unit = Hom(one(parent(X)), X)[1]; show_dimension = false, subalgebra = nothing, extension = nothing, inclusion = nothing, projection = nothing)
+function _algebra_structures(structure_ideal::Function,X::Object,
+        _unit=Hom(one(parent(X)),X)[1];check::Bool=false,
+        show_dimension=false,subalgebra=nothing,extension=nothing,
+        inclusion=nothing,projection=nothing)
 
     mult_base = basis(Hom(X⊗X, X))
 
@@ -178,7 +206,10 @@ function _algebra_structures(structure_ideal::Function, X::Object, _unit = Hom(o
 
     ms = [sum(s .* mult_base) for s ∈ sols]
 
-    [AlgebraObject(parent(X), X, m, _unit) for m ∈ ms]
+    candidates = [AlgebraObject(parent(X),X,m,_unit) for m in ms]
+    check && !all(is_algebra,candidates) &&
+        error("the polynomial solver returned an invalid algebra structure")
+    candidates
 end
 
 function fix_unit(base::Vector{<:Morphism}, unit::Morphism)
