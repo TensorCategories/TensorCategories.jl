@@ -295,6 +295,8 @@ export is_subobject
 export is_tensor 
 export is_tensor_action
 export is_unitary
+export is_weak_fusion
+export is_weak_multifusion
 export is_zero
 export isequivariant 
 export isgraded 

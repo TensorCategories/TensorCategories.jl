@@ -6,3 +6,4 @@ using Oscar, Test
 # without invoking center computations or database-based integration tests.
 include("VectorSpacesTest/VSTest.jl")
 include("SixJCategoryTests/RingCatTests.jl")
+include("InterfaceTests.jl")
