@@ -5,7 +5,6 @@
 const database_path = joinpath(@__DIR__,"src/SixJCategoryDatabase/")
 
 function save_object(s::SerializerState, C::SixJCategory)
-    _materialize_sixj_symbols!(C)
     save_data_dict(s) do 
 
         save_typed_object(s, base_ring(C), :base_ring)
@@ -28,8 +27,8 @@ function save_object(s::SerializerState, C::SixJCategory)
 
         #save_typed_object(s, Dict(Tuple(k) => v for (k,v) ∈ F_symbols(C)), :F_symbols)
         save_data_array(s, :ass) do 
-            for m ∈ C.ass[:]
-                save_object(s, m)
+            for I in CartesianIndices(C.ass)
+                save_object(s, six_j_symbol(C,Tuple(I)...))
             end
         end
 
@@ -54,8 +53,8 @@ function save_object(s::SerializerState, C::SixJCategory)
 
         if is_braided(C)
             save_data_array(s, :braiding) do 
-                for m ∈ C.braiding[:]
-                    save_object(s, m)
+                for I in CartesianIndices(C.braiding)
+                    save_object(s, r_symbol(C,Tuple(I)...))
                 end
             end
         end

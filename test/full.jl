@@ -28,6 +28,7 @@ end
 end
 
 include("InterfaceTests.jl")
+include("SerializationTests/OscarSerializationTests.jl")
 include("LiteratureTests.jl")
 
 @testset "Test Module Categories" begin

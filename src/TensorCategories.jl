@@ -547,6 +547,12 @@ function _version_string()
 end
 
 function __init__() 
+    # Registration mutates Oscar's runtime registry, so the top-level macro's
+    # side effect is not restored when this package is loaded from a cache.
+    if !haskey(Oscar.Serialization.reverse_type_map,"SixJCategory")
+        Oscar.Serialization.register_serialization_type(
+            SixJCategory,"SixJCategory",false)
+    end
     if displaysize(stdout)[2] >= 96
         println(styled"""
       {bright_yellow:X} {bright_yellow:X}        
@@ -672,7 +678,7 @@ include("Serialization/symbols_to_csv.jl")
 include("AnyonWiki/AnyonWiki.jl")
 
 
-@register_serialization_type SixJCategory "SixJCategory"
+@register_serialization_type SixJCategory "SixJCategory" uses_id
 
 # @register_serialization_type SixJMorphism
 # @register_serialization_type SixJObject
