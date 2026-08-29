@@ -42,7 +42,7 @@ end
     # Scaling the sigma component by two preserves equality of left and right
     # dimensions but violates monoidality of the pivotal structure.
     old = copy(I.pivotal)
-    @test_throws ArgumentError set_spherical!(I,L.([1,1,2]))
+    @test_throws ArgumentError set_spherical!(I,L.([1,1,2]);check=true)
     @test I.pivotal == old && is_spherical(I)
     set_pivotal!(I,L.([1,1,-1]))
     fresh = matrix(L,[L(tr(braiding(A,B) ∘ braiding(B,A)))
@@ -178,7 +178,7 @@ end
                 delete!(incomplete,[1,1,1,1,2,2])
                 bad = joinpath(dir,"incomplete.csv")
                 numeric_symbols_to_csv(bad,incomplete)
-                @test_throws ArgumentError load_numeric_fusion_category(bad,K)
+                @test_throws ArgumentError load_numeric_fusion_category(bad,K;check=true)
             end
         end
     end
@@ -198,7 +198,7 @@ end
             # If X^2=1+X, a tensor automorphism component a must satisfy both
             # a^2=1 and a^2=a, hence a=1. Yang--Lee cannot be normalized to
             # the positive Fibonacci dimension character.
-            @test_throws ArgumentError set_canonical_spherical!(C)
+            @test_throws ArgumentError set_canonical_spherical!(C;check=true)
             @test C.pivotal == old
             @test is_pivotal(C) && dim(C[2]) == d
 
@@ -214,7 +214,7 @@ end
                 @test overlaps(dim(D[2]),AcbField(64)(d))
             end
         else
-            set_canonical_spherical!(C)
+            set_canonical_spherical!(C;check=true)
             @test is_spherical(C) && dim(C[2]) == d
         end
     end
@@ -222,7 +222,7 @@ end
     # Ball overlap is numerical evidence, not an exact certificate.
     A = ising_category(AcbField(64))
     old = copy(A.pivotal)
-    @test_throws ArgumentError set_canonical_spherical!(A)
+    @test_throws ArgumentError set_canonical_spherical!(A;check=true)
     @test A.pivotal == old
 
     # Over Q(sqrt(2)), positivity is relative to a chosen embedding.
@@ -231,10 +231,10 @@ end
     B = ising_category(L,r)
     set_pivotal!(B,L.([1,1,-1]))
     old = copy(B.pivotal)
-    @test_throws ArgumentError set_canonical_spherical!(B)
+    @test_throws ArgumentError set_canonical_spherical!(B;check=true)
     @test B.pivotal == old
     embedding = complex_embedding(L,sqrt(AcbField(128)(2)))
-    set_canonical_spherical!(B;embedding=embedding)
+    set_canonical_spherical!(B;embedding=embedding,check=true)
     @test is_spherical(B) && dim(B[3]) == r
 end
 

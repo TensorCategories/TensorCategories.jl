@@ -141,10 +141,12 @@ left_dual(X::Object) = dual(X)
 # A chosen LEFT dual is not automatically a chosen right dual. A pivotal
 # isomorphism transports the left duality of X* to a right duality of X.
 # EGNO §2.10 and §4.7. Backends without such data must supply right_dual.
-function right_dual(X::Object)
-    j = pivotal(X)
-    domain(j) == X && codomain(j) == dual(dual(X)) && is_invertible(j) ||
-        throw(ArgumentError("right duality requires a pivotal isomorphism or a category-specific implementation"))
+function right_dual(X::Object; check::Bool=false)
+    if check
+        j = pivotal(X)
+        domain(j) == X && codomain(j) == dual(dual(X)) && is_invertible(j) ||
+            throw(ArgumentError("right duality requires a pivotal isomorphism or a category-specific implementation"))
+    end
     dual(X)
 end
 right_ev(X::Object) = ev(dual(X)) ∘ (pivotal(X) ⊗ id(dual(X)))
@@ -513,7 +515,10 @@ end
 # Fusion Categories
 #-------------------------------------------------------
 
-function fusion_coefficient(X::Object, Y::Object, Z::Object, check = true)
+fusion_coefficient(X::Object,Y::Object,Z::Object;check::Bool=false) =
+    fusion_coefficient(X,Y,Z,check)
+
+function fusion_coefficient(X::Object, Y::Object, Z::Object, check::Bool)
     check && @assert is_simple(X) && is_simple(Y) && is_simple(Z)
     return div(int_dim(Hom(X ⊗ Y, Z)), int_dim(End(Z)))
 end

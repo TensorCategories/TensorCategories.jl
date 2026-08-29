@@ -41,11 +41,11 @@ end
 # labels, including zero matrix entries. Unlike a unit slice, this is invariant
 # under relabeling. EGNO §§4.6,4.9: the two bases of Hom((ab)c,d) are indexed
 # by intermediate simples and bases in their binary multiplicity spaces.
-function _fusion_rules_from_symbol_dictionary(F::Dict)
+function _fusion_rules_from_symbol_dictionary(F::Dict; check::Bool=false)
     isempty(F) && throw(ArgumentError("an F-symbol dictionary must be nonempty"))
     width = length(first(keys(F)))
     width in (6,10) || throw(ArgumentError("F-symbol labels must have length 6 or 10"))
-    all(k -> length(k) == width && all(>(0),k),keys(F)) ||
+    !check || all(k -> length(k) == width && all(>(0),k),keys(F)) ||
         throw(ArgumentError("inconsistent or nonpositive F-symbol indices"))
     n = maximum(maximum(k[1:4]) for k in keys(F))
     N = zeros(Int,n,n,n)
@@ -53,7 +53,7 @@ function _fusion_rules_from_symbol_dictionary(F::Dict)
     for key in keys(F)
         a,b,c,d = key[1:4]
         labels = (a,b,c,d)
-        counts[labels] = get(counts,labels,0)+1
+        check && (counts[labels] = get(counts,labels,0)+1)
         f,e = key[5],key[width == 6 ? 6 : 8]
         max(e,f) <= n || throw(ArgumentError("fusion-channel label outside the object range"))
         # Ten-index convention: [a,b,c,d,f,j2,i2,e,j,i].
@@ -65,8 +65,9 @@ function _fusion_rules_from_symbol_dictionary(F::Dict)
     N,counts
 end
 
-function _load_numeric_fusion_category(F::Dict, R, K; transpose=false, unit=nothing, pivotal=nothing)
-    N,counts = _fusion_rules_from_symbol_dictionary(F)
+function _load_numeric_fusion_category(F::Dict, R, K; transpose=false,
+        unit=nothing, pivotal=nothing, check::Bool=false)
+    N,counts = _fusion_rules_from_symbol_dictionary(F;check)
     n = size(N,1)
     identity = [Int(i == j) for i in 1:n,j in 1:n]
     units = [u for u in 1:n if N[u,:,:] == identity && N[:,u,:] == identity]
@@ -74,26 +75,26 @@ function _load_numeric_fusion_category(F::Dict, R, K; transpose=false, unit=noth
     u = only(units)
     unit === nothing || unit == u || throw(ArgumentError("specified unit disagrees with the fusion paths"))
     ass = dict_to_associator(n,K,F)
-    for a in 1:n,b in 1:n,c in 1:n,d in 1:n
-        rows = sum(N[a,b,e]*N[e,c,d] for e in 1:n)
-        cols = sum(N[b,c,f]*N[a,f,d] for f in 1:n)
-        # All dictionary indices are admissible by construction of N.
-        # Their cardinality must equal the full Cartesian product of the
-        # channel bases; this detects omitted zero entries/entire blocks
-        # without enumerating six nested simple-label loops.
-        get(counts,(a,b,c,d),0) == rows*cols ||
-            throw(ArgumentError("incomplete F-symbol dictionary (including zero entries)"))
-        rows == cols && size(ass[a,b,c,d]) == (rows,cols) ||
-            throw(ArgumentError("F-symbol dimensions do not match the reconstructed fusion rules"))
+    if check
+        for a in 1:n,b in 1:n,c in 1:n,d in 1:n
+            rows = sum(N[a,b,e]*N[e,c,d] for e in 1:n)
+            cols = sum(N[b,c,f]*N[a,f,d] for f in 1:n)
+            get(counts,(a,b,c,d),0) == rows*cols ||
+                throw(ArgumentError("incomplete F-symbol dictionary (including zero entries)"))
+            rows == cols && size(ass[a,b,c,d]) == (rows,cols) ||
+                throw(ArgumentError("F-symbol dimensions do not match the reconstructed fusion rules"))
+        end
     end
     C = six_j_category(K,N)
     set_associator!(C,transpose ? Oscar.transpose.(ass) : ass)
     set_one!(C,u)
     if R !== nothing
         braid = dict_to_braiding(n,K,R)
-        for i in 1:n,j in 1:n,k in 1:n
-            size(braid[i,j,k]) == (N[i,j,k],N[j,i,k]) ||
-                throw(ArgumentError("R-symbol dimensions disagree with the fusion rules"))
+        if check
+            for i in 1:n,j in 1:n,k in 1:n
+                size(braid[i,j,k]) == (N[i,j,k],N[j,i,k]) ||
+                    throw(ArgumentError("R-symbol dimensions disagree with the fusion rules"))
+            end
         end
         set_braiding!(C,transpose ? Oscar.transpose.(braid) : braid)
     end
@@ -113,22 +114,25 @@ end
     load_numeric_fusion_category(F::String, R::String, [K::AcbField]; kwargs...)
 
 Load complete F (and optional R) dictionaries, preserving their simple labels.
-Fusion paths determine the unit; `unit` optionally checks its index. All zero
-entries in nonempty F blocks must be present. F/R data do not specify pivotal
+Fusion paths determine the unit; `unit` optionally checks its index. F/R data do not specify pivotal
 maps: supply `pivotal` explicitly, or retain the constructor's unchecked all-one
 components. No canonical spherical structure or exact coherence is asserted.
+Pass `check=true` to validate completeness (including stored zero entries) and
+structural block dimensions; supplied dictionaries are trusted by default.
 """
 function load_numeric_fusion_category(F::String, K::AcbField=AcbField(64);
-        delimiter=", ", transpose=false, unit=nothing, pivotal=nothing)
+        delimiter=", ", transpose=false, unit=nothing, pivotal=nothing,
+        check::Bool=false)
     data = numeric_symbols_from_csv(F,K;delimiter=delimiter)
-    _load_numeric_fusion_category(data,nothing,K;transpose=transpose,unit=unit,pivotal=pivotal)
+    _load_numeric_fusion_category(data,nothing,K;transpose,unit,pivotal,check)
 end
 
 function load_numeric_fusion_category(F::String, R::String, K::AcbField=AcbField(64);
-        delimiter=", ", transpose=false, unit=nothing, pivotal=nothing)
+        delimiter=", ", transpose=false, unit=nothing, pivotal=nothing,
+        check::Bool=false)
     data = numeric_symbols_from_csv(F,K;delimiter=delimiter)
     braid = numeric_symbols_from_csv(R,K;delimiter=delimiter)
-    _load_numeric_fusion_category(data,braid,K;transpose=transpose,unit=unit,pivotal=pivotal)
+    _load_numeric_fusion_category(data,braid,K;transpose,unit,pivotal,check)
 end
 
 # Preserve the previous positional delimiter/transpose overloads.

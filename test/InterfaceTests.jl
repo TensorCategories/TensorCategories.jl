@@ -402,7 +402,7 @@ end
     U = six_j_category(QQ,ones(Int,1,1,1))
     set_one!(U,1)
     @test_throws ArgumentError set_associator!(U,1,1,1,1,
-                                                matrix(QQ,1,1,[2]))
+                                                matrix(QQ,1,1,[2]);check=true)
     @test pentagon_axiom(U)
     @test TensorCategories.randomized_pentagon_axiom(U,1)
 end
