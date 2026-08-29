@@ -23,6 +23,7 @@ end
 
 @testset "Test generic structures" begin
     include("SixJCategoryTests/RingCatTests.jl")
+    include("NaturalityTests.jl")
 end
 
 include("InterfaceTests.jl")
