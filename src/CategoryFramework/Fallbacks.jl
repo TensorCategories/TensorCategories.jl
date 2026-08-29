@@ -69,7 +69,8 @@ function product(X::Object...)
 end
 
 function ∐(X::T,Y::T) where {T <: Object}
-    return coproduct(T[1],X)[1]
+    # Dispatch on the two objects. `T` is their type and cannot be indexed.
+    return coproduct(X,Y)[1]
 end
 
 function ∐(T::Tuple{S,Vector{R}},X::S1) where {S <: Object,S1 <: Object, R <: Morphism}
@@ -91,22 +92,22 @@ end
 """
     ×(X::Object...)
 
-Return the product Object and an array containing the projection morphisms.
+Return the product object. Use `product` to also obtain its projections.
 """
 ×(X::Object...) = product(X...)[1]
 
 """
     ∐(X::Object...)
 
-Return the coproduct Object and an array containing the injection morphisms.
+Return the coproduct object. Use `coproduct` to also obtain its injections.
 """
 ∐(X::Object...) = coproduct(X...)[1]
 
 """
     ⊕(X::Object...)
 
-Return the direct sum Object and arrays containing the injection and projection
-morphisms.
+Return the direct sum object. Use `direct_sum` to also obtain its injections
+and projections.
 """
 
 ⊕(X::Vector{<:Object}) = direct_sum(X...)[1]
@@ -326,4 +327,3 @@ function matrix(f::Morphism)
         error("matrix(::$(typeof(f))) not implemented")
     end
 end
-
