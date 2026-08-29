@@ -549,9 +549,12 @@ end
 function __init__() 
     # Registration mutates Oscar's runtime registry, so the top-level macro's
     # side effect is not restored when this package is loaded from a cache.
-    if !haskey(Oscar.Serialization.reverse_type_map,"SixJCategory")
-        Oscar.Serialization.register_serialization_type(
-            SixJCategory,"SixJCategory",false)
+    for (T,name) in ((SixJCategory,"SixJCategory"),
+                     (SixJObject,"SixJObject"),
+                     (SixJMorphism,"SixJMorphism"))
+        if !haskey(Oscar.Serialization.reverse_type_map,name)
+            Oscar.Serialization.register_serialization_type(T,name,false)
+        end
     end
     if displaysize(stdout)[2] >= 96
         println(styled"""
@@ -679,9 +682,8 @@ include("AnyonWiki/AnyonWiki.jl")
 
 
 @register_serialization_type SixJCategory "SixJCategory" uses_id
-
-# @register_serialization_type SixJMorphism
-# @register_serialization_type SixJObject
+@register_serialization_type SixJObject "SixJObject"
+@register_serialization_type SixJMorphism "SixJMorphism"
 # @register_serialization_type CenterCategory
 
 

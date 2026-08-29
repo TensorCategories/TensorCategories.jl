@@ -139,7 +139,8 @@ end
     Serialize SixJMorphism 
 ----------------------------------------------------------=#
 
-type_params(X::SixJObject) = TypeParams(X.parent, parent(X))
+Oscar.Serialization.type_and_params(X::SixJObject) =
+    Oscar.Serialization.TypeAndParams(SixJObject,parent(X))
 
 function save_object(s::SerializerState, X::SixJObject)
     save_data_dict(s) do 
@@ -147,22 +148,32 @@ function save_object(s::SerializerState, X::SixJObject)
     end
 end
 
-function load_object(s::DeserializerState, ::Type{SixJObject},params::SixJCategory)
-    components = load_object(s, Vector{Int64}, :components)
-    return SixJObject(parent, components)
+function load_object(s::DeserializerState, ::Type{SixJObject},C::SixJCategory)
+    components = load_object(s, Vector{Int}, :components)
+    return SixJObject(C,components)
 end
 
-function save_object(s::SerializerState, m::SixJMorphism)
+Oscar.Serialization.type_and_params(f::SixJMorphism) =
+    Oscar.Serialization.TypeAndParams(SixJMorphism,parent(domain(f)))
+
+function save_object(s::SerializerState, f::SixJMorphism)
     save_data_dict(s) do 
-        save_object(s, m.domain, :domain)
-        save_object(s, m.codomain, :codomain)
-        save_object(s, m.m, :mats)
+        save_object(s, domain(f).components, :domain_components)
+        save_object(s, codomain(f).components, :codomain_components)
+        save_data_array(s, :mats) do
+            for M in matrices(f)
+                save_object(s,M)
+            end
+        end
     end
 end
 
-function load_object(s::DeserializerState, ::Type{SixJMorphism}, parent::SixJCategory)
-    domain = load_object(s, SixJobject, :domain, parent)
-    codomain = load_object(s, SixJObject, :codomain, parent)
-    m = load_object(s, Array{MatElem}, :mats)
-    return SixJMorphism(domain, codomain, m)
+function load_object(s::DeserializerState, ::Type{SixJMorphism},C::SixJCategory)
+    X = SixJObject(C,load_object(s,Vector{Int},:domain_components))
+    Y = SixJObject(C,load_object(s,Vector{Int},:codomain_components))
+    mats = load_array_node(s,:mats) do (i,n)
+        M = load_object(s,Matrix{elem_type(base_ring(C))},base_ring(C))
+        matrix(base_ring(C),size(M)...,M)
+    end
+    return morphism(X,Y,mats)
 end
