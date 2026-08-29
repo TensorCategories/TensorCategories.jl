@@ -34,6 +34,22 @@ representation tests disabled for a GAP MeatAxe regression in Oscar 1.8.0 are
 enabled again after verification with Oscar 1.8.1. Other tests whose includes
 were already commented out remain dormant.
 
+## Mathematical literature checks
+
+`LiteratureTests.jl` belongs to the full suite. It checks exact examples and
+independent consequences rather than treating agreement with an older package
+version as evidence. The center benchmarks derive fusion multiplicities from
+central Hom spaces, compare quantum doubles with group-character formulas, and
+check modular identities for full matrices. Numerical ball tests are marked as
+compatibility checks, not exact certificates.
+
+Principal sources are EGNO, *Tensor Categories* (AMS, 2015); Rowell--Stong--
+Wang, [arXiv:0712.1377v4](https://arxiv.org/pdf/0712.1377v4); Müger,
+[arXiv:math/0111205v1](https://arxiv.org/pdf/math/0111205v1), Theorem 1.2;
+Gelaki--Naidu--Nikshych, *Algebra & Number Theory* 3 (2009), Section 4A;
+Etingof--Ostrik, [arXiv:1801.04409v4](https://arxiv.org/pdf/1801.04409v4);
+and Krause, [arXiv:1410.2822v1](https://arxiv.org/pdf/1410.2822v1).
+
 ## GitHub Actions
 
 Push and pull-request runs select **quick** on the existing Julia 1.11/1.12 and

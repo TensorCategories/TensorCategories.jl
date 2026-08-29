@@ -540,3 +540,348 @@ end
     @test length(simples(splitZ)) == 9
     @test all(int_dim(End(S)) == 1 for S in simples(splitZ))
 end
+# Cross-backend literature benchmarks, included by the full suite only.
+# Direct central Hom calculations are independent of the optimized
+# S-matrix/Verlinde multiplication-table implementation.
+# RSW, On classification of modular tensor categories, arXiv:0712.1377v4,
+# §5.3.1: s²=1, F(s,s,s;s)=-1, R(s,s;1)=i, d(s)=1, theta(s)=i.
+function semion_fixture(K, imaginary_unit)
+    N=zeros(Int,2,2,2)
+    N[1,1,1]=N[1,2,2]=N[2,1,2]=N[2,2,1]=1
+    C=six_j_category(K,N,["1","s"])
+    set_one!(C,1); set_name!(C,"Semion literature fixture")
+    set_associator!(C,2,2,2,2,matrix(K,1,1,[-1]))
+    set_braiding!(C,[N[i,j,k]==0 ? zero_matrix(K,0,0) :
+        matrix(K,1,1,[i==j==2 ? imaginary_unit : K(1)]) for i=1:2,j=1:2,k=1:2])
+    # The skeletal duality convention uses ev_s=-1. Thus j_s=-1 gives d_s=1.
+    set_pivotal!(C,K.([1,-1]))
+    C
+end
+
+# RSW §5.3.8. Label order (1,e,m,epsilon), with e=(1,0), m=(0,1).
+# The bicharacter R((a,b),(c,d))=(-1)^(bc) has q(a,b)=(-1)^(ab).
+function toric_fixture(K=QQ)
+    labels=[(0,0),(1,0),(0,1),(1,1)]
+    N=zeros(Int,4,4,4)
+    for i=1:4,j=1:4
+        a,b=labels[i]; c,d=labels[j]
+        k=findfirst(==((mod(a+c,2),mod(b+d,2))),labels)
+        N[i,j,k]=1
+    end
+    C=six_j_category(K,N,["1","e","m","epsilon"])
+    set_one!(C,1); set_name!(C,"Toric-code literature fixture")
+    set_braiding!(C,[N[i,j,k]==0 ? zero_matrix(K,0,0) :
+        matrix(K,1,1,[(-1)^(labels[i][2]*labels[j][1])]) for i=1:4,j=1:4,k=1:4])
+    C
+end
+
+# EGNO, Tensor Categories (2015), §§8.13–8.16:
+# https://math.mit.edu/~etingof/egnobookfinal.pdf.
+# These are consequences of modularity, checked independently of the
+# implementation's is_modular predicate. S is UNNORMALIZED positive monodromy.
+function modular_checks(C)
+    K=base_ring(C); objects=simples(C); n=length(objects)
+    d=dim.(objects); theta=[K(twist(s)) for s in objects]
+    S=smatrix(C); T=tmatrix(C)
+    N = if C isa CenterCategory
+        # Independent route: the center's default multiplication_table itself
+        # uses Verlinde. Count actual central intertwiners instead, so that
+        # comparison with the S-matrix formula below is not circular.
+        products=[s⊗t for s in objects,t in objects]
+        direct=[int_dim(Hom(products[i,j],objects[k])) for i=1:n,j=1:n,k=1:n]
+        # These examples are split, hence Hom dimensions ARE multiplicities
+        # (Schur's lemma, EGNO §1.5). Compare the optimized implementation too.
+        @test multiplication_table(C)==direct
+        direct
+    else
+        multiplication_table(C)
+    end
+    D=sum(d.^2); u=findfirst(s->is_isomorphic(s,one(C))[1],objects)
+    conjugation=matrix(K,[Int(is_isomorphic(dual(s),t)[1]) for s in objects,t in objects])
+    # EGNO Prop. 8.13.8: balancing computes S from fusion, twists, dimensions.
+    @test S == matrix(K,[sum(N[i,j,k]*theta[k]*d[k] for k=1:n)/(theta[i]*theta[j]) for i=1:n,j=1:n])
+    # EGNO Remark 8.13.3 and Prop. 8.14.2: symmetry, unit row and charge conjugation.
+    @test S == transpose(S) && [S[u,i] for i=1:n] == d
+    @test S^2 == D*conjugation
+    # EGNO Prop. 8.15.4: the two Gauss sums multiply to global dimension.
+    tauplus=sum(theta.*d.^2); tauminus=sum(inv.(theta).*d.^2)
+    @test tauplus*tauminus == D
+    # EGNO Thm. 8.16.1 uses T_EGNO=diag(theta^-1), unlike this package's T.
+    @test T == diagonal_matrix(theta)
+    @test (S*inv(T))^3 == tauminus*S^2
+    # EGNO §8.14: the Verlinde formula must recover EVERY integer coefficient.
+    Sinv=inv(S)
+    @test all(sum(S[i,l]*S[j,l]*Sinv[l,k]/S[u,l] for l=1:n)==N[i,j,k] for i=1:n,j=1:n,k=1:n)
+end
+
+# EGNO, Proposition 9.2.2 (p. 278), for the forgetful functor
+# F: Z(C) -> C and its right adjoint I:
+#     F I(Y) = direct_sum_X X tensor Y tensor X^*.
+# In a split fusion category, if B[a,i] = [F(Z_a):X_i], adjunction and
+# semisimplicity give B'B[i,j] = [F I(X_j):X_i].  The right-adjunction
+# routine is checked below as an actual linear isomorphism of Hom spaces,
+# not just by comparing their dimensions.
+function center_induction_checks(C,Z; check_maps=false)
+    X,Zs=simples(C),simples(Z)
+    @test is_split_semisimple(C) && all(int_dim(End(z))==1 for z in Zs)
+    B=[int_dim(Hom(X[i],object(Zs[a]))) for a=eachindex(Zs),i=eachindex(X)]
+    gram=transpose(B)*B
+    # Compute (9.4) directly from tensor products, without calling the
+    # package's induction_restriction implementation being tested.
+    expected=[sum(int_dim(Hom(X[i],s⊗X[j]⊗dual(s))) for s in X)
+        for i=eachindex(X),j=eachindex(X)]
+    @test gram==expected
+    check_maps || return
+    for x in X, z in Zs
+        H=Hom(object(z),x)
+        isempty(basis(H)) && continue
+        Ix=induction(x;parent_category=Z)
+        image=induction_right_adjunction(H,z,Ix)
+        ambient=Hom(z,Ix)
+        @test int_dim(image)==int_dim(H)==int_dim(ambient)
+        # Expressing the constructed maps in the independently computed
+        # central Hom basis checks both centrality and surjectivity.
+        coordinates=[express_in_basis(f,basis(ambient)) for f in basis(image)]
+        A=matrix(base_ring(C),length(coordinates),int_dim(ambient),vcat(coordinates...))
+        @test rank(A)==int_dim(ambient)
+    end
+end
+
+# Müger, arXiv:math/0111205v1, Theorem 1.2:
+# https://arxiv.org/pdf/math/0111205v1
+# For a split spherical fusion category, scalar extension of the stated
+# algebraically-closed-field result gives BOTH Gauss sums of its center:
+#     sum_Z theta_Z^(+/-1) dim(Z)^2 = dim(C).
+# This is strictly stronger than the product identity in modular_checks.
+function center_gauss_checks(C,Z)
+    D=sum(dim(x)^2 for x in simples(C))
+    Zs=simples(Z); d=dim.(Zs); theta=twist_scalar.(Zs)
+    @test sum(theta.*d.^2)==D
+    @test sum(inv.(theta).*d.^2)==D
+end
+
+# The package's historical Rep(A4) F-symbol fixture predates Oscar's current
+# serializer schema. Decode that fixed exact input without changing it. The
+# independent oracle below comes from group characters, not from this file.
+function a4_rep_fixture()
+    path=joinpath(dirname(pathof(TensorCategories)),"SixJCategoryDatabase","Rep_A4.mrdi")
+    d=Oscar.JSON.parsefile(path)["data"]
+    K,a=number_field(polynomial(QQ,[1,-1,1]),"a")
+    rational(c)=(q=split(c,"//"); length(q)==1 ? QQ(parse(BigInt,q[1])) :
+        QQ(parse(BigInt,q[1]),parse(BigInt,q[2])))
+    scalar(x)=sum(rational(c)*a^parse(Int,e) for (e,c) in x;init=zero(K))
+    mat(x)=isempty(x) ? zero_matrix(K,0,0) :
+        matrix(K,length(x),length(x[1]),[scalar(c) for row in x for c in row])
+    n=parse(Int,d["simples"])
+    C=six_j_category(K,reshape(parse.(Int,d["tensor_product"]),n,n,n),
+        String.(d["simples_names"]))
+    set_one!(C,parse.(Int,d["one"]))
+    set_associator!(C,reshape(mat.(d["ass"]),n,n,n,n))
+    # Rep(A4) is pseudounitary. EGNO Proposition 9.5.1 gives its canonical
+    # spherical structure, with dimensions 1,1,1,3. Check it exactly here.
+    set_canonical_spherical!(C;embedding=complex_embeddings(K)[1],check=true)
+    C
+end
+
+
+const A4Perm = NTuple{4,Int}
+a4_mul(p::A4Perm,q::A4Perm)=ntuple(i->p[q[i]],4)
+a4_inv(p::A4Perm)=ntuple(i->findfirst(==(i),p),4)
+a4_conj(p::A4Perm,q::A4Perm)=a4_mul(p,a4_mul(q,a4_inv(p)))
+a4_power(p::A4Perm,n::Int)=foldl((q,_)->a4_mul(q,p),1:n;init=(1,2,3,4))
+
+# EGNO Example 8.13.6 and formula (8.47), pp. 224--225, give the simple
+# labels (conjugacy class, irreducible centralizer character), dimensions,
+# twists and every S-entry of Z(Vec_G).  Morita invariance identifies this
+# with Z(Rep(G)); see EGNO Theorem 8.12.3.  For A4 the character data are
+# generated below from its permutations, rather than copied from the center.
+function a4_double_modular_data(K,a)
+    G=A4Perm[]
+    for i=1:4,j=1:4,k=1:4,l=1:4
+        p=(i,j,k,l); allunique(p)||continue
+        iseven(sum(p[r]>p[s] for r=1:4 for s=r+1:4))&&push!(G,p)
+    end
+    e=(1,2,3,4); r2=(2,1,4,3); r3=(2,3,1,4); r3i=a4_inv(r3)
+    centralizer(g)=[x for x in G if a4_mul(x,g)==a4_mul(g,x)]
+    conjugacy_class(g)=Set(a4_conj(x,g) for x in G)
+    V4class=conjugacy_class(r2); C3=conjugacy_class(r3); zeta=a^2
+    # The three linear A4 characters factor through A4/V4 = C3.  The
+    # remaining character is the four-point permutation character minus 1.
+    a4_character(j,x)=x==e||x in V4class ? K(1) : x in C3 ? zeta^j : zeta^(2j)
+    standard_character(x)=x==e ? K(3) : x in V4class ? -K(1) : K(0)
+    V4=centralizer(r2); b=first(x for x in V4 if x!=e&&x!=r2)
+    function v4_character(u,v,x)
+        exponents=first((i,j) for i=0:1 for j=0:1
+            if a4_mul(a4_power(r2,i),a4_power(b,j))==x)
+        K((-1)^(u*exponents[1]+v*exponents[2]))
+    end
+    c3_character(rep,j,x)=K(zeta^(j*first(m for m=0:2 if a4_power(rep,m)==x)))
+    labels=Any[]
+    for j=0:2; push!(labels,(r=e,C=G,ch=x->a4_character(j,x),degree=K(1))); end
+    push!(labels,(r=e,C=G,ch=standard_character,degree=K(3)))
+    for u=0:1,v=0:1
+        push!(labels,(r=r2,C=V4,ch=x->v4_character(u,v,x),degree=K(1)))
+    end
+    for rep in (r3,r3i),j=0:2
+        push!(labels,(r=rep,C=centralizer(rep),
+            ch=x->c3_character(rep,j,x),degree=K(1)))
+    end
+    dimensions=[K(12)*q.degree/K(length(q.C)) for q in labels]
+    theta=[q.ch(q.r)/q.degree for q in labels]
+    S=matrix(K,[K(12)/(K(length(q.C))*K(length(t.C)))*
+        sum(q.ch(a4_conj(x,t.r))*t.ch(a4_conj(a4_inv(x),q.r))
+            for x in G if a4_mul(q.r,a4_conj(x,t.r))==a4_mul(a4_conj(x,t.r),q.r);
+            init=K(0)) for q in labels,t in labels])
+    dimensions,theta,S
+end
+
+function simultaneous_modular_permutation(expected_d,expected_t,expected_S,Zs,actual_S)
+    actual_d,actual_t=dim.(Zs),twist_scalar.(Zs)
+    candidates=[[j for j=eachindex(Zs) if expected_d[i]==actual_d[j]&&
+        expected_t[i]==actual_t[j]] for i=eachindex(expected_d)]
+    permutation=zeros(Int,length(Zs)); order=sortperm(length.(candidates))
+    function search(depth)
+        depth>length(order)&&return copy(permutation)
+        i=order[depth]
+        for j in candidates[i]
+            j in permutation&&continue
+            permutation[i]=j; assigned=findall(!iszero,permutation)
+            if all(expected_S[x,y]==actual_S[permutation[x],permutation[y]]
+                    for x in assigned,y in assigned)
+                result=search(depth+1)
+                result===nothing||return result
+            end
+            permutation[i]=0
+        end
+        nothing
+    end
+    search(1)
+end
+
+@testset "Independent modular-data benchmarks" begin
+    K,z=cyclotomic_field(8); C=semion_fixture(K,z^2)
+    # RSW §5.3.1: the nontrivial cocycle and braiding satisfy both coherence axioms.
+    @test pentagon_axiom(C) && hexagon_axiom(C)
+    # Positive dimension is obtained from the pivotal convention explained above.
+    @test is_pivotal(C) && is_spherical(C) && dim.(simples(C))==K.([1,1])
+    @test smatrix(C)==matrix(K,[1 1;1 -1]) && tmatrix(C)==diagonal_matrix([K(1),z^2])
+    modular_checks(C)
+    D=toric_fixture()
+    # RSW §5.3.8: the trivial associator and bilinear braiding give toric-code data.
+    @test pentagon_axiom(D) && hexagon_axiom(D)
+    @test smatrix(D)==matrix(QQ,[1 1 1 1;1 1 -1 -1;1 -1 1 -1;1 -1 -1 1])
+    @test tmatrix(D)==diagonal_matrix(QQ.([1,1,1,-1]))
+    modular_checks(D)
+end
+flush(stdout)
+
+@testset "Semion center and toric-code center" begin
+    K,z=cyclotomic_field(8); C=semion_fixture(K,z^2); Z=center(C); S=simples(Z)
+    # Müger, arXiv:math/0111205v1, Thm. 7.10: Z(C) ≃ C ⊠ C^rev for modular C.
+    # This predicts four invertible objects with twists {1,1,i,-i}. Matching
+    # these invariants is a test of the construction, not a proof of equivalence.
+    @test length(S)==4 && all(dim(s)==1 for s in S)
+    @test all(is_central,S)
+    theta=[K(twist(s)) for s in S]
+    @test count(==(K(1)),theta)==2 && z^2 in theta && -z^2 in theta
+    @test all(is_isomorphic(s⊗s,one(Z))[1] for s in S)
+    # EGNO §8.10: theta is a natural endomorphism on EVERY object. For
+    # 1⊕s in the semion factor its two eigenvalues are 1 and i, so no
+    # single scalar represents it. This caught the center's scalar-only API.
+    a = findfirst(==(z^2),theta); b = findfirst(==(K(1)),theta)
+    X,inc,proj = direct_sum(S[a],S[b]); t = twist(X)
+    @test domain(t) == codomain(t) == X
+    @test t ∘ inc[1] == inc[1] ∘ twist(S[a]) && t ∘ inc[2] == inc[2] ∘ twist(S[b])
+    @test_throws ArgumentError twist_scalar(X)
+    modular_checks(Z)
+    center_gauss_checks(C,Z)
+    # RSW §5.3.8 realizes toric code as D(C2); EGNO Example 8.13.6 gives
+    # its four (group element, character) labels and twists chi(g).
+    VC2=graded_vector_spaces(QQ,cyclic_group(2)); W=center(VC2); P=simples(W)
+    @test length(P)==4 && all(dim(s)==1 for s in P)
+    @test count(s->QQ(twist(s))==-1,P)==1 && count(s->QQ(twist(s))==1,P)==3
+    @test all(is_central,P)
+    modular_checks(W)
+    center_gauss_checks(VC2,W)
+end
+flush(stdout)
+
+@testset "Nonabelian quantum double of S3" begin
+    K,z=cyclotomic_field(3)
+    Z=center(graded_vector_spaces(K,symmetric_group(3))); S=simples(Z)
+    # EGNO Example 8.13.6 and formula (8.47). The three conjugacy classes
+    # have sizes 1,3,2 and centralizers S3,C2,C3. Their irreducible dimensions
+    # give [1,1,2], [3,3], [2,2,2], and twists 1, +/-1, and cube roots.
+    @test length(S)==8 && all(int_dim(End(s))==1 for s in S)
+    @test count(s->dim(s)==1,S)==2 && count(s->dim(s)==2,S)==4 && count(s->dim(s)==3,S)==2
+    theta=[K(twist(s)) for s in S]
+    @test count(==(K(1)),theta)==5 && count(==(-K(1)),theta)==1 && z in theta && z^2 in theta
+    # EGNO Thm. 7.16.6: FPdim Z(Vec_S3)=6², here also the spherical dimension.
+    @test sum(dim(s)^2 for s in S)==36 && all(is_central,S)
+    modular_checks(Z)
+    center_induction_checks(category(Z),Z;check_maps=true)
+    center_gauss_checks(category(Z),Z)
+end
+flush(stdout)
+
+@testset "Character-theoretic quantum double of A4" begin
+    C=a4_rep_fixture(); K=base_ring(C)
+    # The ordinary A4 character table gives degrees 1,1,1,3 and
+    # V⊗V=1+chi+chi^2+2V. This explicitly exercises multiplicity two.
+    @test dim.(simples(C))==K.([1,1,1,3])
+    @test C.tensor_product[4,4,:]==[1,1,1,2]
+    @test pentagon_axiom(C)
+    Z=center(C); Zs=simples(Z)
+    expected_d,expected_t,expected_S=a4_double_modular_data(K,gen(K))
+    permutation=simultaneous_modular_permutation(
+        expected_d,expected_t,expected_S,Zs,smatrix(Z))
+    # EGNO Example 8.13.6 predicts 14 split simples with dimensions
+    # 1^3, 3^5, 4^6. Matching the full S and T data fixes one simultaneous
+    # relabeling; separate multisets would miss correlations between entries.
+    @test length(Zs)==14&&all(int_dim(End(z))==1 for z in Zs)
+    @test count(==(K(1)),dim.(Zs))==3
+    @test count(==(K(3)),dim.(Zs))==5
+    @test count(==(K(4)),dim.(Zs))==6
+    @test permutation!==nothing
+    if permutation!==nothing
+        @test twist_scalar.(Zs[permutation])==expected_t
+        @test smatrix(Z)[permutation,permutation]==expected_S
+        # Label 4 is the identity-flux three-dimensional representation V.
+        # Check its multiplicity two directly in the central Hom space, not
+        # through Verlinde's formula or the expected character table.
+        V=Zs[permutation[4]]
+        @test int_dim(Hom(V⊗V,V))==2
+    end
+    center_induction_checks(C,Z)
+    center_gauss_checks(C,Z)
+end
+flush(stdout)
+
+@testset "TY signs and numerical Ising data" begin
+    # Gelaki–Naidu–Nikshych, Centers of graded fusion categories (2009), §4A:
+    # https://msp.org/ant/2009/3-8/ant-v3-n8-p05-s.pdf.
+    # Their tau is the RECIPROCAL of this constructor's sqrt(|A|) argument.
+    # Both signs give fusion categories. With the stored pivotal maps 1,
+    # categorical dim(m) is signed, while FPdim(m)=sqrt(|A|) stays positive.
+    for sign in (1,-1)
+        C=tambara_yamagami(QQ,abelian_group(PcGroup,[2,2]),QQ(sign*2)); S=simples(C)
+        @test pentagon_axiom(C) && is_pivotal(C) && is_spherical(C)
+        @test dim.(S)==QQ.([1,1,1,1,sign*2]) && sum(dim(s)^2 for s in S)==8
+        @test C[5]⊗C[5]==direct_sum(S[1:4])[1]
+    end
+    # RSW §5.3.4: Ising's positive pivotal structure has dimensions 1,1,sqrt(2)
+    # in package order, and this unnormalized S. Acb checks are compatibility
+    # of enclosures at two precisions, NEVER proofs of exact identities.
+    for precision in (64,128)
+        K=AcbField(precision); C=ising_category(K); r=sqrt(K(2))
+        @test all(overlaps.(dim.(simples(C)),[K(1),K(1),r]))
+        expected=matrix(K,[K(1) K(1) r;K(1) K(1) -r;r -r K(0)])
+        @test all(overlaps.(smatrix(C),expected))
+        # Ising's fermion twist is -1 and the noninvertible twist has eighth
+        # power -1 (RSW §5.3.4, allowing the constructor's conjugate braiding).
+        T = tmatrix(C)
+        @test overlaps(T[1,1],K(1)) && overlaps(T[2,2],K(-1)) && overlaps(T[3,3]^8,K(-1))
+        f=associator(C[3],C[3],C[3])
+        @test overlaps(f∘dagger(f),id(codomain(f)))
+    end
+end
