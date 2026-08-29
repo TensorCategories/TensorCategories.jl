@@ -40,3 +40,19 @@ end
     @test_throws ArgumentError morphism(J2, J2, identity_matrix(GF(7), 2))
     @test_throws ErrorException morphism(J2, J2, identity_matrix(F, 1))
 end
+
+# Monomorphisms and epimorphisms need not split outside semisimple categories;
+# see EGNO (2015), Sections 1.3--1.4.
+@testset "Nonsplit monomorphisms and epimorphisms" begin
+    R = representation_category(GF(5), cyclic_group(5))
+    J1, J2 = audit_jordan_representation(R, 1), audit_jordan_representation(R, 2)
+    p = only(basis(Hom(J2, J1)))
+    i = only(basis(Hom(J1, J2)))
+    @test is_epimorphism(p) && !is_monomorphism(p)
+    @test is_monomorphism(i) && !is_epimorphism(i)
+    # Splittings would decompose the indecomposable Jordan block J2.
+    @test_throws ErrorException right_inverse(p)
+    @test_throws ErrorException left_inverse(i)
+    @test is_monomorphism(zero_morphism(zero(R), J1))
+    @test is_epimorphism(zero_morphism(J1, zero(R)))
+end

@@ -144,6 +144,9 @@ tr(ρ::GroupRepresentationMorphism) = morphism(one(parent(ρ)), one(parent(ρ)),
 
 is_zero(f::GroupRepresentationMorphism) = iszero(matrix(f))
 
+is_monomorphism(f::GroupRepresentationMorphism) = rank(matrix(f)) == int_dim(domain(f))
+is_epimorphism(f::GroupRepresentationMorphism) = rank(matrix(f)) == int_dim(codomain(f))
+
 """
     parent(ρ::GroupRepresentation)
 

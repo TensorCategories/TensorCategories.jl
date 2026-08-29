@@ -103,6 +103,9 @@ is_linear(C::CenterCategory) = true
 is_monoidal(C::CenterCategory) = true
 is_spherical(C::CenterCategory) = is_spherical(category(C))
 
+is_monomorphism(f::CenterMorphism) = is_monomorphism(morphism(f))
+is_epimorphism(f::CenterMorphism) = is_epimorphism(morphism(f))
+
 # Norms 
 squared_norm(X::CenterObject) = squared_norm(object(X))
 dim(C::CenterCategory) = dim(category(C))^2

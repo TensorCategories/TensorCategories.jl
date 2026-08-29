@@ -637,8 +637,8 @@ end
 
     left_inverse(f::Morphism)
 
-Compute a morphism ``g`` such that ``g ∘ f = id``. Errors if 
-``f``is not mono. 
+Compute a morphism ``g`` such that ``g ∘ f = id``. Errors if
+``f`` is not a split monomorphism.
 """
 function left_inverse(f::Morphism)
     X = domain(f)
@@ -679,7 +679,7 @@ end
     right_inverse(f::Morphism)
 
 Compute a morphism ``g`` such that ``f ∘ g = id``. Errors if ``f``
-is not epi.
+is not a split epimorphism.
 """
 function right_inverse(f::Morphism)
     X = domain(f)
@@ -770,32 +770,24 @@ end
 
 @doc raw""" 
 
-    is_monomoprhism(f::Morphism)
+    is_monomorphism(f::Morphism)
 
-Check whether ``f`` mono.
+Check whether ``f`` is mono in an abelian category.
 """
 function is_monomorphism(f::Morphism)
-    try 
-        left_inverse(f)
-        return true
-    catch
-        false
-    end
+    is_abelian(parent(f)) || throw(ArgumentError("a category-specific monomorphism test is required"))
+    is_zero(kernel(f)[1])
 end
 
 @doc raw""" 
 
     is_epimorphism(f::Morphism)
 
-Check wether ``f``is epi.
+Check whether ``f`` is epi in an abelian category.
 """
 function is_epimorphism(f::Morphism)
-    try 
-        right_inverse(f)
-        return true
-    catch
-        false
-    end
+    is_abelian(parent(f)) || throw(ArgumentError("a category-specific epimorphism test is required"))
+    is_zero(cokernel(f)[1])
 end
 
 
@@ -950,4 +942,3 @@ function basis(mors::Vector{<:Morphism})
     
     return base
 end
-
