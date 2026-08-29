@@ -197,11 +197,15 @@ compose(f::T...) where T <: Morphism = reduce(compose, f)
 
 function composition_power(f::Morphism, k::Int) 
     @assert domain(f) == codomain(f)
-    if k == 0
-        return id(domain(f))
+    k >= 0 || throw(ArgumentError("exponent must be nonnegative"))
+    result = id(domain(f))
+    power = f
+    while k > 0
+        isodd(k) && (result = compose(result,power))
+        k = div(k,2)
+        k > 0 && (power = compose(power,power))
     end
-
-    compose([f for _ in 1:k]...)
+    result
 end
 
 -(f::Morphism, g::Morphism) = f + (-1)*g
