@@ -59,6 +59,51 @@ TensorCategories.is_fusion(::MultifusionShortcutAuditCategory) =
     @test is_linear(A) && TensorCategories.is_krull_schmidt(A)
 end
 
+# In a skeletal semisimple category, a component vector records multiplicities
+# relative to the chosen simple objects of one parent; see EGNO (2015),
+# Sections 1.1 and 4.9. Equal coordinates in different categories do not define
+# equal objects or mixed-category morphisms.
+@testset "Parent-sensitive skeletal operations" begin
+    F = GF(11)
+    M = zeros(Int, 2, 2, 2)
+    for i in 1:2, j in 1:2
+        M[i, j, mod(i + j - 2, 2) + 1] = 1
+    end
+    C = six_j_category(F, M, ["1", "g"])
+    set_one!(C, [1, 0])
+    D = fibonacci_category(F)
+    g, X = simples(C)[2], simples(D)[2]
+
+    # Both have coordinates [0,1], but g⊗g=1 whereas X⊗X=1⊕X.
+    @test g != X && !is_isomorphic(g, X)[1]
+    @test_throws ArgumentError Hom(g, X)
+    @test_throws ArgumentError zero_morphism(g, X)
+    @test_throws ArgumentError morphism(g, X, matrices(id(g)))
+    @test_throws ArgumentError g ⊗ X
+    @test_throws ArgumentError direct_sum(g, X)
+    @test_throws ArgumentError g ⊕ X
+    @test_throws ArgumentError express_in_basis(id(g), End(X))
+
+    g2 = simples(C)[2]
+    ok, f = is_isomorphic(g, g2)
+    @test ok && domain(f) === g && codomain(f) === g2
+    @test inv(f) ∘ f == id(g)
+    @test Dict(g => 7)[g2] == 7
+
+    C2 = six_j_category(F, M, ["1", "g"])
+    set_one!(C2, [1, 0])
+    g3 = simples(C2)[2]
+    # Structurally identical presentations still require explicit transport.
+    @test g != g3
+    @test parent(extension_of_scalars(g, F, C2)) === C2
+
+    G = cyclic_group(5)
+    R11, R13 = representation_category(F, G), representation_category(GF(13), G)
+    # Zero representations retain their group and coefficient field.
+    @test zero(R11) != zero(R13)
+    @test !is_isomorphic(zero(R11), zero(R13))[1]
+end
+
 # Maschke's theorem gives semisimplicity when the characteristic does not
 # divide |G|; see EGNO (2015), Remark 4.2.14. Fusion additionally requires
 # splitting; see Mäurer--Thiel, arXiv:2406.13438v2, Section 2.1.

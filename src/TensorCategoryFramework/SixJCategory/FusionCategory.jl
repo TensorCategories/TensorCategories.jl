@@ -34,7 +34,20 @@ struct SixJMorphism <: Morphism
     m::Vector{<:MatElem}
 end
 
-==(X::SixJObject, Y::SixJObject) = base_ring(X) == base_ring(Y) && X.components == Y.components
+# Component vectors are coordinates relative to a particular skeletal category.
+==(X::SixJObject, Y::SixJObject) =
+    parent(X) === parent(Y) && X.components == Y.components
+
+Base.hash(X::SixJObject, h::UInt) =
+    hash((objectid(parent(X)), X.components), h)
+
+function _check_sixj_parents(X::SixJObject...)
+    isempty(X) && throw(ArgumentError(
+        "at least one object is needed to determine the parent"))
+    all(Y -> parent(Y) === parent(X[1]), X) || throw(ArgumentError(
+        "skeletal objects must share one parent instance; transport objects explicitly between categories"))
+    return nothing
+end
 
 function ==(C::SixJCategory, D::SixJCategory)
     base_ring(C) ≠ base_ring(D) && return false 
@@ -56,7 +69,10 @@ object_type(::SixJCategory) = SixJObject
 
 #six_j_category(x...) = six_j_category(x...)
 
-morphism(X::SixJObject, Y::SixJObject, m) = SixJMorphism(X,Y,m)
+function morphism(X::SixJObject, Y::SixJObject, m)
+    _check_sixj_parents(X, Y)
+    SixJMorphism(X, Y, m)
+end
 
 @doc raw""" 
 
@@ -795,7 +811,7 @@ end
 
 
 function tensor_product(X::SixJObject, Y::SixJObject)
-    #@assert parent(X) == parent(Y) "Mismatching parents"
+    _check_sixj_parents(X, Y)
     C = parent(X)
     n = C.rank
     T = [0 for i ∈ 1:n]
@@ -886,6 +902,7 @@ end
 # end
 
 function direct_sum(X::SixJObject...)
+    _check_sixj_parents(X...)
     if length(X) == 1
         return X...,[id(X...)], [id(X...)]
     end
@@ -913,6 +930,7 @@ end
 
 
 function ⊕(X::SixJObject...) 
+    _check_sixj_parents(X...)
     SixJObject(parent(X[1]), vec(sum(hcat([x.components for x in X]...), dims = 2)))
 end
 
@@ -957,6 +975,7 @@ end
 zero(C::SixJCategory) = SixJObject(C,[0 for i ∈ 1:C.rank])
 
 function zero_morphism(X::SixJObject, Y::SixJObject)
+    _check_sixj_parents(X, Y)
     return SixJMorphism(X,Y,[zero(matrix_space(base_ring(X), cX, cY)) for (cX,cY) ∈ zip(X.components, Y.components)])
 end
 
@@ -964,7 +983,7 @@ function is_isomorphic(X::SixJObject, Y::SixJObject)
     if X != Y
         return false, nothing
     else
-        return true, id(X)
+        return true, morphism(X, Y, matrices(id(X)))
     end
 end
 #-------------------------------------------------------------------------------
@@ -1057,7 +1076,7 @@ struct SixJHomSpace<: AbstractHomSpace
 end
 
 function Hom(X::SixJObject, Y::SixJObject)
-    #@assert parent(X) == parent(Y) "Mismatching parents"
+    _check_sixj_parents(X, Y)
     Xi, Yi = X.components, Y.components
     F = base_ring(X)
 
@@ -1079,7 +1098,9 @@ function Hom(X::SixJObject, Y::SixJObject)
 end
 
 function express_in_basis(f::SixJMorphism, H::SixJHomSpace)
-   vcat((collect(m)[:] for m ∈ matrices(f))...)
+    domain(f) == domain(H) && codomain(f) == codomain(H) ||
+        throw(ArgumentError("morphism and Hom basis must have the same endpoints"))
+    vcat((collect(m)[:] for m ∈ matrices(f))...)
 end
 
 

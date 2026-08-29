@@ -6,6 +6,12 @@ get a workable fusion category from provided ``6j`-symbols.
 
 ## ``F``-Symbols
 
+Skeletal object coordinates belong to one particular parent instance. For
+example, `[0, 1]` may denote an invertible object in one category and a
+Fibonacci object in another. Consequently equality, Hom spaces, tensor
+products, and direct sums require the same parent instance. Transport objects
+and morphisms explicitly when changing categories or scalars.
+
 Let ``\mathcal C`` be a locally finite semisimple multitensor category.  Then, if ``\{X_i\mid i \in \mathcal I\}`` is a collection of the non-isomorphic simple objects, there is an equivalence of abelian categories 
 
 ```math
