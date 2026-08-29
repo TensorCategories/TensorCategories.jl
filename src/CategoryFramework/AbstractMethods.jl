@@ -59,6 +59,11 @@ function extension_of_scalars(R::AbstractAssociativeAlgebra, F::Ring)
     A = StructureConstantAlgebra(F, F.(multiplication_table(R)), F.(coefficients(one(R))))
 end
 
+# Oscar uses `embed` for finite fields and `embedding` for the other exact
+# field types supported here.
+_scalar_extension_embedding(K,L) = K isa FinField && L isa FinField ?
+    Oscar.embed(K,L) : embedding(K,L)
+
 ⊗(F::Ring, R::AbstractAssociativeAlgebra) = extension_of_scalars(R,F)
 ⊗(R::AbstractAssociativeAlgebra, F::Ring) = extension_of_scalars(R,F)
 
