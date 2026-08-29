@@ -30,8 +30,14 @@ function six_j_category(C::Category, S::Vector{<:Object}, names::Vector{String} 
     # Define SixJCategory
     skel_C = six_j_category(F,names)
 
-    # Extract 6j-Symbols
-    ass = six_j_symbols(C, S)
+    # Choose one system of multiplicity-space bases for the associator and
+    # braiding. Recomputing a Hom basis between the two changes their common
+    # gauge and can destroy the hexagon equations.
+    S = copy(S)
+    one_indices = findall(s -> int_dim(Hom(s,one(C))) > 0,S)
+    S[one_indices] = simple_subobjects(one(C))
+    homs = multiplicity_spaces(C,S)
+    ass = six_j_symbols(C,S;homs)
 
     # Recover multiplication table 
     one_index = findfirst(s -> int_dim(Hom(one(C),s)) > 0, S)
@@ -56,7 +62,7 @@ function six_j_category(C::Category, S::Vector{<:Object}, names::Vector{String} 
     end
 
     if is_braided(C)
-        set_braiding!(skel_C, skeletal_braiding(C,S))
+        set_braiding!(skel_C,skeletal_braiding(C,S;homs))
     end
     
     try 
@@ -67,7 +73,7 @@ function six_j_category(C::Category, S::Vector{<:Object}, names::Vector{String} 
     return skel_C
 end
 
-function six_j_symbols(C::Category, S = simples(C))
+function six_j_symbols(C::Category,S=simples(C);homs=nothing)
     @assert is_semisimple(C)
 
     N = length(S)
@@ -77,12 +83,12 @@ function six_j_symbols(C::Category, S = simples(C))
     ass = Array{MatElem}(undef,N,N,N,N)
 
     one_indices = findall(s -> int_dim(Hom(s,one(C))) > 0 , S)
-    one_components = simple_subobjects(one(C))
-
-    # Set unitors to identity
-    S[one_indices] = one_components
-
-    homs = multiplicity_spaces(C)
+    if homs === nothing
+        # Normalize unit representatives before choosing the corresponding
+        # multiplicity-space bases.
+        S[one_indices] = simple_subobjects(one(C))
+        homs = multiplicity_spaces(C,S)
+    end
 
     prods = [domain(homs[(i,j,findfirst(k -> haskey(homs, (i,j,k)), 1:N))]) for i ∈ 1:N, j in 1:N]
 
@@ -151,7 +157,8 @@ function six_j_symbols(C::Category, S = simples(C))
     return ass           
 end
 
-function six_j_symbols_of_construction(C::Category, S = simples(C), mult = nothing; log = nothing)
+function six_j_symbols_of_construction(C::Category,S=simples(C),mult=nothing;
+        log=nothing,homs=nothing)
     @assert is_semisimple(C)
     if typeof(base_ring(C)) <: Union{AcbField,ArbField} && !is_unitary(C)
         @warn("Computing F-symbols is buggy for non unitary numeric categories. Check Results afterwards")
@@ -181,10 +188,10 @@ function six_j_symbols_of_construction(C::Category, S = simples(C), mult = nothi
     ass = Array{MatElem}(undef,N,N,N,N)
 
     one_indices = findall(s -> int_dim(Hom(s,one(C))) > 0 , S)
-    one_components = simple_subobjects(one(C))
-
-    # Set unitors to identity
-    S[one_indices] = one_components
+    if homs === nothing
+        S[one_indices] = simple_subobjects(one(C))
+        homs = multiplicity_spaces(C,S)
+    end
 
     # prods = [X ⊗ Y for X ∈ S, Y ∈ S]
 
@@ -194,8 +201,6 @@ function six_j_symbols_of_construction(C::Category, S = simples(C), mult = nothi
     #     global homs = [morphism.(basis(Hom(prods[i,j],S[k]))) for i ∈ 1:N, j ∈ 1:N, k ∈ 1:N]
     # end  
     
-    homs = multiplicity_spaces(C)
-
     homs = Dict(k => morphism.(basis(v)) for (k,v) in homs)
     missed = [(i,j,k) => C_morphism_type[] for i in 1:N, j in 1:N, k in 1:N if !haskey(homs, (i,j,k))]
     if length(missed) > 0
@@ -298,7 +303,8 @@ end
 function skeletal_spherical(C::Category, Homs)
 end
 
-function skeletal_braiding(C::Category, S = simples(C))
+function skeletal_braiding(C::Category,S=simples(C);
+        homs=multiplicity_spaces(C,S))
     @assert is_braided(C)
     
     N = length(S)
@@ -306,7 +312,6 @@ function skeletal_braiding(C::Category, S = simples(C))
     F = base_ring(C) 
     braid = Array{MatElem}(undef,N,N,N)
 
-    homs = multiplicity_spaces(C) 
     homs = Dict(k => (basis(v)) for (k,v) in homs)
     missed = [(i,j,k) => C_morphism_type[] for i in 1:N, j in 1:N, k in 1:N if !haskey(homs, (i,j,k))]
     if length(missed) > 0

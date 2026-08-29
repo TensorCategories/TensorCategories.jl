@@ -905,6 +905,27 @@ function multiplicity_spaces(C::CenterCategory)
     end
 end
 
+function multiplicity_spaces(C::CenterCategory,S::Vector{<:Object})
+    canonical = simples(C)
+    if length(S) == length(canonical) &&
+       all(isequal_without_parent(s,t) for (s,t) in zip(S,canonical))
+        # Reuse the specialized cached center computation when the explicit
+        # representatives agree with the canonical ordered simples.
+        return multiplicity_spaces(C)
+    end
+    homs = Dict{NTuple{3,Int},HomSpace}()
+    for (i,X) in pairs(S),(j,Y) in pairs(S)
+        XY = X ⊗ Y
+        for (k,Z) in pairs(S)
+            H = hom_by_linear_equations(XY,Z)
+            isempty(basis(H)) && continue
+            homs[(i,j,k)] = is_unitary(C) ?
+                HomSpace(XY,Z,orthonormal_basis(H)) : H
+        end
+    end
+    homs
+end
+
 #-------------------------------------------------------------------------------
 #   Pretty Printing
 #-------------------------------------------------------------------------------
@@ -1644,10 +1665,10 @@ end
 # end
 
 
-function six_j_symbols(C::CenterCategory, S = simples(C))
+function six_j_symbols(C::CenterCategory,S=simples(C);homs=nothing)
     @assert is_semisimple(C)
 
-    six_j_symbols_of_construction(C, S)
+    six_j_symbols_of_construction(C,S;homs)
 end
 
 

@@ -8,6 +8,19 @@ TensorCategories.is_multifusion(::MultifusionShortcutAuditCategory) = true
 TensorCategories.is_fusion(::MultifusionShortcutAuditCategory) =
     error("the fusion predicate must not be needed here")
 
+# The center-specific SixJ implementation reuses precomputed central Hom bases.
+# Keyword dispatch must retain that specialization; falling back to `Category`
+# would reconstruct half-braidings inside every basis composition.
+@testset "Center SixJ keyword dispatch" begin
+    kwtypes = Tuple{
+        NamedTuple{(:homs,),Tuple{Dict{NTuple{3,Int},HomSpace}}},
+        typeof(TensorCategories.six_j_symbols),
+        CenterCategory,
+        Vector{CenterObject},
+    }
+    @test which(Core.kwcall,kwtypes).sig.parameters[4] === CenterCategory
+end
+
 # Structural predicates record axioms supplied by an implementation. The mere
 # presence of a generic method does not establish an axiom. The fusion/weak
 # fusion convention is Mäurer--Thiel, arXiv:2406.13438v2, Section 2.1; weak
