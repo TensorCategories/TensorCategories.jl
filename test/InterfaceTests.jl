@@ -178,6 +178,31 @@ end
     @test matrix(only(basis(H2)))[1,1] == e(a)^3
 end
 
+# Vec_G is the direct sum of its homogeneous components, and tensor degrees
+# multiply in the order gh; see EGNO (2015), Section 2.3.
+@testset "Graded multiplicities and tensor order" begin
+    G = cyclic_group(2)
+    e, g = one(G), only(gens(G))
+    C = graded_vector_spaces(QQ, G)
+    X, Y, Z = C[e,e,g], C[e,g,g], C[g,e,e]
+    # Equal support and total dimension do not imply equal graded dimensions.
+    @test is_isomorphic(X, Y) == (false, nothing)
+    ok, f = is_isomorphic(X, Z)
+    @test ok && inv(f) ∘ f == id(X) && f ∘ inv(f) == id(Z)
+
+    # A graded map has no nonzero component between unequal degrees.
+    @test_throws ErrorException morphism(C[e], C[g], matrix(QQ, 1, 1, [1]))
+    @test_throws ArgumentError morphism(C[e], C[e], identity_matrix(GF(5), 1))
+    @test_throws ArgumentError morphism(C[e], C[e], identity_matrix(QQ, 2))
+
+    H = symmetric_group(3)
+    D = graded_vector_spaces(QQ, H)
+    a, b = gens(H)[1:2]
+    @test a*b != b*a
+    @test TensorCategories.grading(D[a] ⊗ D[b]) == [a*b]
+    @test_throws ArgumentError C[e] ⊗ D[a]
+end
+
 # Maschke's theorem gives semisimplicity when the characteristic does not
 # divide |G|; see EGNO (2015), Remark 4.2.14. Fusion additionally requires
 # splitting; see Mäurer--Thiel, arXiv:2406.13438v2, Section 2.1.
