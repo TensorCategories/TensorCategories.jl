@@ -221,6 +221,18 @@ end
                 bad = joinpath(dir,"incomplete.csv")
                 numeric_symbols_to_csv(bad,incomplete)
                 @test_throws ArgumentError load_numeric_fusion_category(bad,K;check=true)
+
+                # This dictionary is complete and dimensionally valid, but a
+                # unit-containing F-symbol is not the normalized identity.
+                # The checked loader must enforce the skeletal unit convention.
+                badunit = Dict(k => P(v) for (k,v) in original)
+                u = only(findall(!iszero,A.one))
+                key = first(k for (k,v) in badunit if k[1] == u && !iszero(v))
+                badunit[key] = 2*badunit[key]
+                unitfile = joinpath(dir,"bad-unit.csv")
+                numeric_symbols_to_csv(unitfile,badunit)
+                @test_throws ArgumentError load_numeric_fusion_category(
+                    unitfile,K;check=true)
             end
         end
     end
