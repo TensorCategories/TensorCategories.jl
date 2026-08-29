@@ -22,7 +22,7 @@ import Oscar: +, @alias, @attributes, AbstractSet, AcbField, StructureConstantAl
     gmodule, groebner_basis, group_algebra, gset, guess, has_attribute, height_bits, hnf,
     hom, id, ideal, identity_matrix, image, index, inv, involution, irreducible_modules,
     is_abelian, is_central, is_finite, is_invertible, is_isomorphic, is_modular,
-    is_rational, is_semisimple, is_simple, is_square, is_subfield, is_subgroup,
+    is_rational, is_semisimple, is_simple, is_indecomposable, is_square, is_subfield, is_subgroup,
     is_independent, is_invertible, is_separable, iso_oscar_gap, norm, is_exact, add_error!,
     jordan_normal_form, kernel, kronecker_product, lcm, leading_coefficient, accuracy_bits,
     leading_monomial, left_transversal, lex, load, matrix, matrix_algebra, minpoly, quo,
@@ -303,6 +303,7 @@ export isequivariant
 export isgraded 
 export ising_category 
 export is_invertible
+export is_indecomposable
 export karoubian_envelope 
 export kernel 
 export left_action
@@ -570,6 +571,7 @@ end
 
 include("CategoryFramework/AbstractTypes.jl")
 include("CategoryFramework/AbstractMethods.jl")
+include("CategoryFramework/FiniteFieldDecomposition.jl")
 include("CategoryFramework/DecompositionInAbelianCategories.jl")
 include("CategoryFramework/FrameworkChecks.jl")
 include("CategoryFramework/ProductCategory.jl")
