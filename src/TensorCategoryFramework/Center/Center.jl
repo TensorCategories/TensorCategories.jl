@@ -1231,25 +1231,29 @@ function hom_by_adjunction(X::CenterObject, Y::CenterObject)
     # Y_Homs = Y_Homs[candidates]
     
 
-    M = zero_matrix(base_ring(C),0,*(size(matrix(zero_morphism(X,Y)))...))
-
-    mors = CenterMorphism[]
-
-    # Induction uses mutable caches, and appending to one shared vector is not
-    # thread safe. Accumulate deterministically.
-    for i ∈ findall(==(true), candidates)
-        s, X_s, s_Y = S[i], X_Homs[i], Y_Homs[i]
-        Is = induction(s, parent_category = Z)
-        
-        B = induction_right_adjunction(X_s, X, Is)
-        B2 = induction_adjunction(s_Y, Y, Is)
-
-        # Take all combinations
-        B3 = [h ∘ b for b ∈ B, h in B2][:]
-        
-        append!(mors, B3)
-        # Build basis
+    indices = findall(candidates)
+    # Induction and structural-map construction populate shared caches. Finish
+    # that work serially before composing independent skeletal matrix maps.
+    adjunctions = map(indices) do i
+        Is = induction(S[i],parent_category=Z)
+        (induction_right_adjunction(X_Homs[i],X,Is),
+         induction_adjunction(Y_Homs[i],Y,Is))
     end
+    parts = Vector{Vector{CenterMorphism}}(undef,length(indices))
+    function compose_batch(k)
+        B,B2 = adjunctions[k]
+        parts[k] = CenterMorphism[h ∘ b for b in B for h in B2]
+    end
+    # Other backends may enter GAP even during parent/equality operations and
+    # cannot in general be called concurrently from Julia threads.
+    if object(X) isa SixJObject && object(Y) isa SixJObject
+        @threads for k in eachindex(indices)
+            compose_batch(k)
+        end
+    else
+        foreach(compose_batch,eachindex(indices))
+    end
+    mors = reduce(vcat,parts)
 
     mats = matrix.(mors)
 
@@ -1315,34 +1319,24 @@ function hom_by_linear_equations(X::CenterObject, Y::CenterObject, ind = 1:rank(
         return HomSpace(X,Y, CenterMorphism[])
     end 
 
-    Fx,poly_basis = polynomial_ring(F,n)
-    
-    eqs = []
+    blocks = MatElem[]
 
     S = simples(parent(object(X)))
 
     for (s,γₛ,λₛ) ∈ zip(S[ind],half_braiding(X)[ind], half_braiding(Y)[ind])
         Hs = Hom(object(X)⊗s, s⊗object(Y))
-        base = basis(Hs)
-        if length(base) == 0
+        if length(Hs) == 0
             continue
         end
-        eq_i = [zero(Fx) for _ ∈ 1:length(base)]
-        for (f,a) ∈ zip(B,poly_basis)
-            coeffs = express_in_basis((id(s)⊗f)∘γₛ - λₛ∘(f⊗id(s)), base)
-            eq_i = eq_i .+ (a .* coeffs)
+        block = zero_matrix(F,length(Hs),n)
+        for (j,f) in enumerate(B)
+            block[:,j] = express_in_basis(
+                (id(s)⊗f)∘γₛ - λₛ∘(f⊗id(s)),Hs)
         end
-        
-        eqs = [eqs; eq_i]
-
+        push!(blocks,block)
     end
 
-    M = zero(matrix_space(F,length(eqs),n))
-
-    for (i,e) ∈ zip(1:length(eqs),eqs)
-        M[i,:] = [coeff(e, a) for a ∈ poly_basis]
-    end
-    M
+    M = isempty(blocks) ? zero_matrix(F,0,n) : reduce(vcat,blocks)
     # If Basering is numeric field, we need to be careful 
     # if typeof(F) <: Union{ArbField, ComplexField, AcbField}
     #     basically_zero = findall(a -> overlaps(a, F(0)), M)
