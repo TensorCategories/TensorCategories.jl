@@ -257,3 +257,119 @@ end
     @test !is_unitary(C)
     @test overlaps(tmatrix(C)[2,2],base_ring(C)(-1))
 end
+
+function literature_jordan_representation(C,n)
+    F = base_ring(C)
+    J = identity_matrix(F,n)
+    for i in 1:n-1
+        J[i,i+1] = 1
+    end
+    Representation(C,gens(base_group(C)),[J])
+end
+
+# Etingof--Ostrik, On semisimplification of tensor categories,
+# arXiv:1801.04409v4, Definition 2.1 and the paragraph after Definition 2.5.
+# The quotient functor need not preserve kernels upstairs; kernels and inverses
+# must be computed from the trace-radical quotient Hom spaces.
+@testset "Quotient kernels, cokernels, and inverses" begin
+    F = GF(5)
+    R = representation_category(F,cyclic_group(5))
+    J1,J2,J5 = [literature_jordan_representation(R,n) for n in (1,2,5)]
+    Q = Semisimplification(R)
+    p = semisimplify(only(basis(Hom(J2,J1))),Q)
+    i = semisimplify(only(basis(Hom(J1,J2))),Q)
+    # J1 and J2 survive as distinct simples, so these opposite maps vanish.
+    @test is_zero(p) && is_zero(i)
+    K,k = kernel(p)
+    C,c = cokernel(i)
+    Kc,kc = kernel(p;check=true)
+    Cc,cc = cokernel(i;check=true)
+    @test dim(Kc) == dim(K) && is_zero(p ∘ kc)
+    @test dim(Cc) == dim(C) && is_zero(cc ∘ i)
+    @test dim(K) == dim(C) == F(2)
+    @test inv(k) ∘ k == id(K)
+    @test c ∘ inv(c) == id(C)
+
+    # For N^2=0, (1+N)^-1=1-N already exists upstairs and is the fast path.
+    q = semisimplify(morphism(J2,J2,matrix(F,[1 1;0 1])),Q)
+    @test matrix(morphism(inv(q))) == matrix(F,[1 -1;0 1])
+    @test inv(q;check=true) ∘ q == id(domain(q))
+    @test is_zero(kernel(id(K))[1]) && is_zero(cokernel(id(K))[1])
+    @test is_zero(inv(id(zero(Q))))
+
+    # Every endomorphism of J5 has trace divisible by 5, so J5 becomes zero.
+    disappearing = semisimplify(zero_morphism(J5,zero(R)),Q)
+    @test is_zero(inv(disappearing)) && is_invertible(disappearing)
+    @test_throws ArgumentError inv(p)
+    @test !is_invertible(p)
+
+    S,inc,proj = direct_sum(J1,J5)
+    f = semisimplify(proj[1],Q)
+    # The representative is rectangular, but the missing J5 summand vanishes.
+    @test inv(f) == semisimplify(inc[1],Q)
+    @test inv(f;check=true) == inv(f)
+    @test inv(f) ∘ f == id(domain(f))
+    @test f ∘ inv(f) == id(codomain(f))
+    # This square representative is singular only on the negligible summand.
+    e = semisimplify(inc[1] ∘ proj[1],Q)
+    @test inv(e;check=true) == id(domain(e))
+    dec = decompose(semisimplify(S,Q))
+    @test length(dec) == 1 && dec[1][2] == 1
+    @test dim(dec[1][1]) == F(1)
+
+    X,ix,px = direct_sum(J1,J1,J2,J5)
+    Y,iy,py = direct_sum(J1,J2,J2,J5)
+    negligible = only(basis(Hom(J2,J1)))
+    raw = iy[1] ∘ (px[1]+px[2]) + iy[2] ∘ px[3] + iy[4] ∘ px[4]
+    raw += iy[1] ∘ negligible ∘ px[3]
+    f = semisimplify(raw,Q)
+    K,k = kernel(f)
+    C,c = cokernel(f)
+    @test dim(K) == F(1) && dim(C) == F(2)
+    @test is_zero(f ∘ k) && is_zero(c ∘ f)
+    @test left_inverse(k) ∘ k == id(K)
+    @test c ∘ right_inverse(c) == id(C)
+    for rawS in (J1,J2,J5)
+        T = semisimplify(rawS,Q)
+        H = basis(Hom(T,domain(f)))
+        B = basis(Hom(T,codomain(f)))
+        M = matrix(F,length(H),length(B),
+            [a for h in H for a in express_in_basis(f ∘ h,B)])
+        @test int_dim(Hom(T,K)) == length(H)-rank(M)
+        @test int_dim(Hom(T,C)) == length(B)-rank(M)
+    end
+    @test composition_power(id(K),0) == id(K)
+    @test composition_power(id(K),17) == id(K)
+    @test_throws ArgumentError composition_power(id(K),-1)
+end
+
+# Etingof--Ostrik's negligible ideal tests traces against every opposite
+# morphism, not only tr(id). For End(W)=F4 over F2 the field-trace pairing is
+# nondegenerate, although dim(W)=0 in F2; compare the standard finite-field
+# trace formula Tr_F4/F2(t)=t+t^2.
+@testset "Zero-dimensional nonsplit quotient simple" begin
+    F = GF(2)
+    R = representation_category(F,cyclic_group(3))
+    W = Representation(R,gens(base_group(R)),[matrix(F,[0 1;1 1])])
+    T = tensor_power_category(W)
+    Q = Semisimplification(T)
+    @test sort(int_dim.(End.(simples(Q)))) == [1,2]
+    @test length(decompose(semisimplify(first(indecomposables(T,1)),Q))) == 1
+
+    Qraw = Semisimplification(R)
+    Wq = semisimplify(W,Qraw)
+    @test F(id(Wq)) == F(1)
+    @test TensorCategories._quotient_inverse(id(Wq)) == id(Wq)
+    @test !is_invertible(zero_morphism(Wq,Wq))
+    a = semisimplify(morphism(W,W,matrix(F,[0 1;1 1])),Qraw)
+    @test_throws ArgumentError F(a)
+
+    X,ix,px = direct_sum(W,W)
+    f = semisimplify(ix[1] ∘ px[1],Qraw)
+    K,k = kernel(f)
+    C,c = cokernel(f)
+    @test int_dim(End(K)) == int_dim(End(C)) == 2
+    @test is_zero(f ∘ k) && is_zero(c ∘ f)
+    @test left_inverse(k) ∘ k == id(K)
+    @test c ∘ right_inverse(c) == id(C)
+end
