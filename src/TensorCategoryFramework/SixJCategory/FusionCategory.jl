@@ -255,25 +255,50 @@ function _sixj_is_spherical(C::SixJCategory)
     all(dim(X) == dim(dual(X)) for X in simples(C))
 end
 
-function set_canonical_spherical!(C::SixJCategory)
-    @assert is_fusion(C)
+"""
+    set_canonical_spherical!(C::SixJCategory; embedding=nothing)
 
+Set and verify a spherical structure whose dimensions are the FP dimensions.
+This requires exact characteristic-zero coefficients. For a number field,
+specify the complex embedding that determines positivity. Failure preserves
+the previous pivotal data. Existence is not automatic; see EGNO Proposition
+9.5.1.
+"""
+function set_canonical_spherical!(C::SixJCategory; embedding=nothing)
     K = base_ring(C)
-    
-    set_pivotal!(C, K.([1 for _ ∈ 1:C.rank]))
-    set_pivotal!(C, K.(real.([fpdim(s)*inv(dim(s)) for s ∈ simples(C)])))
-
-    if K isa Union{ArbField, AcbField}
-        p = C.pivotal 
-        for i in 1:rank(C)
-            if overlaps(p[i], K(1))
-                C.pivotal[i] = K(1)
-            elseif overlaps(p[i], K(-1))
-                C.pivotal[i] = K(-1)
-            end
-        end
+    K isa Union{ArbField,AcbField,ComplexField} &&
+        throw(ArgumentError("canonical spherical certification requires exact coefficients"))
+    characteristic(K) == 0 && is_fusion(C) ||
+        throw(ArgumentError("canonical spherical normalization requires a characteristic-zero fusion category"))
+    if K isa NumField
+        embedding === nothing && isdefined(C,:embedding) &&
+            (embedding = C.embedding)
+        embedding isa AbsSimpleNumFieldEmbedding &&
+            number_field(embedding) === K ||
+            throw(ArgumentError("specify a complex embedding of the coefficient number field"))
+        embedding = _qqbar_embedding(embedding)
     end
-    C.pivotal
+    target = [_fpdim_in_base_field(K,fpdim(s),embedding) for s in simples(C)]
+    old = C.pivotal
+    candidate = try
+        set_pivotal!(C,fill(K(1),rank(C)))
+        target ./ dim.(simples(C))
+    finally
+        set_pivotal!(C,old)
+    end
+    set_spherical!(C,candidate)
+    copy(C.pivotal)
+end
+
+function _fpdim_in_base_field(K,d,embedding)
+    K isa NumField || return K(d)
+    candidates = roots(change_base_ring(K,minpoly(d)))
+    isempty(candidates) &&
+        throw(ArgumentError("the FP dimension is not in the coefficient field"))
+    matches = filter(c -> embedding(c) == d,candidates)
+    length(matches) == 1 ||
+        throw(ArgumentError("the FP dimension is not in the specified embedded field"))
+    only(matches)
 end
 
 

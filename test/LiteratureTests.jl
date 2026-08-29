@@ -183,3 +183,57 @@ end
         end
     end
 end
+
+# EGNO Proposition 9.5.1 supplies the positive spherical structure under the
+# pseudounitary hypothesis. It cannot be imposed on an arbitrary fusion
+# category from fusion rules alone. Rowell--Stong--Wang, arXiv:0712.1377v4,
+# pages 3--4 identify Fibonacci and its Yang--Lee Galois conjugate.
+@testset "Canonical spherical structure checks existence" begin
+    K = QQBarField()
+    for q in 1:2
+        C = fibonacci_category(K,q)
+        old = copy(C.pivotal)
+        d = dim(C[2])
+        if d < 0
+            # If X^2=1+X, a tensor automorphism component a must satisfy both
+            # a^2=1 and a^2=a, hence a=1. Yang--Lee cannot be normalized to
+            # the positive Fibonacci dimension character.
+            @test_throws ArgumentError set_canonical_spherical!(C)
+            @test C.pivotal == old
+            @test is_pivotal(C) && dim(C[2]) == d
+
+            # Numeric import must likewise leave this dimension character
+            # alone rather than silently claim a positive spherical structure.
+            mktempdir() do dir
+                A = AcbField(128)
+                file = joinpath(dir,"yang-lee.csv")
+                numeric_symbols_to_csv(file,Dict(k => A(v)
+                    for (k,v) in TensorCategories.F_symbols(C)))
+                D = load_numeric_fusion_category(file,AcbField(64))
+                @test is_pivotal(D)
+                @test overlaps(dim(D[2]),AcbField(64)(d))
+            end
+        else
+            set_canonical_spherical!(C)
+            @test is_spherical(C) && dim(C[2]) == d
+        end
+    end
+
+    # Ball overlap is numerical evidence, not an exact certificate.
+    A = ising_category(AcbField(64))
+    old = copy(A.pivotal)
+    @test_throws ArgumentError set_canonical_spherical!(A)
+    @test A.pivotal == old
+
+    # Over Q(sqrt(2)), positivity is relative to a chosen embedding.
+    R,x = polynomial_ring(QQ,"x")
+    L,r = number_field(x^2-2,"r")
+    B = ising_category(L,r)
+    set_pivotal!(B,L.([1,1,-1]))
+    old = copy(B.pivotal)
+    @test_throws ArgumentError set_canonical_spherical!(B)
+    @test B.pivotal == old
+    embedding = complex_embedding(L,sqrt(AcbField(128)(2)))
+    set_canonical_spherical!(B;embedding=embedding)
+    @test is_spherical(B) && dim(B[3]) == r
+end
