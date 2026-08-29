@@ -1432,6 +1432,18 @@ function autoequivalences(C::SixJCategory)
     equivs
 end
 
+"Return verified tensor autoequivalence candidates; completeness is not claimed."
+function autoequivalence_candidates(C::SixJCategory)
+    fusion_ring_autos = automorphisms(split_grothendieck_ring(C))
+    result = MonoidalFunctor[]
+    for f in fusion_ring_autos
+        images = [findfirst(==(a),f.images) for a in basis(domain(f))]
+        F = functor(C,C,simples(C)[images])
+        append!(result,monoidal_structure_candidates(F))
+    end
+    result
+end
+
 
 #=----------------------------------------------------------
     Reverse braided  

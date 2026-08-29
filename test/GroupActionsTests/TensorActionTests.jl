@@ -45,12 +45,10 @@ References:
 
 I = ising_category() 
 G = cyclic_group(2)
-aut = autoequivalences(I)
-# For this fixed presentation the current search returns two coherent monoidal
-# structures on the identity underlying functor.  The assertions validate those
-# returned structures and their count as a regression fixture; they do not by
-# themselves prove that the search classifies every tensor autoequivalence.
-@testset "Autoequivalences of Ising category" begin
+aut = autoequivalence_candidates(I)
+# The candidate search is not a classification over Q(sqrt(2)).  These are the
+# two checked structures used to construct this particular split C2 action.
+@testset "Chosen autoequivalence candidates of Ising category" begin
 
     @test length(aut) == 2
     @test all(monoidal_functor_axiom, aut)

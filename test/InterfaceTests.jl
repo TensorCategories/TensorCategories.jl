@@ -330,6 +330,22 @@ function audit_pointed_c3()
     C,z
 end
 
+# EGNO Proposition 2.6.1 identifies tensor structures on the identity of a
+# pointed category with group 2-cocycles modulo coboundaries.  Consequently a
+# finite algebraic search must not present its output as a complete list unless
+# completeness has independently been proved.
+@testset "Verified monoidal candidates versus classification" begin
+    C,_ = audit_pointed_c3()
+    @test_throws ArgumentError monoidal_structures(id(C))
+
+    # In rank one the normalized tensorator is forced by the unit constraint.
+    V = VectorSpaces(QQ)
+    structures = monoidal_structures(id(V))
+    @test length(structures) == 1
+    @test monoidal_functor_axiom(only(structures))
+end
+
+
 # EGNO Sections 2.10, 4.7, and 8.13 distinguish left and right pivotal
 # traces and define T from twist eigenvalues. Rowell--Stong--Wang,
 # arXiv:0712.1377v4, Section 5.3.3 supplies the pointed C3 data.
@@ -349,31 +365,6 @@ end
           (id(X)⊗right_coev(X)) == id(X)
     set_pivotal!(C,K.([1,1,1]))
 
-    L,_ = cyclotomic_field(16)
-    I = ising_category(L)
-    S = smatrix(I)
-    perm = [3,2,1]
-    # Argument-dependent S-matrices must respect the requested ordering and
-    # must not poison a later full matrix through a category-wide cache.
-    @test smatrix(I,simples(I)[perm]) == S[perm,perm]
-    @test size(smatrix(I,[one(I)])) == (1,1)
-    @test size(smatrix(I)) == (3,3)
-    @test normalized_smatrix(I,simples(I)[perm]) ==
-          normalized_smatrix(I)[perm,perm]
-
-    # Scaling the Ising sigma component by two preserves equality of dual
-    # dimensions but violates monoidality of the pivotal structure.
-    old = copy(I.pivotal)
-    @test_throws ArgumentError set_spherical!(I,L.([1,1,2]))
-    @test I.pivotal == old && is_spherical(I)
-    set_pivotal!(I,L.([1,1,-1]))
-    fresh = matrix(L,[L(tr(braiding(A,B) ∘ braiding(B,A)))
-                      for A in simples(I),B in simples(I)])
-    @test is_pivotal(I) && smatrix(I) == fresh && fresh != S
-    S2 = smatrix(I)
-    S2[1,1] = 100
-    @test smatrix(I) == fresh
-
     # Unit-containing pentagons are part of coherence. The skeletal API fixes
     # unit associators to identities and rejects conflicting supplied data.
     U = six_j_category(QQ,ones(Int,1,1,1))
@@ -382,9 +373,6 @@ end
                                                 matrix(QQ,1,1,[2]))
     @test pentagon_axiom(U)
     @test TensorCategories.randomized_pentagon_axiom(U,1)
-    J = ising_category(L)
-    set_associator!(J,3,3,3,3,2*J.ass[3,3,3,3])
-    @test !pentagon_axiom(J)
 end
 
 @testset "Enclosure equality versus numerical overlap" begin

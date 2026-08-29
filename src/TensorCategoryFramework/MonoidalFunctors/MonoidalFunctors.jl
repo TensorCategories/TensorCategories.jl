@@ -2,16 +2,48 @@
     Compute Monoidal Functors   
 ----------------------------------------------------------=#
 
+"""
+    monoidal_structures(F)
+
+Enumerate monoidal structures up to monoidal natural isomorphism only when
+completeness is established. Currently the generic solver supports the
+normalised rank-one case. Use `monoidal_structure_candidates` for a possibly
+incomplete list of individually checked structures in higher rank.
+"""
 function monoidal_structures(F::AbstractFunctor)
+    C,D = domain(F),codomain(F)
+    is_fusion(C) && is_fusion(D) ||
+        throw(ArgumentError("split fusion domain and codomain are required"))
+    length(simples(C)) == 1 || throw(ArgumentError(
+        "complete monoidal-structure classification is not implemented in this rank; use monoidal_structure_candidates for verified, possibly incomplete candidates"))
+    F(one(C)) == one(D) || throw(ArgumentError("the rank-one solver requires a strictly unit-preserving functor"))
+    G = monoidal_functor(F,simples(C),Dict((1,1) => id(F(one(C)))))
+    monoidal_functor_axiom(G) || throw(ArgumentError("the normalised tensorator is not coherent"))
+    [G]
+end
+
+"""
+    monoidal_structure_candidates(F)
+
+Search for and verify monoidal structures on a strictly unit-preserving
+linear functor between split fusion categories. This search is NOT a complete
+classification: it fixes selected tensorators/determinants and may sample a
+positive-dimensional solution scheme. Failure to find a candidate is not a
+proof of nonexistence. EGNO §2.6 classifies pointed examples by H²; the order
+of the universal grading group is not the number of structures.
+"""
+function monoidal_structure_candidates(F::AbstractFunctor)
     C = domain(F)
     D = codomain(F)
-    @assert is_fusion(C)
+    is_fusion(C) && is_fusion(D) ||
+        throw(ArgumentError("split fusion domain and codomain are required"))
 
     S = simples(C)
     n = length(S)
 
-    if n == 1 
-        return [monoidal_functor(F, S, Dict(S[1] => id(F)))]
+    F(one(C)) == one(D) || throw(ArgumentError("the candidate search requires a strictly unit-preserving functor"))
+    if n == 1
+        return monoidal_structures(F)
     end
 
     one_C = one(C)
@@ -43,6 +75,11 @@ function monoidal_structures(F::AbstractFunctor)
     y = copy(x)
     vars = Dict((s,t) => var_numbers[(s,t)] > 0 ? [popfirst!(y) for _ ∈ 1:var_numbers[(s,t)]] : [R(1)] for s ∈ 1:n, t ∈ 1:n)
 
+    if isempty(x)
+        tensorators = Dict((i,j) => only(bases[(i,j)]) for i in 1:n,j in 1:n)
+        G = monoidal_functor(F,S,tensorators)
+        return monoidal_functor_axiom(G) ? [G] : MonoidalFunctor[]
+    end
     equations = []
     for (i,j,k) ∈ Base.product(1:n,1:n,1:n)
         if one_index ∈ [i,j,k] continue end
@@ -50,7 +87,7 @@ function monoidal_structures(F::AbstractFunctor)
         X,Y,Z = S[[i,j,k]]
 
         eq_basis = basis(Hom((F(X) ⊗ F(Y)) ⊗ F(Z), F(X ⊗ (Y ⊗ Z))))
-        eq = [zero(R) for _ ∈ length(eq_basis)]
+        eq = [zero(R) for _ ∈ eq_basis]
 
         # Decompose X⊗Y and Y⊗Z
         _,_,ixy,pxy = direct_sum_decomposition(X ⊗ Y, S)
@@ -129,7 +166,7 @@ function monoidal_structures(F::AbstractFunctor)
     
     nats = [Dict((x,y) => sum([v(s...) * t for (v,t) ∈ zip(vars[(x,y)], bases[(x,y)])]) for (x,y) ∈ Base.product(1:n,1:n)) for s ∈ sols]
 
-    mon_structures = filter(e -> all(is_invertible.(values(e.monoidal_structure))), [monoidal_functor(F, S, n) for n ∈ nats])
+    mon_structures = filter(e -> monoidal_functor_axiom(e), [monoidal_functor(F, S, n) for n ∈ nats])
 
     if length(mon_structures) == 0 
         return MonoidalFunctor[]
@@ -147,9 +184,6 @@ function monoidal_structures(F::AbstractFunctor)
         end
     end
 
-    if length(unique_structures) != universal_order
-         @warn "Number of monoidal structures does not match order of universal grading group. Something's wrong..."
-    end
     unique_structures
 end
 
@@ -173,17 +207,24 @@ function monoidal_natural_transformations(F::AbstractMonoidalFunctor, G::Abstrac
 
     K = base_ring(domain(F))
     n = length(Nats)
-    
+    n == 0 && return AdditiveNaturalTransformation[]
+
     R,x = polynomial_ring(K,n)
 
-    equations = []
+    U = one(domain(F))
+    F(U) == one(codomain(F)) && G(U) == one(codomain(G)) ||
+        throw(ArgumentError("monoidal natural transformations currently require normalised unit maps"))
+    unit_basis = basis(Hom(F(U),G(U)))
+    unit_coords = express_in_basis(id(F(U)),unit_basis)
+    equations = [-R(c) for c in unit_coords]
+    for (a,η) in zip(x,Nats)
+        equations .+= a .* express_in_basis(η(U),unit_basis)
+    end
 
     for X ∈ S, Y ∈ S
         eq_basis = basis(Hom(F(X)⊗F(Y), G(X ⊗ Y)))
         eqs = [zero(R) for _ ∈ eq_basis]
-        if length(eq_basis) == 0 
-            return AdditiveNaturalTransformation[]
-        end
+        isempty(eq_basis) && continue
         for (a,η) ∈ zip(x, Nats), (b,ν) ∈ zip(x, Nats)
 
             left = monoidal_structure(G,X,Y) ∘ (η(X) ⊗ ν(Y))  
@@ -211,8 +252,25 @@ function monoidal_natural_transformations(F::AbstractMonoidalFunctor, G::Abstrac
 end
 
 function monoidal_functor_axiom(F::AbstractMonoidalFunctor)
-    S = indecomposables(domain(F))
-    
+    C,D = domain(F),codomain(F)
+    S = indecomposables(F)
+    U = one(C)
+    F(U) == one(D) || throw(ArgumentError("the checker currently requires normalised unit maps"))
+    for X in S
+        # In this representation unit maps are identities (EGNO §2.4).
+        monoidal_structure(F,U,X) == id(F(X)) || return false
+        monoidal_structure(F,X,U) == id(F(X)) || return false
+    end
+    for X in S,Y in S
+        J = monoidal_structure(F,X,Y)
+        domain(J) == F(X)⊗F(Y) && codomain(J) == F(X⊗Y) || return false
+        is_invertible(J) || return false
+        # Naturality on generating morphisms; this also works when the
+        # listed generators have non-scalar endomorphisms.
+        for X2 in S,Y2 in S,f in basis(Hom(X,X2)),g in basis(Hom(Y,Y2))
+            F(f⊗g) ∘ J == monoidal_structure(F,X2,Y2) ∘ (F(f)⊗F(g)) || return false
+        end
+    end
     for X ∈ S, Y ∈ S, Z ∈ S 
         left = compose(
             monoidal_structure(F,X,Y) ⊗ id(F(Z)),
