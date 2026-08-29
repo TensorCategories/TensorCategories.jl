@@ -567,6 +567,20 @@ function audit_jordan_representation(C, n)
     Representation(C, gens(base_group(C)), [J])
 end
 
+# A modular representation's matrices act on its underlying vector space.
+# Categorical dimension is reduced in the base field and cannot determine the
+# matrix size; compare EGNO (2015), Definition 4.7.11.
+@testset "Modular representation matrix dimensions" begin
+    F = GF(5)
+    R = representation_category(F,cyclic_group(5))
+    J3 = audit_jordan_representation(R,3)
+    X = J3 ⊗ J3
+    @test matrix(morphism(X,X,identity_matrix(F,9))) ==
+          identity_matrix(F,9)
+    @test_throws ErrorException morphism(X,X,identity_matrix(F,4);check=true)
+    @test sum(int_dim(S)*m for (S,m) in decompose(X)) == 9
+end
+
 # Jordan--Hölder factors, socle types, and indecomposable summands are
 # different notions; see EGNO (2015), §1.5, and GAP Reference Manual 69.5/69.7.
 @testset "Representation simplicity and composition factors" begin
