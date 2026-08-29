@@ -260,6 +260,42 @@ end
     @test_throws ArgumentError ordinary(id(X))
 end
 
+# The opposite category reverses arrows and composition, interchanges products
+# with coproducts, and uses the inverse associator; see EGNO (2015), §1.1.
+@testset "Opposite-category variance" begin
+    V = VectorSpaces(QQ)
+    U, A, B = [VectorSpaceObject(V,n) for n in 1:3]
+    f = morphism(U,A,matrix(QQ,1,2,[1,2]))
+    g = morphism(A,B,matrix(QQ,2,3,[1,0,2,0,1,3]))
+    O = opposite_category(V)
+    of, og = O(f), O(g)
+
+    @test all(domain(h) == O(A) && codomain(h) == O(B)
+              for h in basis(Hom(O(A),O(B))))
+    @test of ∘ og == O(g ∘ f)
+    @test opposite_morphism(of) == f
+    @test opposite_object(O(A)) == A
+
+    Z, inc, proj = direct_sum(O(U),O(A))
+    @test proj[1] ∘ inc[1] == id(O(U))
+    @test proj[2] ∘ inc[2] == id(O(A))
+    @test inc[1] ∘ proj[1] + inc[2] ∘ proj[2] == id(Z)
+    P, ps = product(O(U),O(A))
+    Q, js = coproduct(O(U),O(A))
+    @test domain(ps[1]) == P && codomain(ps[1]) == O(U)
+    @test domain(js[2]) == O(A) && codomain(js[2]) == Q
+
+    a = associator(O(U),O(A),O(B))
+    @test domain(a) == (O(U)⊗O(A))⊗O(B)
+    @test codomain(a) == O(U)⊗(O(A)⊗O(B))
+    @test O(f) ⊗ O(g) == O(f ⊗ g)
+
+    K, k = kernel(of)
+    C, c = cokernel(of)
+    @test of ∘ k == zero_morphism(K,codomain(of))
+    @test c ∘ of == zero_morphism(domain(of),C)
+end
+
 # Maschke's theorem gives semisimplicity when the characteristic does not
 # divide |G|; see EGNO (2015), Remark 4.2.14. Fusion additionally requires
 # splitting; see Mäurer--Thiel, arXiv:2406.13438v2, Section 2.1.
