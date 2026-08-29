@@ -375,6 +375,19 @@ end
         [zero_matrix(QQ,1,0),zero_matrix(QQ,0,1)]))
 end
 
+# Morphisms between biproducts are matrices of component maps (EGNO (2015),
+# Section 1.2). Skeletal Hom bases must use the same matrix-unit order as their
+# coordinate vectors, including rectangular source and target multiplicities.
+@testset "Skeletal Hom matrix-unit coordinates" begin
+    C = six_j_category(GF(5),ones(Int,1,1,1),["1"])
+    set_one!(C,[1])
+    U = one(C)
+    H = Hom(U ⊕ U,U ⊕ U ⊕ U)
+    for f in basis(H)
+        @test sum(express_in_basis(f,H) .* basis(H)) == f
+    end
+end
+
 # EGNO Proposition 2.6.1 identifies tensor structures on the identity of a
 # pointed category with group 2-cocycles modulo coboundaries.  Consequently a
 # finite algebraic search must not present its output as a complete list unless

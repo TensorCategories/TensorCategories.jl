@@ -1327,7 +1327,10 @@ end
 function express_in_basis(f::SixJMorphism, H::SixJHomSpace)
     domain(f) == domain(H) && codomain(f) == codomain(H) ||
         throw(ArgumentError("morphism and Hom basis must have the same endpoints"))
-    vcat((collect(m)[:] for m ∈ matrices(f))...)
+    # Hom constructs matrix units in block, row, column order. Julia's
+    # column-major vec would permute the coefficients within rectangular blocks.
+    [M[i,j] for M in matrices(f)
+            for i in 1:number_of_rows(M) for j in 1:number_of_columns(M)]
 end
 
 
