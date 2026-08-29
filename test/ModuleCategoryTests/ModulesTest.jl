@@ -19,6 +19,9 @@ Funcs = category_of_bimodules(A)
 # V. Ostrik, Tensor Categories, AMS (2015), Definitions 7.8.21 and 7.8.25 and
 # Exercise 7.8.28; Proposition 7.8.30 gives semisimplicity from separability.
 @testset "Modules in Ising" begin
+    # The multiplication found on 1⊕ψ satisfies the unit and associativity
+    # equations of an algebra object; see EGNO (2015), Definition 7.8.1.
+    @test is_algebra(A)
     @test length(simples(M1)) == 3
     @test pentagon_axiom(Funcs)
 end

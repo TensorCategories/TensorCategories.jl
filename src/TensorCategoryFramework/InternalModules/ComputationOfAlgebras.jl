@@ -135,8 +135,12 @@ function _algebra_structures(structure_ideal::Function, X::Object, _unit = Hom(o
         mult_mat = change_base_ring(Q, mult_mat)
 
         # get coefficients of the image multiplication
-        image_mult = phi_squared_mat * mult_mat * inv(phi_mat)
-        image_coeffs = express_in_basis(morphism(image_mult), morphism.(matrix.(mult_base)))
+        image_mult = phi_mat_squared * mult_mat * inv(phi_mat)
+        # The parameterized multiplication is over Q=Frac(K[x]); transport
+        # its comparison basis to the same field before taking coordinates.
+        extended_basis = [morphism(change_base_ring(Q,matrix(b)))
+                          for b in mult_base]
+        image_coeffs = express_in_basis(morphism(image_mult), extended_basis)
 
         # Find a coefficient that is linear in a for every a in iso_vars
         free_indices = []
@@ -328,7 +332,8 @@ function non_degenerate_condition(A::Object, mult_basis::Vector{<:Morphism}, var
 
     A_dual_to_A = basis(Hom(dA, A))
 
-    coeffs = express_in_basis(morphism(inv_quo_mat), morphism.(matrix.(A_dual_to_A)))
+    coeffs = express_in_basis(morphism(inv_quo_mat),
+        [morphism(change_base_ring(QKx,matrix(b))) for b in A_dual_to_A])
 
     # set up comultiplication Δ: A → A⊗A 
 
@@ -349,7 +354,8 @@ function non_degenerate_condition(A::Object, mult_basis::Vector{<:Morphism}, var
     end
 
     comult_basis = basis(Hom(A, A ⊗ A))
-    comult_coeffs = express_in_basis(morphism(comult_mat), morphism.(matrix.(comult_basis)))
+    comult_coeffs = express_in_basis(morphism(comult_mat),
+        [morphism(change_base_ring(QKx,matrix(b))) for b in comult_basis])
 
     # Add equations for m ∘ Δ = id 
     eqs = sum(a*b*change_base_ring(QKx, matrix(m ∘ d)) for  (a,m) ∈ zip(vars, mult_basis), (b,d) ∈ zip(comult_coeffs, comult_basis)) .- matrix(id(A))
