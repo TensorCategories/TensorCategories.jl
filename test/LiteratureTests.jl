@@ -478,3 +478,39 @@ end
                              embedding=wrapped.embedding)
     @test g == id(only(wrapped.objects))
 end
+
+function literature_nonsplit_center_object()
+    F = GF(2)
+    N = zeros(Int,3,3,3)
+    for i in 1:3,j in 1:3
+        N[i,j,mod(i+j-2,3)+1] = 1
+    end
+    C = six_j_category(F,N,["1","g","g2"])
+    set_one!(C,1)
+    Z = center(C)
+    U = one(C) ⊕ one(C)
+    A = matrix(F,[0 1;1 1])
+    gamma = [morphism(U⊗S,S⊗U,
+                [k == j ? A^(j-1) : zero_matrix(F,0,0) for k in 1:3])
+             for (j,S) in enumerate(simples(C))]
+    C,Z,CenterObject(Z,U,gamma)
+end
+
+# EGNO Example 8.5.4 identifies Z(Vec_C3) with C3-graded C3-modules. The
+# irreducible polynomial x^2+x+1 gives a two-dimensional simple over F2 whose
+# endomorphism field is F4. Local center algorithms must not enumerate all
+# ambient simples and must decompose the full End algebra, including radicals.
+@testset "Finite-field center objects" begin
+    _,Z,X = literature_nonsplit_center_object()
+    @test is_central(X) && int_dim(End(X)) == 2
+    @test is_simple(X)
+    @test !isdefined(Z,:simples)
+
+    dec = decompose(X ⊕ X)
+    @test length(dec) == 1 && dec[1][2] == 2
+    @test is_isomorphic(dec[1][1],X)[1]
+    Y = CenterObject(Z,object(X),copy(half_braiding(X)))
+    ok,f = is_isomorphic(X,Y)
+    @test ok && inv(f) ∘ f == id(X) && f ∘ inv(f) == id(Y)
+    @test !isdefined(Z,:simples)
+end
