@@ -4,7 +4,7 @@
 
 function numeric_symbols_to_csv(destination::String, F::Dict{Vector{Int}, AcbFieldElem}; delimiter = ", ")
     open(destination, "w") do io 
-        sorted = collect(sort(F))
+        sorted = sort!(collect(F); by = first)
 
         for (k,v) ∈ sorted 
             m = max(accuracy_bits(v),0)
@@ -12,8 +12,8 @@ function numeric_symbols_to_csv(destination::String, F::Dict{Vector{Int}, AcbFie
                 m = 64
             end
 
-            real_str = overlaps(real(v), zero(parent(real(v)))) ? "0.0" : string(BigFloat(BigFloat(real(v)), m))
-            imag_str = overlaps(imag(v), zero(parent(imag(v)))) ? "0.0" : string(BigFloat(BigFloat(imag(v)), m))
+            real_str = overlaps(real(v), zero(parent(real(v)))) ? "0.0" : string(BigFloat(BigFloat(real(v)); precision = m))
+            imag_str = overlaps(imag(v), zero(parent(imag(v)))) ? "0.0" : string(BigFloat(BigFloat(imag(v)); precision = m))
             s = join([string.(k); [real_str, imag_str]], delimiter) * "\n"
             write(io, s)
         end
