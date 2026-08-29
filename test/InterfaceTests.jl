@@ -14,3 +14,29 @@
     M = representation_category(GF(3), cyclic_group(3))
     @test !is_weak_fusion(M) && !is_fusion(M)
 end
+
+function audit_jordan_representation(C, n)
+    J = identity_matrix(base_ring(C), n)
+    for i in 1:n-1
+        J[i, i+1] = 1
+    end
+    Representation(C, gens(base_group(C)), [J])
+end
+
+# A representation morphism is an intertwiner; see Etingof et al.,
+# Introduction to Representation Theory (2011), Definition 1.13.
+@testset "Representation morphism validation" begin
+    F = GF(5)
+    R = representation_category(F, cyclic_group(5))
+    J2 = audit_jordan_representation(R, 2)
+    bad = matrix(F, [1 0; 0 0])
+    @test_throws ArgumentError morphism(J2, J2, bad; check = true)
+    # Expensive equivariance validation is opt-in for performance.
+    @test matrix(morphism(J2, J2, bad)) == bad
+
+    S = representation_category(F, cyclic_group(2))
+    T = Representation(S, gens(base_group(S)), [identity_matrix(F, 2)])
+    @test_throws ArgumentError morphism(J2, T, identity_matrix(F, 2))
+    @test_throws ArgumentError morphism(J2, J2, identity_matrix(GF(7), 2))
+    @test_throws ErrorException morphism(J2, J2, identity_matrix(F, 1))
+end

@@ -97,19 +97,16 @@ function Representation(C::GroupRepresentationCategory, m::Function)
     return GroupRepresentation(C,G,m,F,d)
 end
 """
-    morphism(ρ::GroupRepresentation, τ::GroupRepresentation, m::MatElem; check = true)
+    morphism(ρ::GroupRepresentation, τ::GroupRepresentation, m::MatElem; check = false)
 
-Morphism between representations defined by ``m``. If check == false equivariancy
-will not be checked.
+Morphism between representations defined by ``m``. Equivariance is assumed by
+default; pass `check=true` to verify it.
 """
-function morphism(ρ::GroupRepresentation, τ::GroupRepresentation, m::MatElem; check = true)
-    if size(m) != (dim(ρ), dim(τ)) throw(ErrorException("Mismatching dimensions")) end
-    if check
-        if !isequivariant(m,ρ,τ)
-            # TODO: Fix that for left_inverse 
-            #  "Map has to be equivariant" 
-        end
-    end
+function morphism(ρ::GroupRepresentation, τ::GroupRepresentation, m::MatElem; check = false)
+    parent(ρ) == parent(τ) || throw(ArgumentError("Mismatching parents"))
+    base_ring(m) == base_ring(ρ) || throw(ArgumentError("Mismatching base fields"))
+    size(m) == (int_dim(ρ), int_dim(τ)) || throw(ErrorException("Mismatching dimensions"))
+    check && !isequivariant(m, ρ, τ) && throw(ArgumentError("Map must be equivariant"))
     return GroupRepresentationMorphism(ρ,τ,m)
 end
 
