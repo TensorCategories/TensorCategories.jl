@@ -443,6 +443,18 @@ end
     @test is_fusion(representation_category(GF(5), cyclic_group(2)))
     M = representation_category(GF(3), cyclic_group(3))
     @test !is_weak_fusion(M) && !is_fusion(M)
+
+    # EGNO Example 8.5.4 identifies Z(Vec_G) with Yetter--Drinfeld modules.
+    # For G=C2 in characteristic two it contains Rep_F2(C2), which is not
+    # semisimple by Maschke. Thus a split fusion input can have a center that
+    # is neither multifusion nor modular when its global dimension vanishes.
+    N = zeros(Int,2,2,2)
+    N[1,1,1] = N[1,2,2] = N[2,1,2] = N[2,2,1] = 1
+    C = six_j_category(GF(2),N)
+    set_one!(C,1)
+    Z = center(C)
+    @test is_fusion(C) && iszero(dim(C))
+    @test !is_semisimple(Z) && !is_multifusion(Z) && !is_modular(Z)
 end
 
 # Exact ordinary-characteristic representations exercise a different backend
