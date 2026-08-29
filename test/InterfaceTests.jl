@@ -221,6 +221,25 @@ end
         zero_morphism(X,Y), [zero_morphism(Y,X)])
 end
 
+# Row reduction in a Hom space must preserve the original source and target.
+# Rectangular matrices detect both accidental transposition and flattening in
+# the wrong order; compare the vector-space structure in EGNO (2015), §1.2.
+@testset "Rectangular Hom-span coordinates" begin
+    V = VectorSpaces(QQ)
+    X, Y = VectorSpaceObject(V,2), VectorSpaceObject(V,3)
+    f = morphism(X,Y,matrix(QQ,2,3,[1,2,0,3,0,4]))
+    g = morphism(X,Y,matrix(QQ,2,3,[0,1,2,0,3,0]))
+    B = basis([f,g,f+g])
+    @test length(B) == 2
+    @test all(domain(b) == X && codomain(b) == Y for b in B)
+    # The independent output spans each original generator exactly.
+    for h in (f,g)
+        c = express_in_basis(h,B)
+        @test sum((a*b for (a,b) in zip(c,B));
+                  init=zero_morphism(X,Y)) == h
+    end
+end
+
 # Maschke's theorem gives semisimplicity when the characteristic does not
 # divide |G|; see EGNO (2015), Remark 4.2.14. Fusion additionally requires
 # splitting; see Mäurer--Thiel, arXiv:2406.13438v2, Section 2.1.
