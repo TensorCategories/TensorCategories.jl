@@ -57,6 +57,9 @@ end
 # equations after each operation and do not compare a complete center oracle.
 @testset "AnyonWiki Center" begin
     keys = anyonwiki_keys(3)
+    # For sampled rank-at-most-three inputs, compute the center, split its
+    # simples, and skeletonize it; both transported associators must remain
+    # coherent on the sampled quadruples.
     @testset "Rank < 4: Computation" begin
 
         for k in rand(keys, 3)
@@ -87,16 +90,19 @@ end
 # target fields.  QQBar and GF(17) are exact here; AcbField uses ball arithmetic,
 # so its randomized pentagon result is numerical evidence rather than a proof.
 @testset "AnyonWiki with other fields" begin
+    # QQBar gives an exact algebraically closed characteristic-zero target.
     @testset "QQBar" begin
         C = anyonwiki(QQBarField(), 3,1,0,1,2,1,1)
         @test randomized_pentagon_axiom(C, 3)
     end
 
+    # GF(17) checks exact reduction into positive characteristic for this entry.
     @testset "finite" begin
         C = anyonwiki(GF(17), 3,1,0,1,2,1,1)
         @test randomized_pentagon_axiom(C, 3)
     end
 
+    # AcbField checks approximate complex-ball evaluation of the same data.
     @testset "AcbField" begin
         C = anyonwiki(AcbField(), 3,1,0,1,2,1,1)
         @test randomized_pentagon_axiom(C, 3)

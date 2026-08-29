@@ -18,7 +18,9 @@ end
 # The same reference, Proposition 7.14.6 and Example 8.5.4, identifies the
 # center with a Drinfeld-double representation category.  Its simples are
 # indexed by a conjugacy class and an irreducible representation of its
-# centralizer.  For S₃ the three classes contribute 3, 2, and 2 simples.
+# centralizer.  Over F₂₃, x²+x+1 is irreducible because 3 does not divide
+# |F₂₃×|=22, so C₃ has a trivial module and one two-dimensional simple.
+# The three S₃ conjugacy classes therefore contribute 3, 2, and 2 simples.
 @testset "Rep center" begin 
     S = simples(center(RepG))
     @test length(S) == 7
