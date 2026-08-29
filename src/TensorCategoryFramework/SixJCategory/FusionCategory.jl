@@ -49,18 +49,10 @@ function _check_sixj_parents(X::SixJObject...)
     return nothing
 end
 
-function ==(C::SixJCategory, D::SixJCategory)
-    base_ring(C) ≠ base_ring(D) && return false 
-    multiplication_table(C) ≠ multiplication_table(D) && return false 
-    if !(typeof(base_ring(C)) <: Union{AcbField,ArbField})
-        if !has_attribute(C, :six_j_symbol)
-            C.ass != D.ass && return false
-        end
-    else
-        !all([overlaps(a,b) for (a,b) in zip(C.ass,D.ass)]) && return false
-    end
-    true 
-end
+# Categories carry mutable structural data. Equality means the same parent,
+# not coincident fusion rules/F-symbols (which can have different braidings).
+==(C::SixJCategory,D::SixJCategory) = C === D
+Base.hash(C::SixJCategory,h::UInt) = hash(objectid(C),h)
 
 object_type(::SixJCategory) = SixJObject
 #-------------------------------------------------------------------------------
@@ -105,6 +97,16 @@ end
 #   Setters/Getters
 #-------------------------------------------------------------------------------
 
+# Invalidate derived values, but preserve lazy F/R-symbol providers.
+function _invalidate_sixj_structure!(C::SixJCategory)
+    if isdefined(C,:__attrs)
+        for key in (:smatrix,:modular,:spherical,:is_spherical,:is_unitary)
+            delete!(getfield(C,:__attrs),key)
+        end
+    end
+    nothing
+end
+
 @doc raw""" 
 
     set_tensor_product!(F::SixJCategory, mult::Array{Int,4})
@@ -112,6 +114,7 @@ end
 Set the fusion rules of ``F``.
 """
 function set_tensor_product!(F::SixJCategory, tensor)
+    _invalidate_sixj_structure!(F)
     F.tensor_product = tensor
     n = size(tensor,1)
 
@@ -124,6 +127,7 @@ function set_tensor_product!(F::SixJCategory, tensor)
 end
 
 function set_braiding!(F::SixJCategory, braiding)
+    _invalidate_sixj_structure!(F)
     F.braiding = braiding
 end
 
@@ -139,22 +143,52 @@ end
 
 Set the ``F``-symbols of ``F``.
 """
-set_associator!(F::SixJCategory, ass) = F.ass = ass
+# SixJCategory uses strictly normalised unit associators (see associator).
+# Reject conflicting input instead of silently discarding a supplied F=2
+# in the rank-one category. The pentagon itself would force F³=F².
+function _check_normalised_unit_associator(C::SixJCategory,i,j,k,M)
+    if isdefined(C,:one) && sum(C.one) == 1
+        u = findfirst(!iszero,C.one)
+        if u in (i,j,k)
+            M == identity_matrix(base_ring(C),number_of_rows(M)) ||
+                throw(ArgumentError("skeletal unit associators are normalised to identities"))
+        end
+    end
+    nothing
+end
+
+function set_associator!(F::SixJCategory,ass)
+    for i in 1:F.rank,j in 1:F.rank,k in 1:F.rank,l in 1:F.rank
+        # An unassigned entry may be supplied later by :six_j_symbol.
+        isassigned(ass,i,j,k,l) || continue
+        _check_normalised_unit_associator(F,i,j,k,ass[i,j,k,l])
+    end
+    _invalidate_sixj_structure!(F)
+    F.ass = ass
+end
 
 function set_associator!(F::SixJCategory, i::Int, j::Int, k::Int, ass::Vector{<:MatElem})
+    _invalidate_sixj_structure!(F)
+    foreach(M -> _check_normalised_unit_associator(F,i,j,k,M),ass)
     F.ass[i,j,k,:] = ass
 end
 
 function set_associator!(F::SixJCategory, i::Int, j::Int, k::Int, l::Int, ass::MatElem)
+    _invalidate_sixj_structure!(F)
+    _check_normalised_unit_associator(F,i,j,k,ass)
     F.ass[i,j,k,l] = ass
 end
 
 function set_associator!(F::SixJCategory, i::Int, j::Int, k::Int, l::Int, ass::Array{T,N}) where {T,N}
-    F.ass[i,j,k,l] = matrix(base_ring(F), (N > 1 ? size(ass) : (1,1))..., ass)
+    _invalidate_sixj_structure!(F)
+    set_associator!(F,i,j,k,l,matrix(base_ring(F), (N > 1 ? size(ass) : (1,1))..., ass))
 end
 
 function set_associator!(F::SixJCategory, i::Int, j::Int, k::Int, l::Int, m::Int, n::Int, v::RingElem) 
-    F.ass[i,j,k,l][m,n] = v
+    _invalidate_sixj_structure!(F)
+    M = deepcopy(F.ass[i,j,k,l])
+    M[m,n] = v
+    set_associator!(F,i,j,k,l,M)
 end
 
 @doc raw""" 
@@ -164,30 +198,45 @@ end
 Set the pivotal structure of ``F``. Warning: No checks are performed.
 """
 function set_pivotal!(F::SixJCategory, sp)
+    _invalidate_sixj_structure!(F)
     F.pivotal = sp
 end
 
-function set_spherical!(F::SixJCategory, sp) 
-    F.pivotal = sp
-    @req is_spherical(F) "Not a spherical structure"
-
+function set_spherical!(C::SixJCategory,sp)
+    base_ring(C) isa Union{ArbField,AcbField,ComplexField} && throw(ArgumentError(
+        "a checked spherical setter requires exact coefficients; set_pivotal! is explicitly unchecked"))
+    is_spherical(C,sp) || throw(ArgumentError("not a spherical pivotal structure"))
+    set_pivotal!(C,base_ring(C).(sp))
 end
 
-function is_spherical(F::SixJCategory, sp) 
-    all([s*ev(dual(x))∘coev(x) == inv(s)*ev(dual(x))∘coev(x) for (s,x) ∈ zip(sp,simples(F))]) 
-end
-
-function is_spherical(F::SixJCategory)
-    get_attribute!(F, :is_spherical) do
-        if isdefined(F, :pivotal) 
-            if typeof(base_ring(F)) <: Union{ArbField, ComplexField,AcbField}
-                return all([overlaps(dim(x), dim(dual(x))) for x in simples(F)])
-            end
-            return all([dim(x) == dim(dual(x)) for x in simples(F)])
-        end
-        false
+function is_spherical(C::SixJCategory,sp)
+    length(sp) == rank(C) || return false
+    sp = base_ring(C).(sp)
+    any(iszero,sp) && return false
+    old = C.pivotal
+    try
+        set_pivotal!(C,copy(sp))
+        return is_spherical(C)
+    finally
+        set_pivotal!(C,old)
     end
-    
+end
+
+function is_spherical(C::SixJCategory)
+    get_attribute!(() -> _sixj_is_spherical(C),C,:is_spherical)
+end
+
+function _sixj_is_spherical(C::SixJCategory)
+    isdefined(C,:pivotal) && length(C.pivotal) == rank(C) || return false
+    any(iszero,C.pivotal) && return false
+    # Ising [1,1,2] has equal dimensions on duals but is NOT pivotal:
+    # the σ⊗σ summands force the σ component to square to one.
+    # EGNO, Definitions 4.7.7 and 4.7.14.
+    is_pivotal(C) || return false
+    if base_ring(C) isa Union{ArbField,AcbField,ComplexField}
+        return all(overlaps(dim(X),dim(dual(X))) for X in simples(C))
+    end
+    all(dim(X) == dim(dual(X)) for X in simples(C))
 end
 
 function set_canonical_spherical!(C::SixJCategory)
@@ -219,12 +268,29 @@ end
 
 Set the unit of ``F``.
 """
-function set_one!(F::SixJCategory, v::Vector) 
-    F.one = v
-end 
+function set_one!(F::SixJCategory,v::Vector)
+    length(v) == rank(F) && all(c -> c isa Integer && c >= 0,v) ||
+        throw(ArgumentError("invalid unit multiplicities"))
+    # Unit-normalised associators must be valid even when the unit is set
+    # AFTER an entire array of F-symbols (the usual constructor order).
+    if sum(v) == 1 && isdefined(F,:ass)
+        u = findfirst(!iszero,v)
+        for i in 1:rank(F),j in 1:rank(F),k in 1:rank(F),l in 1:rank(F)
+            if u in (i,j,k)
+                isassigned(F.ass,i,j,k,l) || continue
+                M = F.ass[i,j,k,l]
+                M == identity_matrix(base_ring(F),number_of_rows(M)) ||
+                    throw(ArgumentError("skeletal unit associators are normalised to identities"))
+            end
+        end
+    end
+    _invalidate_sixj_structure!(F)
+    F.one = copy(v)
+end
 
-function set_one!(F::SixJCategory, i::Int)
-    F.one = [k == i for k ∈ 1:F.rank]
+function set_one!(F::SixJCategory,i::Int)
+    1 <= i <= rank(F) || throw(ArgumentError("unit index out of range"))
+    set_one!(F,[Int(k == i) for k in 1:rank(F)])
 end
 
 function set_ribbon!(F::SixJCategory, r)
@@ -232,6 +298,7 @@ function set_ribbon!(F::SixJCategory, r)
 end
 
 function set_twist!(F::SixJCategory, t)
+    _invalidate_sixj_structure!(F)
     F.twist = t
 end
 
@@ -471,11 +538,17 @@ function r_symbol(C::SixJCategory, i::Int, j::Int, k::Int)
 end
 
 function (K::AcbField)(f::SixJMorphism)
-    x = matrix(f)[1,1]
-    if f != x*id(domain(f))
-        @show matrix(f)
-        error("Not a scalar")
-    end
+    domain(f) == codomain(f) || throw(ArgumentError("a scalar morphism must be an endomorphism"))
+    M = matrix(f)
+    n = number_of_rows(M)
+    n > 0 || throw(ArgumentError("the scalar of an endomorphism of zero is not unique"))
+    x = M[1,1]
+    # End(X)=K for a split simple X (EGNO §1.5): extract its coefficient
+    # directly. Forming x*id(X) can widen a ball, so comparing represented
+    # enclosures after that multiplication can reject even a 1×1 matrix.
+    # For larger matrices, overlap alone cannot certify a common scalar.
+    all(i == j ? Base.isequal(M[i,j],x) : iszero(M[i,j])
+        for i in 1:n,j in 1:n) || throw(ArgumentError("not a represented scalar matrix"))
     K(x)
 end
 
@@ -504,12 +577,16 @@ end
 is_simple(X::SixJObject) = sum(X.components) == 1
 
 # ==(X::SixJObject, Y::SixJObject) = parent(X) == parent(Y) && X.components == Y.components
-function ==(f::SixJMorphism, g::SixJMorphism) 
-    if typeof(base_ring(f)) <: Union{AcbField, ComplexField, ArbField}
-        domain(f) == domain(g) && codomain(f) == codomain(g) && overlaps(matrix(f), matrix(g)) 
-    else 
-        domain(f) == domain(g) && codomain(f) == codomain(g) && f.m == g.m
+function ==(f::SixJMorphism,g::SixJMorphism)
+    domain(f) == domain(g) && codomain(f) == codomain(g) || return false
+    if base_ring(f) isa Union{ArbField,AcbField,ComplexField}
+        # Equality of represented enclosures is transitive; overlap is not.
+        return Base.isequal(f.m,g.m)
     end
+    f.m == g.m
+end
+function overlaps(f::SixJMorphism,g::SixJMorphism)
+    domain(f) == domain(g) && codomain(f) == codomain(g) && overlaps(matrix(f),matrix(g))
 end
 
 
@@ -739,7 +816,7 @@ function twists(C::SixJCategory)
 
     if is_pivotal(C)
         t = [K(inv(drinfeld_morphism(X)) ∘ pivotal(X)) for X in simples(C)]
-        t.twist = t
+        C.twist = t
         return t
     end
     throw(ErrorException("Cannot compute twists"))

@@ -316,6 +316,100 @@ end
     @test domain(K) == O && is_additive(K) && is_linear(K)
 end
 
+function audit_pointed_c3()
+    K,z = cyclotomic_field(3)
+    N = zeros(Int,3,3,3)
+    for i in 0:2,j in 0:2
+        N[i+1,j+1,mod(i+j,3)+1] = 1
+    end
+    C = six_j_category(K,N,["1","g","g^2"])
+    set_one!(C,1)
+    R = [N[i,j,k] == 1 ? matrix(K,1,1,[z^((i-1)*(j-1))]) :
+         zero_matrix(K,0,0) for i in 1:3,j in 1:3,k in 1:3]
+    set_braiding!(C,R)
+    C,z
+end
+
+# EGNO Sections 2.10, 4.7, and 8.13 distinguish left and right pivotal
+# traces and define T from twist eigenvalues. Rowell--Stong--Wang,
+# arXiv:0712.1377v4, Section 5.3.3 supplies the pointed C3 data.
+@testset "Pivotal and modular data" begin
+    C,z = audit_pointed_c3()
+    K = base_ring(C)
+    @test pentagon_axiom(C) && hexagon_axiom(C)
+    @test tmatrix(C) == diagonal_matrix(K.([1,z,z]))
+
+    # A nontrivial character of C3 is pivotal but not spherical. Left and
+    # right dimensions use inverse character values.
+    set_pivotal!(C,[K(1),z,z^2])
+    X = C[2]
+    @test is_pivotal(C) && !is_spherical(C)
+    @test left_dim(X) == z && right_dim(X) == inv(z)
+    @test (right_ev(X)⊗id(X)) ∘ inv_associator(X,right_dual(X),X) ∘
+          (id(X)⊗right_coev(X)) == id(X)
+    set_pivotal!(C,K.([1,1,1]))
+
+    L,_ = cyclotomic_field(16)
+    I = ising_category(L)
+    S = smatrix(I)
+    perm = [3,2,1]
+    # Argument-dependent S-matrices must respect the requested ordering and
+    # must not poison a later full matrix through a category-wide cache.
+    @test smatrix(I,simples(I)[perm]) == S[perm,perm]
+    @test size(smatrix(I,[one(I)])) == (1,1)
+    @test size(smatrix(I)) == (3,3)
+    @test normalized_smatrix(I,simples(I)[perm]) ==
+          normalized_smatrix(I)[perm,perm]
+
+    # Scaling the Ising sigma component by two preserves equality of dual
+    # dimensions but violates monoidality of the pivotal structure.
+    old = copy(I.pivotal)
+    @test_throws ArgumentError set_spherical!(I,L.([1,1,2]))
+    @test I.pivotal == old && is_spherical(I)
+    set_pivotal!(I,L.([1,1,-1]))
+    fresh = matrix(L,[L(tr(braiding(A,B) ∘ braiding(B,A)))
+                      for A in simples(I),B in simples(I)])
+    @test is_pivotal(I) && smatrix(I) == fresh && fresh != S
+    S2 = smatrix(I)
+    S2[1,1] = 100
+    @test smatrix(I) == fresh
+
+    # Unit-containing pentagons are part of coherence. The skeletal API fixes
+    # unit associators to identities and rejects conflicting supplied data.
+    U = six_j_category(QQ,ones(Int,1,1,1))
+    set_one!(U,1)
+    @test_throws ArgumentError set_associator!(U,1,1,1,1,
+                                                matrix(QQ,1,1,[2]))
+    @test pentagon_axiom(U)
+    @test TensorCategories.randomized_pentagon_axiom(U,1)
+    J = ising_category(L)
+    set_associator!(J,3,3,3,3,2*J.ass[3,3,3,3])
+    @test !pentagon_axiom(J)
+end
+
+@testset "Enclosure equality versus numerical overlap" begin
+    K = ArbField(64)
+    C = six_j_category(K,ones(Int,1,1,1))
+    set_one!(C,1)
+    U = one(C)
+    f,g,h = [morphism(U,U,[matrix(K,1,1,[K(s)])])
+             for s in ["0 +/- 1","1.5 +/- 1","3 +/- 1"]]
+    # Overlap is nontransitive numerical compatibility, not equality.
+    @test overlaps(f,g) && overlaps(g,h) && !overlaps(f,h)
+    @test f != g && g != h && f != h && f == f
+
+    L = AcbField(32)
+    D = six_j_category(L,ones(Int,1,1,1))
+    set_one!(D,1)
+    U = one(D)
+    a = L("0.4142135624 +/- 2.72e-11")*L(0,1)
+    h = morphism(U,U,[matrix(L,1,1,[a])])
+    @test Base.isequal(L(h),a)
+    A = U⊕U
+    bad = morphism(A,A,[matrix(L,2,2,[a,L("0 +/- 1"),L(0),a])])
+    @test_throws ArgumentError L(bad)
+end
+
 # Maschke's theorem gives semisimplicity when the characteristic does not
 # divide |G|; see EGNO (2015), Remark 4.2.14. Fusion additionally requires
 # splitting; see Mäurer--Thiel, arXiv:2406.13438v2, Section 2.1.
