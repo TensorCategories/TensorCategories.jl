@@ -1604,14 +1604,20 @@ function autoequivalences(C::SixJCategory)
     equivs
 end
 
-"Return verified tensor autoequivalence candidates; completeness is not claimed."
-function autoequivalence_candidates(C::SixJCategory)
+"""
+    autoequivalence_candidates(C; check=false)
+
+Return tensor autoequivalence candidates; completeness is not claimed.  The
+solved equations impose coherence, and `check=true` additionally re-evaluates
+the monoidal functor axioms on every returned candidate.
+"""
+function autoequivalence_candidates(C::SixJCategory; check::Bool=false)
     fusion_ring_autos = automorphisms(split_grothendieck_ring(C))
     result = MonoidalFunctor[]
     for f in fusion_ring_autos
         images = [findfirst(==(a),f.images) for a in basis(domain(f))]
         F = functor(C,C,simples(C)[images])
-        append!(result,monoidal_structure_candidates(F))
+        append!(result,monoidal_structure_candidates(F;check))
     end
     result
 end

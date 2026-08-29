@@ -45,7 +45,7 @@ References:
 
 I = ising_category() 
 G = cyclic_group(2)
-aut = autoequivalence_candidates(I)
+aut = autoequivalence_candidates(I;check=true)
 # The candidate search is not a classification over Q(sqrt(2)).  These are the
 # two checked structures used to construct this particular split C2 action.
 @testset "Chosen autoequivalence candidates of Ising category" begin
