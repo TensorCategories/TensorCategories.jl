@@ -23,6 +23,24 @@
               for G in candidates)
 end
 
+# EGNO Proposition 2.6.1 identifies normalized tensorators on Vec_G with
+# normalized 2-cocycles. For G=C3 with trivial associator, the identity
+# cocycle supplies a solution. Unlike the C2 test above, this construction has
+# polynomial variables and therefore exercises the equation solver.
+@testset "Pointed polynomial tensorators" begin
+    N = zeros(Int,3,3,3)
+    for i in 1:3,j in 1:3
+        N[i,j,mod(i+j-2,3)+1] = 1
+    end
+    C = six_j_category(QQ,N)
+    set_one!(C,1)
+    candidates = monoidal_structure_candidates(id(C))
+    @test !isempty(candidates)
+    # Production trusts the solved equations; the test independently checks
+    # coherence, naturality, and invertibility of every returned tensorator.
+    @test all(monoidal_functor_axiom,candidates)
+end
+
 # Rowell--Stong--Wang, arXiv:0712.1377v4, Section 5.3.2 gives the exact
 # Ising modular data. EGNO Sections 4.7 and 8.13 require a pivotal structure
 # to be monoidal and define S using the pivotal trace.
