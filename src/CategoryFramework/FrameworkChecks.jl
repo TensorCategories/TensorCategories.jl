@@ -2,170 +2,37 @@
     Generic checks for categories 
 ----------------------------------------------------------=#
 
-function is_fusion(C::Category) 
-    if hasfield(typeof(C), :__attrs) 
-        return get_attribute(C, :fusion) do 
-            false
-        end
-    end
-    false
-end
+# Structural predicates report declared or category-specific knowledge. Generic
+# methods cannot prove axioms merely from the existence of other methods.
+_declared_structure(C::Category, key::Symbol) =
+    hasfield(typeof(C), :__attrs) && get_attribute(C, key, false) === true
 
-function is_weak_fusion(C::Category)
-    is_fusion(C)
-end
-
-function is_weak_multifusion(C::Category)
-    is_multifusion(C) && is_weak_fusion(C)
-end
-
-function is_multifusion(C::Category) 
-    if is_fusion(C) 
-        return true
-    end
-    if hasfield(typeof(C), :__attrs) 
-        return get_attribute(C, :multifusion) do 
-            false
-        end
-    end
-    false
-end
+is_fusion(C::Category) = _declared_structure(C, :fusion)
+is_multifusion(C::Category) = is_fusion(C) || _declared_structure(C, :multifusion)
+is_weak_fusion(C::Category) = is_fusion(C) || _declared_structure(C, :weak_fusion)
+is_weak_multifusion(C::Category) = is_multifusion(C) || is_weak_fusion(C) ||
+    _declared_structure(C, :weak_multifusion)
 
 function is_split_semisimple(C::Category)
-    is_fusion(C) && return true
+    is_multifusion(C) && return true
     is_semisimple(C) && all(s -> int_dim(End(s)) == 1, simples(C))
 end
 
-function is_tensor(C::Category) 
-    if is_fusion(C)
-        return true
-    end
-    if hasfield(typeof(C), :__attrs) 
-        return get_attribute(C, :tensor) do 
-            false
-        end
-    end
-    false
-end
+is_tensor(C::Category) = is_fusion(C) || _declared_structure(C, :tensor)
+is_multitensor(C::Category) = is_tensor(C) || is_weak_multifusion(C) ||
+    _declared_structure(C, :multitensor)
+is_ring(C::Category) = is_tensor(C) || _declared_structure(C, :ring)
+is_multiring(C::Category) = is_multitensor(C) || is_ring(C) ||
+    _declared_structure(C, :multiring)
 
-function is_multitensor(C::Category) 
-    if is_tensor(C) || is_multifusion(C)
-        return true
-    end
-    if hasfield(typeof(C), :__attrs) 
-        return get_attribute(C, :multitensor) do 
-            false
-        end
-    end
-    false
-end
-
-function is_ring(C::Category) 
-    if is_tensor(C)
-        return true
-    end
-    if hasfield(typeof(C), :__attrs) 
-        return get_attribute(C, :ring) do 
-            false
-        end
-    end
-    false
-end
-
-function is_multiring(C::Category) 
-    if is_multitensor(C) || is_ring(C)
-        return true
-    end 
-    if hasfield(typeof(C), :__attrs) 
-        return get_attribute(C, :multiring) do 
-            false
-        end
-    end
-    false
-end
-
-function is_finite(C::Category) 
-    if is_fusion(C)
-        return true
-    end
-    if hasfield(typeof(C), :__attrs) 
-        return get_attribute(C, :finite) do 
-            try 
-                return length(simples(C)) ≥ 0 
-            catch end
-            return false
-        end
-    end
-    try 
-        return length(simples(C)) ≥ 0 
-    catch end
-    return false
-end
-
-function is_monoidal(C::Category) 
-    if is_multiring(C)
-        return true
-    end
-    if hasfield(typeof(C), :__attrs) 
-        return get_attribute(C, :monoidal) do 
-            T = object_type(C)
-            hasmethod(one, Tuple{typeof(C)}) &&
-            hasmethod(tensor_product, Tuple{T,T}) 
-        end
-    end
-    T = object_type(C)
-    hasmethod(one, Tuple{typeof(C)}) &&
-    hasmethod(tensor_product, Tuple{T,T}) 
-end
-
-function is_abelian(C::Category) 
-    if is_multiring(C)
-        return true
-    end
-    if hasfield(typeof(C), :__attrs) 
-        return get_attribute(C, :abelian) do 
-            if is_additive(C) && is_linear(C)
-                T = morphism_type(C)
-                return hasmethod(kernel, Tuple{T}) && hasmethod(cokernel, Tuple{T})
-            end
-            false
-        end
-    end
-    if is_additive(C) && is_linear(C)
-        T = morphism_type(C)
-        return hasmethod(kernel, Tuple{T}) && hasmethod(cokernel, Tuple{T})
-    end
-    return false
-end
-
-function is_additive(C::Category) 
-if is_abelian(C)
-        return true
-    end
-    if hasfield(typeof(C), :__attrs) 
-        return get_attribute(C, :additive) do 
-            T = object_type(C)
-            hasmethod(direct_sum, Tuple{T,T}) && hasmethod(zero, Tuple{typeof(C)})
-        end
-    end
-    T = object_type(C)
-    hasmethod(direct_sum, Tuple{T,T}) && hasmethod(zero, Tuple{typeof(C)})
-end
-
-
-function is_linear(C::Category) 
-    if is_multiring(C)
-        return true
-    end
-    if hasfield(typeof(C), :__attrs) 
-        return get_attribute(C, :additive) do 
-            hasmethod(base_ring, Tuple{typeof(C)})
-        end
-    end
-    hasmethod(base_ring, Tuple{typeof(C)})
-end
-
-is_semisimple(C::Category) = is_multifusion(C)
+is_finite(C::Category) = is_weak_multifusion(C) || _declared_structure(C, :finite)
+is_monoidal(C::Category) = is_multiring(C) || any(
+    key -> _declared_structure(C, key), (:monoidal, :rigid, :spherical, :is_braided))
+is_abelian(C::Category) = is_multiring(C) || _declared_structure(C, :abelian)
+is_additive(C::Category) = is_abelian(C) || _declared_structure(C, :additive)
+is_linear(C::Category) = is_multiring(C) || _declared_structure(C, :linear)
+is_semisimple(C::Category) = is_weak_multifusion(C) ||
+    _declared_structure(C, :semisimple)
 
 function is_modular(C::Category) 
     if hasfield(typeof(C), :__attrs) 
@@ -212,40 +79,14 @@ function _is_spherical(C::Category)
 end
 
 function is_rigid(C::Category)
-    if is_multitensor(C)
-        return true
-    end
-    if hasfield(typeof(C), :__attrs) 
-        return get_attribute!(C, :spherical) do
-            T = object_type(C)
-            is_monoidal(C) && hasmethod(dual, Tuple{T}) && hasmethod(ev, Tuple{T}) && hasmethod(coev, Tuple{T})
-        end
-    end
-    T = object_type(C)
-    is_monoidal(C) && hasmethod(dual, Tuple{T}) && hasmethod(ev, Tuple{T}) && hasmethod(coev, Tuple{T})
+    is_multitensor(C) || _declared_structure(C, :rigid) ||
+        _declared_structure(C, :spherical)
 end
 
-function is_braided(C::Category)
-    if hasfield(typeof(C), :__attrs) 
-        return get_attribute!(C, :is_braided) do
-            T = object_type(C)
-            hasmethod(braiding, Tuple{T,T})
-        end
-    end
-    T = object_type(C)
-    false
-end
+is_braided(C::Category) = _declared_structure(C, :is_braided)
 
 function is_krull_schmidt(C::Category)
-    if is_multiring(C)
-        return true
-    end
-    if hasfield(typeof(C), :__attrs) 
-        return get_attribute!(C, :spherical) do
-            false
-        end
-    end
-    false
+    is_multiring(C) || _declared_structure(C, :krull_schmidt)
 end
 
 is_unitary(C::Category) = false

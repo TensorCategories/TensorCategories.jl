@@ -21,6 +21,7 @@ struct VSMorphism <: VectorSpaceMorphism
 end
 
 is_fusion(::VectorSpaces) = true
+is_braided(::VectorSpaces) = true
 
 #-----------------------------------------------------------------
 #   Constructors
