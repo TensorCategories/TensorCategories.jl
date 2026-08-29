@@ -964,10 +964,5 @@ end
 
 function twist(X::CentralizerObject)
     u = _drinfeld_morphism(X)
-    
-    B,k = is_scalar_multiple(matrix(spherical(object(X))), matrix(u))
-
-    !B && error("Something went wrong")
-
-    return k
+    morphism(X,X,inv(u) ∘ spherical(object(X)))
 end
