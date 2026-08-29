@@ -7,7 +7,7 @@ comprehensive behavior.
 | Suite | Intended use | Current coverage |
 | --- | --- | --- |
 | `quick` | Every push and pull request | Finite-dimensional vector spaces, skeletal fusion arithmetic, and exact associator coherence for the Ising and `I2(5)` fixtures. |
-| `full` | Locally before releases or substantial mathematical changes | Every active test previously included by `test/runtests.jl`: examples, centers, centralizers, module categories, group actions, equivariantization, AnyonWiki, and the quick checks. |
+| `full` | Locally before releases or substantial mathematical changes | The quick checks plus examples, group representations, centers, centralizers, module categories, group actions, equivariantization, and AnyonWiki. |
 
 From the repository root:
 
@@ -29,8 +29,10 @@ end
 ```
 
 Invalid suite names fail immediately rather than silently omitting coverage.
-No previously active test has been removed from the full suite; tests whose
-includes were already commented out remain dormant.
+No previously active test has been removed from the full suite. The group
+representation tests disabled for a GAP MeatAxe regression in Oscar 1.8.0 are
+enabled again after verification with Oscar 1.8.1. Other tests whose includes
+were already commented out remain dormant.
 
 ## GitHub Actions
 

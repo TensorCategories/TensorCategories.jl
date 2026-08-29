@@ -7,12 +7,9 @@ using Oscar, Test
 
 @testset "Test Examples" begin
     include("VectorSpacesTest/VSTest.jl")
-    #UT: Momentary disable the following test that fails
-    #because of an error introduced in the GAP MeatAxe with
-    #Oscar 1.8.0
-    #See https://github.com/gap-system/gap/issues/6463
-    #
-    #include("GroupRepresentationTests/GroupRepresentationTests.jl")
+    # Re-enabled after verification with Oscar 1.8.1. This was disabled for
+    # Oscar 1.8.0 because of GAP MeatAxe issue #6463.
+    include("GroupRepresentationTests/GroupRepresentationTests.jl")
     include("SixJCategoryTests/Examples.jl")
     include("UqSl2.jl")
 end
