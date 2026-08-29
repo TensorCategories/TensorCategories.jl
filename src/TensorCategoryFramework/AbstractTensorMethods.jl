@@ -654,6 +654,8 @@ function normalized_basis(V::AbstractHomSpace)
 end
 
 function is_unitary(f::Morphism)
+    base_ring(f) isa Union{ArbField,AcbField,ComplexField} &&
+        throw(ArgumentError("approximate coefficients cannot certify unitarity"))
     !is_invertible(f) && return false
     id(codomain(f)) == f ∘ dagger(f)
 end
