@@ -131,3 +131,4 @@ TensorCategories.jl was initiated by [**Ulrich Thiel**](https://agag-thiel.math.
 
 [**Gert Vercleyen**](https://gert-vercleyen.github.io/) contributed to the  integration of the data from his [AnyonWiki](https://anyonwiki.github.io/).
 
+Since version 0.7, AI assistance has been used in the development of TensorCategories.jl.
