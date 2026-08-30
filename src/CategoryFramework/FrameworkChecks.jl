@@ -45,11 +45,11 @@ function is_modular(C::Category)
 end
 
 function _is_modular(C::Category) 
-    try
-        return det(smatrix(C)) != 0 
-    catch 
-        return false 
-    end
+    is_fusion(C) && is_braided(C) && is_spherical(C) || return false
+    base_ring(C) isa Union{ArbField,AcbField,ComplexField} &&
+        throw(ArgumentError(
+            "numerical overlap does not certify modularity; use exact category data"))
+    !iszero(det(smatrix(C)))
 end
 
 function is_spherical(C::Category)
@@ -62,20 +62,17 @@ function is_spherical(C::Category)
 end
 
 function _is_spherical(C::Category)
-    @assert is_multifusion(C) "Generic checking only available for multifusion categories"
-
-    obj_type = typeof(one(C))
-    if  !hasmethod(spherical, Tuple{obj_type})
-        return false
+    # EGNO, Section 4.7: for a split semisimple pivotal category it suffices
+    # to compare the left and right dimensions on simple objects. A method
+    # producing components does not by itself prove pivotal monoidality.
+    is_split_semisimple(C) || return false
+    S = simples(C)
+    all(X -> applicable(spherical,X),S) || return false
+    is_pivotal(C) || return false
+    if base_ring(C) isa Union{ArbField,AcbField,ComplexField}
+        return all(overlaps(dim(X),dim(dual(X))) for X in S)
     end
-    try 
-        for x ∈ simples(C)
-            spherical(x)
-        end
-        return true
-    catch
-        return false
-    end
+    all(dim(X) == dim(dual(X)) for X in S)
 end
 
 function is_rigid(C::Category)
