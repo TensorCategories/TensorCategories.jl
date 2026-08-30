@@ -40,7 +40,7 @@ end
     @test dual(S[3]) == S[4]
     @test all(pentagon_axiom(W,X,Y,Z) for W in S,X in S,Y in S,Z in S)
     @test hexagon_axiom(C)
-    @test is_pivotal(C)
+    @test is_pivotal(C;check=true)
     # Relabeling must transport the multiplicity-two intermediate channel in
     # 8⊗8. Outer-index permutation alone changes this F-matrix and destroys
     # coherence; Appendix B supplies the exact F/R oracle used here.
@@ -80,7 +80,7 @@ end
     @test d^2 == d+1 && e^2 == e+1
     @test d != e && d*e == -1
     @test pentagon_axiom(C) && pentagon_axiom(D)
-    @test is_pivotal(C) && is_pivotal(D)
+    @test is_pivotal(C;check=true) && is_pivotal(D;check=true)
 end
 
 # EGNO Exercise 4.7.16: pivotal structures on Vec_C3 are the three
@@ -98,6 +98,20 @@ end
     @test all(p in pivs for p in [[K(1),z^i,z^(2i)] for i in 0:2])
     @test TensorCategories.spherical_structures(C) == [K.([1,1,1])]
 
+    # The two embeddings of Q(zeta_3) conjugate the nontrivial pivotal
+    # characters. Every component must be evaluated by the same exact field
+    # homomorphism used for the rest of the category.
+    set_pivotal!(C,K.([1,z,z^2]))
+    images = Any[]
+    for embedding in complex_embeddings(K)
+        E = extension_of_scalars(C,QQBarField(),embedding)
+        exact = TensorCategories._qqbar_embedding(embedding)
+        @test E.pivotal == exact.(C.pivotal)
+        @test is_pivotal(E;check=true)
+        push!(images,E.pivotal[2])
+    end
+    @test length(unique(images)) == 2
+
     P = [2,1,3]
     D = six_j_category(K,N[P,P,P])
     set_one!(D,2)
@@ -107,6 +121,12 @@ end
     U = six_j_category(QQ,ones(Int,1,1,1))
     set_one!(U,1)
     set_pivotal!(U,[QQ(2)])
+    # Installing structural data is a declaration; the expensive coherence
+    # equations are checked only on request.  On the rank-one fusion ring,
+    # monoidality forces the sole pivotal component p to satisfy p^2=p, hence
+    # the nonzero solution is p=1 rather than the deliberately supplied p=2.
+    @test is_pivotal(U)
+    @test !is_pivotal(U;check=true)
     @test pivotal_structures(U) == [[QQ(1)]]
     @test U.pivotal == [QQ(2)]
 end

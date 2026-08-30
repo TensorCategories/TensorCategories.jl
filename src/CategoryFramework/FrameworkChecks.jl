@@ -52,7 +52,14 @@ function _is_modular(C::Category)
     !iszero(det(smatrix(C)))
 end
 
-function is_spherical(C::Category)
+"""
+    is_spherical(C::Category; check=false)
+
+Return the declared or cached spherical status. Pass `check=true` to verify the
+chosen pivotal structure and equality of left and right dimensions.
+"""
+function is_spherical(C::Category; check::Bool=false)
+    check && return _is_spherical(C)
     if hasfield(typeof(C), :__attrs) 
         return get_attribute!(C, :spherical) do
             _is_spherical(C)
@@ -68,7 +75,7 @@ function _is_spherical(C::Category)
     is_split_semisimple(C) || return false
     S = simples(C)
     all(X -> applicable(spherical,X),S) || return false
-    is_pivotal(C) || return false
+    is_pivotal(C;check=true) || return false
     if base_ring(C) isa Union{ArbField,AcbField,ComplexField}
         return all(overlaps(dim(X),dim(dual(X))) for X in S)
     end

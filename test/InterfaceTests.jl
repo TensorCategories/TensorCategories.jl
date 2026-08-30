@@ -467,11 +467,20 @@ end
     # right dimensions use inverse character values.
     set_pivotal!(C,[K(1),z,z^2])
     X = C[2]
-    @test is_pivotal(C) && !is_spherical(C)
+    @test is_pivotal(C) # constant-time declaration installed by the setter
+    @test is_pivotal(C;check=true) && !is_spherical(C;check=true)
     @test left_dim(X) == z && right_dim(X) == inv(z)
     @test (right_ev(X)⊗id(X)) ∘ inv_associator(X,right_dual(X),X) ∘
           (id(X)⊗right_coev(X)) == id(X)
-    set_pivotal!(C,K.([1,1,1]))
+    # The trivial C3 character is spherical (EGNO, Exercise 4.7.16). Once
+    # declared, unrelated braiding installation and categorical relabeling
+    # must preserve that structural flag.
+    set_spherical!(C,K.([1,1,1]))
+    @test is_spherical(C)
+    set_braiding!(C,copy(C.braiding))
+    @test is_pivotal(C) && is_spherical(C)
+    TensorCategories.sort_simples!(C,[2,1,3])
+    @test is_pivotal(C) && is_spherical(C)
 
     # Unit-containing pentagons are part of coherence. The skeletal API fixes
     # unit associators to identities and rejects conflicting supplied data.

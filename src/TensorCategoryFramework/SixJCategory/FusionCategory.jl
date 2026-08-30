@@ -114,11 +114,15 @@ end
 #-------------------------------------------------------------------------------
 
 # Invalidate derived values, but preserve lazy F/R-symbol providers.
-function _invalidate_sixj_structure!(C::SixJCategory)
+function _invalidate_sixj_structure!(C::SixJCategory;
+                                     pivotal::Bool=true,
+                                     fusion::Bool=true)
     if isdefined(C,:__attrs)
-        for key in (:smatrix,:smatrix_by_objects,:twists_current,
-                    :modular,:spherical,:is_spherical,:is_unitary,
-                    :multiplication_table)
+        keys = Symbol[:smatrix,:smatrix_by_objects,:twists_current,
+                      :modular,:is_unitary]
+        pivotal && append!(keys,[:pivotal,:spherical,:is_pivotal,:is_spherical])
+        fusion && push!(keys,:multiplication_table)
+        for key in keys
             delete!(getfield(C,:__attrs),key)
         end
     end
@@ -145,7 +149,9 @@ function set_tensor_product!(F::SixJCategory, tensor)
 end
 
 function set_braiding!(F::SixJCategory, braiding)
-    _invalidate_sixj_structure!(F)
+    # Braiding changes twists, S, and modularity, but not the pivotal or
+    # spherical structure of the underlying monoidal category.
+    _invalidate_sixj_structure!(F;pivotal=false,fusion=false)
     F.braiding = braiding
 end
 
@@ -183,20 +189,20 @@ function set_associator!(F::SixJCategory,ass; check::Bool=false)
             _check_normalised_unit_associator(F,i,j,k,ass[i,j,k,l])
         end
     end
-    _invalidate_sixj_structure!(F)
+    _invalidate_sixj_structure!(F;fusion=false)
     F.ass = ass
 end
 
 function set_associator!(F::SixJCategory, i::Int, j::Int, k::Int,
                          ass::Vector{<:MatElem}; check::Bool=false)
-    _invalidate_sixj_structure!(F)
+    _invalidate_sixj_structure!(F;fusion=false)
     check && foreach(M -> _check_normalised_unit_associator(F,i,j,k,M),ass)
     F.ass[i,j,k,:] = ass
 end
 
 function set_associator!(F::SixJCategory, i::Int, j::Int, k::Int, l::Int,
                          ass::MatElem; check::Bool=false)
-    _invalidate_sixj_structure!(F)
+    _invalidate_sixj_structure!(F;fusion=false)
     check && _check_normalised_unit_associator(F,i,j,k,ass)
     F.ass[i,j,k,l] = ass
 end
@@ -214,7 +220,7 @@ function set_associator!(F::SixJCategory, i::Int, j::Int, k::Int, l::Int,
         M[m,n] = v
         set_associator!(F,i,j,k,l,M;check=true)
     else
-        _invalidate_sixj_structure!(F)
+        _invalidate_sixj_structure!(F;fusion=false)
         F.ass[i,j,k,l][m,n] = v
     end
 end
@@ -226,8 +232,11 @@ end
 Set the pivotal structure of ``F``. Warning: No checks are performed.
 """
 function set_pivotal!(F::SixJCategory, sp)
-    _invalidate_sixj_structure!(F)
+    _invalidate_sixj_structure!(F;fusion=false)
     F.pivotal = sp
+    # Structural data are trusted by default, just like supplied F-symbols.
+    # `is_pivotal(F; check=true)` remains the explicit coherence certificate.
+    set_attribute!(F,:pivotal,true)
 end
 
 function set_spherical!(C::SixJCategory,sp; check::Bool=false)
@@ -238,6 +247,7 @@ function set_spherical!(C::SixJCategory,sp; check::Bool=false)
             throw(ArgumentError("not a spherical pivotal structure"))
     end
     set_pivotal!(C,base_ring(C).(sp))
+    set_attribute!(C,:spherical,true)
 end
 
 function is_spherical(C::SixJCategory,sp)
@@ -247,14 +257,15 @@ function is_spherical(C::SixJCategory,sp)
     old = C.pivotal
     try
         set_pivotal!(C,copy(sp))
-        return is_spherical(C)
+        return is_spherical(C;check=true)
     finally
         set_pivotal!(C,old)
     end
 end
 
-function is_spherical(C::SixJCategory)
-    get_attribute!(() -> _sixj_is_spherical(C),C,:is_spherical)
+function is_spherical(C::SixJCategory; check::Bool=false)
+    check && return _sixj_is_spherical(C)
+    get_attribute!(() -> _sixj_is_spherical(C),C,:spherical)
 end
 
 function _sixj_is_spherical(C::SixJCategory)
@@ -263,7 +274,7 @@ function _sixj_is_spherical(C::SixJCategory)
     # Ising [1,1,2] has equal dimensions on duals but is NOT pivotal:
     # the σ⊗σ summands force the σ component to square to one.
     # EGNO, Definitions 4.7.7 and 4.7.14.
-    is_pivotal(C) || return false
+    is_pivotal(C;check=true) || return false
     if base_ring(C) isa Union{ArbField,AcbField,ComplexField}
         return all(overlaps(dim(X),dim(dual(X))) for X in simples(C))
     end
@@ -344,7 +355,7 @@ function set_one!(F::SixJCategory,v::Vector; check::Bool=false)
             end
         end
     end
-    _invalidate_sixj_structure!(F)
+    _invalidate_sixj_structure!(F;fusion=false)
     F.one = copy(v)
 end
 
@@ -358,7 +369,7 @@ function set_ribbon!(F::SixJCategory, r)
 end
 
 function set_twist!(F::SixJCategory, t)
-    _invalidate_sixj_structure!(F)
+    _invalidate_sixj_structure!(F;pivotal=false,fusion=false)
     F.twist = t
     set_attribute!(F,:twists_current,true)
 end
@@ -885,7 +896,7 @@ function simple_objects_ev(X::SixJObject)
 end
 
 function spherical(X::SixJObject; check::Bool=false)
-    check && !is_spherical(parent(X)) && throw(ArgumentError("Not spherical"))
+    check && !is_spherical(parent(X);check=true) && throw(ArgumentError("Not spherical"))
     pivotal(X)
 end
 
@@ -906,7 +917,7 @@ structure is assumed valid; `check=true` verifies pivotal coherence. Values
 are cached until structural data are changed through a setter.
 """
 function twists(C::SixJCategory; check::Bool=false)
-    check && !is_pivotal(C) &&
+    check && !is_pivotal(C;check=true) &&
         throw(ArgumentError("a pivotal structure is required"))
     get_attribute(C,:twists_current,false) && return C.twist
     K = base_ring(C)
@@ -1192,6 +1203,8 @@ reused after this mutation.
 """
 function sort_simples!(C::SixJCategory, order::Vector{Int})
     n = C.rank
+    structure_flags = Dict(key => get_attribute(C,key)
+        for key in (:pivotal,:spherical) if has_attribute(C,key))
     sort(order) == collect(1:n) ||
         throw(ArgumentError("order must be a permutation of the simple labels"))
     order = copy(order)
@@ -1235,6 +1248,9 @@ function sort_simples!(C::SixJCategory, order::Vector{Int})
     isdefined(C, :pivotal) && (C.pivotal = C.pivotal[order])
     isdefined(C, :twist) && (C.twist = C.twist[order])
     _invalidate_sixj_structure!(C)
+    for (key,value) in structure_flags
+        set_attribute!(C,key,value)
+    end
     return C
 end
 
@@ -1402,6 +1418,9 @@ function extension_of_scalars(C::SixJCategory, L::Ring;
     if isdefined(C,:pivotal)
         D.pivotal = embedding.(C.pivotal)
         L isa Union{ArbField,AcbField} && (D.pivotal = L.(D.pivotal))
+        for key in (:pivotal,:spherical)
+            has_attribute(C,key) && set_attribute!(D,key,get_attribute(C,key))
+        end
     end
     if isdefined(C,:braiding)
         D.braiding = _transport_sixj_array!(D,C,:braiding,:r_symbol,L,embedding)
@@ -1691,7 +1710,7 @@ function is_unitary(C::SixJCategory)
             return false
         end
 
-        !is_spherical(C) && return false
+        !is_spherical(C;check=true) && return false
         !all(fpdim(s) == dim(s) for s in simples(C)) && return false
 
         for x ∈ simples(C), y ∈ simples(C), z ∈ simples(C) 
@@ -1727,7 +1746,7 @@ end
 function is_unitary_numeric(C::SixJCategory)
     base_ring(C) isa Union{ArbField,AcbField} ||
         throw(ArgumentError("ball coefficients required"))
-    is_spherical(C) || return false
+    is_spherical(C;check=true) || return false
     S = simples(C)
     all(s -> overlaps(fpdim(s),dim(s)),S) || return false
     all(is_unitary_numeric(associator(x,y,z)) for x in S,y in S,z in S)
