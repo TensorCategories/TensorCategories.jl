@@ -7,3 +7,4 @@ using Oscar, Test
 include("VectorSpacesTest/VSTest.jl")
 include("SixJCategoryTests/RingCatTests.jl")
 include("InterfaceTests.jl")
+include("Anyonwiki/QuickTest.jl")

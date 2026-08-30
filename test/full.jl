@@ -41,6 +41,7 @@ end
 include("GroupActionsTests/TensorActionTests.jl")
 include("GroupActionsTests/EquivariantizationTests.jl")
 
+include("Anyonwiki/QuickTest.jl")
 include("Anyonwiki/AnyonwikiTest.jl")
 
 #include("CoherentSheaves/ConvolutionCategoryTests.jl")
