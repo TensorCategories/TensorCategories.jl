@@ -7,6 +7,13 @@ on:
     tags: '*'
   pull_request:
 
+# Master and tag builds both update gh-pages; never deploy them concurrently.
+# Keep queued releases, and let PR builds run independently of deployments.
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('documenter-pr-{0}', github.event.pull_request.number) || 'documenter-gh-pages' }}
+  cancel-in-progress: false
+  queue: max
+
 permissions:
   contents: write
   actions: write
