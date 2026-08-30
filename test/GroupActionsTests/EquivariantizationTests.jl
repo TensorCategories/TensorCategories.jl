@@ -20,6 +20,8 @@ S = simples(E)
 # S. Natale, J. Math. Phys. 54 (2013), Corollary 2.13.
 @testset "Simples in the Equivariantization" begin
     @test length(S) == 6
+    @test is_multitensor(E) && is_tensor(E)
+    @test is_weak_fusion(E) && is_fusion(E)
     @test all(is_equivariant, S)
     # tensor product
     @test is_equivariant(S[3] ⊗ S[4])
@@ -28,6 +30,29 @@ S = simples(E)
     @test is_equivariant(S[3] ⊕ S[4])
     @test is_equivariant(S[3] ⊕ S[4])
     @test is_equivariant(E[3,4] ⊕ S[5])
+end
+
+# Fusion properties do not simply pass from C to C^G.  For the trivial action
+# of C2 on Vec_F2, equivariant objects are Rep_F2(C2), which is not semisimple
+# because char(F2) divides |C2| (Maschke's theorem).  Thus it is a tensor
+# category, but neither weak fusion nor fusion.  See EGNO, Section 4.15.
+@testset "Equivariantization in modular characteristic" begin
+    V = VectorSpaces(GF(2))
+    G2 = cyclic_group(2)
+    F = identity_as_monoidal_functor(V)
+    η = id(F)
+    trivial_action = gtensor_action(
+        V,
+        elements(G2),
+        fill(F, Int(order(G2))),
+        Dict((i,j) => η for i in 1:Int(order(G2)), j in 1:Int(order(G2)))
+    )
+    E2 = equivariantization(V, trivial_action)
+
+    @test is_tensor_action(trivial_action)
+    @test is_multitensor(E2) && is_tensor(E2)
+    @test !is_weak_multifusion(E2) && !is_weak_fusion(E2)
+    @test !is_multifusion(E2) && !is_fusion(E2)
 end
 
 H = Hom(E[2,2,3,3], E[2,2,3,4])
