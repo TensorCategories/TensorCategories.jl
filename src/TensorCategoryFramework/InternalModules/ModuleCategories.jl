@@ -149,6 +149,7 @@ morphism(f::ModuleMorphism) = f.map
 matrix(f::ModuleMorphism) = matrix(morphism(f))
 
 is_abelian(C::ModuleCategory) = is_abelian(category(C))
+is_linear(C::ModuleCategory) = is_linear(category(C))
 
 is_multiring(C::BiModuleCategory) = true
 is_ring(C::BiModuleCategory) = is_multiring(C) &&  int_dim(End(one(C))) == 1
@@ -1811,5 +1812,4 @@ function show(io::IO, X::ModuleObject)
     typeof(X) == BiModuleObject && 
         print(io, """Bimodule: $(object(X))""")
 end
-
 

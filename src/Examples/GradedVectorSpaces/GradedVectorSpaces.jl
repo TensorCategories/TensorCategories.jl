@@ -87,6 +87,12 @@ is_braided(C::GradedVectorSpaces) = C.braiding !== nothing
 Return the morphism ``V → W``defined by ``m``.
 """
 function morphism(X::GVSObject, Y::GVSObject, m::MatElem)
+    parent(X) == parent(Y) ||
+        throw(ArgumentError("mismatching graded categories"))
+    size(m) == (int_dim(X),int_dim(Y)) ||
+        throw(ArgumentError("mismatching dimensions"))
+    base_ring(m) == base_ring(X) ||
+        throw(ArgumentError("mismatching base fields"))
     if !isgraded(X,Y,m)
         throw(ErrorException("Matrix does not define graded morphism"))
     end
@@ -114,26 +120,27 @@ Check whether ``V``and ``W``are isomorphic as ``G``-graded vector spaces and ret
 isomorphism in the positive case.
 """
 function is_isomorphic(X::GVSObject, Y::GVSObject)
-    if Set(X.grading) != Set(Y.grading) || !is_isomorphic(X.V,Y.V)[1]
+    parent(X) == parent(Y) || return false, nothing
+    degrees = union(X.grading, Y.grading)
+    all(g -> count(==(g), X.grading) == count(==(g), Y.grading), degrees) ||
         return false, nothing
-    else
-        m = zero(matrix_space(base_ring(X),int_dim(X),int_dim(Y)))
-        for g ∈ X.grading
-            i = findall(h -> h == g, X.grading)
-            j = findall(h -> h == g, Y.grading)
-            for (l,k) ∈ zip(i,j)
-                m[l,k] = 1
-            end
+    m = zero_matrix(base_ring(X), int_dim(X), int_dim(Y))
+    for g in degrees
+        for (i,j) in zip(findall(==(g), X.grading),
+                         findall(==(g), Y.grading))
+            m[i,j] = 1
         end
-        return true, morphism(X,Y,m)
     end
+    return true, morphism(X,Y,m)
 end
 
 function ==(C::GradedVectorSpaces, D::GradedVectorSpaces)
-    base_ring(C) == base_ring(D) && base_group(C) == base_group(D) && C.twist == D.twist
+    base_ring(C) == base_ring(D) && base_group(C) == base_group(D) &&
+        C.twist == D.twist && C.spherical == D.spherical &&
+        C.braiding == D.braiding
 end
 function ==(V::GVSObject, W::GVSObject)
-    if base_ring(V) == base_ring(W) && V.grading == W.grading
+    if parent(V) == parent(W) && V.grading == W.grading
         return true
     end
     return false
@@ -201,10 +208,13 @@ end
 Return the tensor product ``V⊗W``.
 """
 function tensor_product(X::GVSObject, Y::GVSObject)
+    parent(X) == parent(Y) ||
+        throw(ArgumentError("mismatching graded categories"))
     W = VectorSpaceObject(parent(X.V), int_dim(X)*int_dim(Y))
     G = base_group(X)
-    elems = elements(G)
-    grading = [i*j for i ∈ Y.grading, j ∈ X.grading][:]
+    # In the Kronecker basis the right-hand index varies fastest, while
+    # homogeneous degrees multiply from left to right.
+    grading = [g*h for h ∈ Y.grading, g ∈ X.grading][:]
     return GVSObject(parent(X), W, length(grading) == 0 ? elem_type(G)[] : grading)
 end
 
@@ -394,20 +404,15 @@ function Hom(V::GVSObject, W::GVSObject)
 end
 
 function isgraded(X::GVSObject, Y::GVSObject, m::MatElem)
-    G = base_group(X)
-    for k ∈ 1:order(G)
-        i = findall(e -> e == k, X.grading)
-        j = findall(e -> e == k, Y.grading)
-        for t ∈ i, s ∈ 1:length(j)
-            if m[t,s] != 0 && !(s ∈ j)
-                return false
-            end
-        end
+    for i in 1:int_dim(X), j in 1:int_dim(Y)
+        !iszero(m[i,j]) && X.grading[i] != Y.grading[j] && return false
     end
     true
 end
 
-is_simple(V::VectorSpaceObject) = dim(V) == 1
+# Categorical dimension is a field element and can vanish or wrap in positive
+# characteristic; simplicity of a vector space uses its integer dimension.
+is_simple(V::VectorSpaceObject) = int_dim(V) == 1
 
 @doc raw""" 
 

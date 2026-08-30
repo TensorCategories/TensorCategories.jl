@@ -4,12 +4,9 @@
 
     function GroupRepresentationCategory(G::Group, F::Field) 
         C = new(G,F)
-        if characteristic(F) !== 0 && rem(order(G), characteristic(F)) == 0 
-            set_attribute!(C, :semisimple, false)
-            set_attribute!(C, :tensor, true)
-        else
-            set_attribute!(C, :fusion, true)
-        end
+        set_attribute!(C, :semisimple,
+            characteristic(F) == 0 || rem(order(G), characteristic(F)) != 0)
+        set_attribute!(C, :tensor, true)
         C
     end
 end
@@ -29,7 +26,17 @@ struct GroupRepresentationMorphism <: RepresentationMorphism
 end
 
 is_tensor(::GroupRepresentationCategory) = true
-is_fusion(C::GroupRepresentationCategory) = mod(order(C.group),characteristic(base_ring(C))) != 0
+# The ordinary flip is equivariant for the diagonal action in every
+# characteristic, so Rep(G) is symmetric monoidal.
+is_braided(::GroupRepresentationCategory) = true
+is_weak_fusion(C::GroupRepresentationCategory) = is_semisimple(C)
+is_weak_multifusion(C::GroupRepresentationCategory) = is_weak_fusion(C)
+function is_fusion(C::GroupRepresentationCategory)
+    get_attribute!(C, :fusion) do
+        is_weak_fusion(C) && all(X -> int_dim(End(X)) == 1, simples(C))
+    end
+end
+is_split_semisimple(C::GroupRepresentationCategory) = is_fusion(C)
 
 function Base.hash(C::GroupRepresentationCategory, h::UInt)
     hash((C.group, C.base_ring), h)
@@ -56,20 +63,60 @@ function representation_category(G::Group)
     return representation_category(abelian_closure(QQ)[1], G)
 end
 
+function extension_of_scalars(C::GroupRepresentationCategory,L::Field;
+                              embedding=_scalar_extension_embedding(base_ring(C),L))
+    representation_category(L,base_group(C))
+end
+
+function extension_of_scalars(X::GroupRepresentation,L::Field,
+                              D::GroupRepresentationCategory=
+                                  extension_of_scalars(parent(X),L);
+                              embedding=_scalar_extension_embedding(base_ring(X),L))
+    base_ring(D) == L && base_group(D) == base_group(X) ||
+        throw(ArgumentError("incompatible target representation category"))
+    int_dim(X) == 0 && return zero(D)
+    G = base_group(X)
+    generators = order(G) == 1 ? elements(G) : gens(G)
+    matrices = [matrix(L,int_dim(X),int_dim(X),
+                       embedding.(collect(matrix(X(g))))) for g in generators]
+    Representation(D,generators,matrices)
+end
+
+function extension_of_scalars(f::GroupRepresentationMorphism,L::Field,
+                              D::GroupRepresentationCategory=
+                                  extension_of_scalars(parent(f),L);
+                              embedding=_scalar_extension_embedding(base_ring(f),L))
+    morphism(extension_of_scalars(domain(f),L,D;embedding),
+             extension_of_scalars(codomain(f),L,D;embedding),
+             matrix(L,size(matrix(f))...,embedding.(collect(matrix(f)))))
+end
+
 """
     Representation(G::Group, pre_img::Vector, img::Vector)
 
-Group representation defined by the images of generators of G.
+Group representation defined by the images of generators of G. The images
+must define a representation; pass `check=true` to verify the group relations.
 """
-function Representation(G::Group, pre_img::Vector, img::Vector; check::Bool = true)
+function Representation(G::Group, pre_img::Vector, img::Vector; check::Bool = false)
     F = base_ring(img[1])
     Representation(representation_category(F, G),pre_img, img, check = check)
 end
 
-function Representation(C::GroupRepresentationCategory, pre_img::Vector, img::Vector; check::Bool = true)
-    F = base_ring(img[1])
-    d = size(img[1])[1]
-    H = GL(d, F)
+function Representation(C::GroupRepresentationCategory, pre_img::Vector, img::Vector; check::Bool = false)
+    isempty(img) && throw(ArgumentError(
+        "supply generator images, including an identity image for the trivial group"))
+    length(pre_img) == length(img) || throw(ArgumentError(
+        "mismatching generator and image lists"))
+    F = base_ring(C)
+    all(m -> base_ring(m) == F, img) || throw(ArgumentError(
+        "generator matrices have the wrong base field"))
+    d = size(img[1], 1)
+    all(m -> size(m) == (d, d), img) || throw(ArgumentError(
+        "generator matrices must be square and have equal sizes"))
+    # A finite-group representation over an infinite field lands in the
+    # finitely generated matrix image. Constructing GL(d,F) instead fails,
+    # for example, because GL(1,QQ) has no known finite generating set.
+    H = is_finite(F) ? GL(d, F) : Oscar.matrix_group(F, d, img; check = check)
     G = base_group(C)
     m = hom(G,H, pre_img, H.(img), check = check)
     GroupRepresentation(C,G,m,F,d)
@@ -87,26 +134,22 @@ end
 
 function Representation(C::GroupRepresentationCategory, m::Function)
     G = base_group(C)
-    F = order(G) == 1 ? base_ring(parent(m(elements(G)[1]))) : base_ring(parent(m(G[1])))
-    d = order(G) == 1 ? size(m(elements(G)[1]))[1] : size(m(G[1]))[1]
-    H = GL(d,F)
-    m = hom(G,H,g -> H(m(g)))
-    return GroupRepresentation(C,G,m,F,d)
+    generators = order(G) == 1 ? elements(G) : gens(G)
+    images = [m(g) for g in generators]
+    Representation(C, generators,
+        [a isa MatElem ? a : matrix(a) for a in images])
 end
 """
-    morphism(ρ::GroupRepresentation, τ::GroupRepresentation, m::MatElem; check = true)
+    morphism(ρ::GroupRepresentation, τ::GroupRepresentation, m::MatElem; check = false)
 
-Morphism between representations defined by ``m``. If check == false equivariancy
-will not be checked.
+Morphism between representations defined by ``m``. Equivariance is assumed by
+default; pass `check=true` to verify it.
 """
-function morphism(ρ::GroupRepresentation, τ::GroupRepresentation, m::MatElem; check = true)
-    if size(m) != (dim(ρ), dim(τ)) throw(ErrorException("Mismatching dimensions")) end
-    if check
-        if !isequivariant(m,ρ,τ)
-            # TODO: Fix that for left_inverse 
-            #  "Map has to be equivariant" 
-        end
-    end
+function morphism(ρ::GroupRepresentation, τ::GroupRepresentation, m::MatElem; check = false)
+    parent(ρ) == parent(τ) || throw(ArgumentError("Mismatching parents"))
+    base_ring(m) == base_ring(ρ) || throw(ArgumentError("Mismatching base fields"))
+    size(m) == (int_dim(ρ), int_dim(τ)) || throw(ErrorException("Mismatching dimensions"))
+    check && !isequivariant(m, ρ, τ) && throw(ArgumentError("Map must be equivariant"))
     return GroupRepresentationMorphism(ρ,τ,m)
 end
 
@@ -143,6 +186,9 @@ base_group(ρ::GroupRepresentation) = ρ.group
 tr(ρ::GroupRepresentationMorphism) = morphism(one(parent(ρ)), one(parent(ρ)), matrix(base_ring(ρ),1,1,[tr(matrix(ρ))]))
 
 is_zero(f::GroupRepresentationMorphism) = iszero(matrix(f))
+
+is_monomorphism(f::GroupRepresentationMorphism) = rank(matrix(f)) == int_dim(domain(f))
+is_epimorphism(f::GroupRepresentationMorphism) = rank(matrix(f)) == int_dim(codomain(f))
 
 """
     parent(ρ::GroupRepresentation)
@@ -184,6 +230,7 @@ function id(ρ::GroupRepresentation)
 end
 
 function ==(ρ::GroupRepresentation, τ::GroupRepresentation)
+    parent(ρ) == parent(τ) || return false
     if ρ.m == 0 || τ.m == 0
         return ρ.m == 0 && τ.m == 0
     elseif order(ρ.group) == 1
@@ -215,7 +262,7 @@ end
 Check whether σ and τ are isomorphic. If true return the isomorphism.
 """
 #=  =# function is_isomorphic(σ::GroupRepresentation, τ::GroupRepresentation)
-    @assert parent(σ) == parent(τ) "Mismatching parents"
+    parent(σ) == parent(τ) || return false, nothing
 
     if int_dim(σ) != int_dim(τ) return false, nothing end
     if int_dim(σ) == 0 return true, zero_morphism(σ,τ) end
@@ -224,6 +271,42 @@ Check whether σ and τ are isomorphic. If true return the isomorphism.
     grp = σ.group
 
     if order(grp) == 1 return true, morphism(σ,τ,one(matrix_space(F,int_dim(σ),int_dim(τ)))) end
+
+    if !is_finite(F)
+        characteristic(F) == 0 || throw(ArgumentError(
+            "isomorphism search over infinite positive-characteristic fields is unsupported"))
+        B = basis(Hom(σ,τ))
+        isempty(B) && return false,nothing
+        # A basis map is often already invertible, avoiding a symbolic
+        # determinant in the common case.
+        for f in B
+            !iszero(det(matrix(f))) && return true,f
+        end
+        R,x = polynomial_ring(F,length(B))
+        M = sum((x[i]*matrix(B[i]) for i in eachindex(B));
+                init=zero_matrix(R,int_dim(σ),int_dim(σ)))
+        determinant = det(M)
+        iszero(determinant) && return false,nothing
+        # A nonzero polynomial of degree at most n in each variable cannot
+        # vanish on {0,...,n}^r in characteristic zero. Specialize greedily
+        # while retaining a nonzero polynomial.
+        values = elem_type(F)[]
+        for i in eachindex(B)
+            found = false
+            for a in 0:int_dim(σ)
+                candidate = [R.(values);R(a);x[i+1:end]]
+                if !iszero(Oscar.evaluate(determinant,candidate))
+                    push!(values,F(a))
+                    found = true
+                    break
+                end
+            end
+            found || error("nonzero determinant specialization failed")
+        end
+        f = sum((values[i]*B[i] for i in eachindex(B));
+                init=zero_morphism(σ,τ))
+        return true,f
+    end
 
     gap_F = GAP.Globals.FiniteField(Int(characteristic(F)), degree(F))
 
@@ -416,7 +499,7 @@ function direct_sum(ρ::GroupRepresentation, τ::GroupRepresentation)
     if ρ.m == 0
         return τ,[GroupRepresentationMorphism(ρ,τ,zero(matrix_space(F,0,int_dim(τ)))), id(τ)], [GroupRepresentationMorphism(τ,ρ,zero(matrix_space(F,int_dim(τ),0))), id(τ)]
     elseif τ.m == 0
-        return ρ,[id(ρ), GroupRepresentationMorphism(τ,ρ,zero(matrix_space(F,0,int_dim(ρ)))), id(τ)], [id(ρ), GroupRepresentationMorphism(ρ,τ,zero(matrix_space(F,int_dim(ρ),0)))]
+        return ρ,[id(ρ), GroupRepresentationMorphism(τ,ρ,zero(matrix_space(F,0,int_dim(ρ))))], [id(ρ), GroupRepresentationMorphism(ρ,τ,zero(matrix_space(F,int_dim(ρ),0)))]
     end
 
     M1 = matrix_space(F,int_dim(ρ),int_dim(ρ))
@@ -479,6 +562,9 @@ function simples(Rep::GroupRepresentationCategory)
 
         if order(grp) == 1 return [one(Rep)] end
 
+        is_finite(F) || throw(ArgumentError(
+            "simple enumeration over this field needs a rational/Schur-index backend; constructing representations and Hom spaces is supported"))
+
         #gap_field = GAP.Globals.FiniteField(Int(characteristic(F)), degree(F))
         gap_field = codomain(iso_oscar_gap(F))
         gap_reps = if is_finite(F) 
@@ -501,8 +587,8 @@ end
 """
     decompose(σ::GroupRepresentation)
 
-Decompose the representation into a direct sum of simple objects. Return a
-list of tuples with simple objects and multiplicities.
+Decompose the representation into a direct sum of indecomposable objects.
+Return a list of tuples with indecomposable objects and multiplicities.
 """
 #=  =# function decompose(σ::GroupRepresentation)
     F = base_ring(σ)
@@ -510,6 +596,9 @@ list of tuples with simple objects and multiplicities.
     G = σ.group
 
     if order(G) == 1 return [(one(parent(σ)),int_dim(σ))] end
+
+    is_finite(F) || throw(ArgumentError(
+        "Krull-Schmidt decomposition of these representations currently requires a finite base field"))
 
     M = to_gap_module(σ,F)
     ret = Object[]
@@ -527,25 +616,61 @@ end
 #     [x for (x,k) ∈ decompose(ρ)]
 # end
 
-function simple_subobjects(σ::GroupRepresentation)
+"""
+    composition_factors(σ::GroupRepresentation)
+
+Return simple composition factors with their Jordan--Hölder multiplicities.
+These are subquotients, not necessarily subobjects or direct summands.
+"""
+function composition_factors(σ::GroupRepresentation)
     F = base_ring(σ)
-    if int_dim(σ) == 0 return [] end
+    if int_dim(σ) == 0 return Tuple{GroupRepresentation,Int}[] end
     G = σ.group
 
     if order(G) == 1 return [(one(parent(σ)),int_dim(σ))] end
 
     M = to_gap_module(σ,F)
-    ret = []
+    ret = Tuple{GroupRepresentation,Int}[]
+    # GAP Reference Manual 69.7-11: CollectedFactors records frequencies.
     facs = GAP.Globals.MTX.CollectedFactors(M)
-    d = int_dim(σ)
     for m ∈ facs
         imgs = [matrix(F,[F(n[i,j]) for i ∈ 1:length(n), j ∈ 1:length(n)]) for n ∈ m[1].generators]
-        ret = [ret; Representation(parent(σ),gens(G),imgs, check = false)]
+        push!(ret,(Representation(parent(σ),gens(G),imgs,check=false),Int(m[2])))
     end
     ret
 end
 
-is_simple(σ::GroupRepresentation) = length(simple_subobjects(σ)) == 1
+"""
+    simple_subobjects(σ::GroupRepresentation)
+
+Return the simple isomorphism types in the socle, without multiplicities.
+"""
+function simple_subobjects(σ::GroupRepresentation)
+    [S for (S,_) in composition_factors(σ) if int_dim(Hom(S,σ)) != 0]
+end
+
+function is_simple(σ::GroupRepresentation)
+    int_dim(σ) == 0 && return false
+    int_dim(σ) == 1 && return true
+    order(base_group(σ)) == 1 && return false
+    if !(base_ring(σ) isa FinField)
+        characteristic(base_ring(σ)) == 0 || throw(ArgumentError(
+            "irreducibility over this field is unsupported"))
+        # Maschke and Schur: in characteristic zero a division endomorphism
+        # algebra certifies simplicity. Over QQ the commutative case can be
+        # decided as a field; noncommutative division algebras need a separate
+        # backend and must not be confused with matrix algebras.
+        E = End(σ)
+        int_dim(E) == 1 && return true
+        A = endomorphism_ring_by_basis(σ,basis(E))
+        is_commutative(A) && return is_simple(A)
+        throw(ArgumentError(
+            "irreducibility with noncommutative endomorphism algebra requires a division-algebra backend"))
+    end
+    # GAP Reference Manual 69.5-1: test irreducibility itself; one factor
+    # type does not imply that a module has composition length one.
+    Bool(GAP.Globals.MTX.IsIrreducible(to_gap_module(σ,base_ring(σ))))
+end
 
 function regular_representation(C::GroupRepresentationCategory)
     G = base_group(C)
@@ -572,10 +697,34 @@ end
 Return the hom-space of the representations as a vector space.
 """
 #=  =# function Hom(σ::GroupRepresentation, τ::GroupRepresentation)
+    parent(σ) == parent(τ) || throw(ArgumentError(
+        "representations belong to different categories"))
     grp = base_group(σ)
     F = base_ring(σ)
 
     if int_dim(σ)*int_dim(τ) == 0 return GRHomSpace(σ,τ,GroupRepresentationMorphism[],VectorSpaces(F)) end
+
+    if !is_finite(F)
+        # Row-vector convention: rho(g)M=M tau(g). These homogeneous exact
+        # linear equations compute Hom without a finite-field MeatAxe.
+        n,m = int_dim(σ),int_dim(τ)
+        generators = order(grp) == 1 ? elements(grp) : gens(grp)
+        E = [matrix(F,n,m,[Int(i == a && j == b)
+                           for i in 1:n,j in 1:m])
+             for a in 1:n for b in 1:m]
+        A = zero_matrix(F,length(generators)*n*m,n*m)
+        for (k,g) in enumerate(generators),(l,e) in enumerate(E)
+            c = collect(matrix(σ(g))*e-e*matrix(τ(g)))[:]
+            for i in eachindex(c)
+                A[(k-1)*n*m+i,l] = c[i]
+            end
+        end
+        d,N = nullspace(A)
+        maps = GroupRepresentationMorphism[morphism(σ,τ,
+            sum((N[i,j]*E[i] for i in eachindex(E));
+                init=zero_matrix(F,n,m))) for j in 1:d]
+        return GRHomSpace(σ,τ,maps,VectorSpaces(F))
+    end
 
     gap_to_F = iso_oscar_gap(F)
     gap_F = codomain(gap_to_F)

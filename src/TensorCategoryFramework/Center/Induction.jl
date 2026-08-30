@@ -199,7 +199,8 @@ function induction_adjunction(H::AbstractHomSpace, Y::CenterObject, IX = inducti
     #     (ev(dual(xi)) ∘ (pivotal(xi) ⊗ id(dual(xi)))) ⊗ id(object(Y))
     # ) for xi ∈ simples(parent(f))]
 
-    mors = [morphism(IX, Y, horizontal_direct_sum(ind_f) ∘ induction_restriction(f)) for f ∈ H]
+    counit = horizontal_direct_sum(ind_f)
+    mors = [morphism(IX,Y,counit ∘ induction_restriction(f)) for f ∈ H]
 
     return HomSpace(IX, Y, mors)
     # morphism(IX,Y, horizontal_direct_sum([sqrt(dim(xi))*((ev(dual(xi)) ∘(pivotal(xi)⊗id(dual(xi))))⊗id(object(IX))) ∘ (id(xi)⊗half_braiding(Y,dual(xi))) ∘ associator(xi,object(Y),dual(xi)) ∘ ((id(xi)⊗f)⊗id(dual(xi))) for xi in simples(parent(X))]))
@@ -236,7 +237,8 @@ function induction_right_adjunction(H::AbstractHomSpace, Y::CenterObject, IX = i
     #     (ev(dual(xi)) ∘ (pivotal(xi) ⊗ id(dual(xi)))) ⊗ id(object(Y))
     # ) for xi ∈ simples(parent(f))]
 
-    base = [morphism(Y, IX, induction_restriction(f) ∘ vertical_direct_sum(ind_f)) for f ∈ H]
+    unit_map = vertical_direct_sum(ind_f)
+    base = [morphism(Y,IX,induction_restriction(f) ∘ unit_map) for f ∈ H]
 
     HomSpace(Y, IX, base)
 end
@@ -441,5 +443,4 @@ function adjusted_dual_basis(V::Vector{<:Morphism}, U::Vector{<:Morphism}, S::Ob
     end
     return V, dual_basis
 end
-
 

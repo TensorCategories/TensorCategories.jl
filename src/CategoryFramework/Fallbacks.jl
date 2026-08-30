@@ -69,7 +69,8 @@ function product(X::Object...)
 end
 
 function ∐(X::T,Y::T) where {T <: Object}
-    return coproduct(T[1],X)[1]
+    # Dispatch on the two objects. `T` is their type and cannot be indexed.
+    return coproduct(X,Y)[1]
 end
 
 function ∐(T::Tuple{S,Vector{R}},X::S1) where {S <: Object,S1 <: Object, R <: Morphism}
@@ -91,22 +92,22 @@ end
 """
     ×(X::Object...)
 
-Return the product Object and an array containing the projection morphisms.
+Return the product object. Use `product` to also obtain its projections.
 """
 ×(X::Object...) = product(X...)[1]
 
 """
     ∐(X::Object...)
 
-Return the coproduct Object and an array containing the injection morphisms.
+Return the coproduct object. Use `coproduct` to also obtain its injections.
 """
 ∐(X::Object...) = coproduct(X...)[1]
 
 """
     ⊕(X::Object...)
 
-Return the direct sum Object and arrays containing the injection and projection
-morphisms.
+Return the direct sum object. Use `direct_sum` to also obtain its injections
+and projections.
 """
 
 ⊕(X::Vector{<:Object}) = direct_sum(X...)[1]
@@ -126,7 +127,8 @@ Return the tensor product object.
 ⊗(X::Object, K::Field) = extension_of_scalars(X,K)
 ⊗(f::Morphism, K::Field) = extension_of_scalars(f,K)
 
-function extension_of_scalars(H::AbstractHomSpace, L::Field, CL::Category; embedding = embedding(base_ring(H),L)) 
+function extension_of_scalars(H::AbstractHomSpace, L::Field, CL::Category;
+                              embedding = _scalar_extension_embedding(base_ring(H),L))
     HomSpace(
         extension_of_scalars(domain(H), L, CL, embedding = embedding),
         extension_of_scalars(codomain(H), L, CL, embedding = embedding),
@@ -195,11 +197,15 @@ compose(f::T...) where T <: Morphism = reduce(compose, f)
 
 function composition_power(f::Morphism, k::Int) 
     @assert domain(f) == codomain(f)
-    if k == 0
-        return id(domain(f))
+    k >= 0 || throw(ArgumentError("exponent must be nonnegative"))
+    result = id(domain(f))
+    power = f
+    while k > 0
+        isodd(k) && (result = compose(result,power))
+        k = div(k,2)
+        k > 0 && (power = compose(power,power))
     end
-
-    compose([f for _ in 1:k]...)
+    result
 end
 
 -(f::Morphism, g::Morphism) = f + (-1)*g
@@ -253,18 +259,18 @@ function morphism_to_scalar(R::Ring, f::Morphism)
         m = matrix(f)
         b, k = is_scalar_multiple(m, matrix(id(domain(f))))
         if b 
-            return k
+            return R(k)
         end
     catch end
 
     B = basis(Hom(domain(f), codomain(f)))
     if length(B) == 0 
-        return 0
+        return zero(R)
     elseif length(B) == 1
         if domain(f) == codomain(f)
-            return express_in_basis(f,[id(domain(f))])[1]
+            return R(express_in_basis(f,[id(domain(f))])[1])
         else
-            return express_in_basis(f,B)[1]
+            return R(express_in_basis(f,B)[1])
         end
     end
 
@@ -276,10 +282,9 @@ function morphism_to_scalar(R::Ring, f::Morphism)
         end
         b,c = is_scalar_multiple(m, matrix(id(domain(f))))
         if b 
-            return c
+            return R(c)
         end
-    catch e
-        showerror(e)
+    catch
     end
     # m = collect(m)[m .!= 0]
     # if size(m) == (1,)
@@ -289,21 +294,15 @@ function morphism_to_scalar(R::Ring, f::Morphism)
 end
 
 function is_scalar_multiple(M::MatElem,N::MatElem)
-    n,m = size(M)
-    ind = findfirst(e -> M[e...] != 0 && M[e...] != 0, [(i,j) for i ∈ 1:n, j ∈ 1:m])
-    if ind === nothing return false, nothing end
-    i,j = Tuple(ind)
-    k = M[i,j] * inv(N[i,j])
-    for (a,b) ∈ zip(M,N)
-        if a == b == 0 
-            continue
-        elseif a == 0 || b == 0 
-            return false, nothing
-        elseif a * inv(b) != k
-            return false, nothing
-        end
+    size(M) == size(N) || return false,nothing
+    # Choose an entry of the denominator N. For M=E12 and N=I2, choosing
+    # the nonzero entry of M instead causes division by zero.
+    for i in 1:number_of_rows(N), j in 1:number_of_columns(N)
+        iszero(N[i,j]) && continue
+        k = M[i,j] * inv(N[i,j])
+        return M == k*N ? (true,k) : (false,nothing)
     end
-    return true,k
+    return iszero(M) ? (true,zero(base_ring(M))) : (false,nothing)
 end
 
 *(f::Morphism, x) = x*f
@@ -326,4 +325,3 @@ function matrix(f::Morphism)
         error("matrix(::$(typeof(f))) not implemented")
     end
 end
-

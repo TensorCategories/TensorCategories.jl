@@ -22,7 +22,7 @@ import Oscar: +, @alias, @attributes, AbstractSet, AcbField, StructureConstantAl
     gmodule, groebner_basis, group_algebra, gset, guess, has_attribute, height_bits, hnf,
     hom, id, ideal, identity_matrix, image, index, inv, involution, irreducible_modules,
     is_abelian, is_central, is_finite, is_invertible, is_isomorphic, is_modular,
-    is_rational, is_semisimple, is_simple, is_square, is_subfield, is_subgroup,
+    is_rational, is_semisimple, is_simple, is_indecomposable, is_square, is_subfield, is_subgroup,
     is_independent, is_invertible, is_separable, iso_oscar_gap, norm, is_exact, add_error!,
     jordan_normal_form, kernel, kronecker_product, lcm, leading_coefficient, accuracy_bits,
     leading_monomial, left_transversal, lex, load, matrix, matrix_algebra, minpoly, quo,
@@ -143,6 +143,7 @@ export complex_embeddings
 export complex_matrix_to_hsv
 export compose 
 export composition_power
+export composition_factors
 export convolution_category 
 export coproduct 
 export cyclic_group_3cocycle 
@@ -295,11 +296,15 @@ export is_subobject
 export is_tensor 
 export is_tensor_action
 export is_unitary
+export is_unitary_numeric
+export is_weak_fusion
+export is_weak_multifusion
 export is_zero
 export isequivariant 
 export isgraded 
 export ising_category 
 export is_invertible
+export is_indecomposable
 export karoubian_envelope 
 export kernel 
 export left_action
@@ -331,6 +336,7 @@ export MonadModuleMorphism
 export MonadModules
 export monoidal_natural_transformations
 export monoidal_structure
+export monoidal_structure_candidates, autoequivalence_candidates
 export monoidal_structures  
 export monoidal_functor
 export monoidal_functor_axiom
@@ -391,6 +397,7 @@ export pushout_product
 export QuantumZZRing
 export QuantumZZRingElem
 export QZZ
+export quotient_hom_dimension
 export R_symbols
 export radical
 export rand
@@ -405,6 +412,7 @@ export Restriction
 export reverse_braiding
 export right_action
 export right_dim
+export right_ev, right_coev
 export right_dual 
 export right_inverse
 export right_module 
@@ -469,10 +477,12 @@ export TensorPowerCategory
 export TensorPowerMorphism
 export TensorPowerObject
 export tmatrix 
+export trace_pairing
 export tr 
 export trivial_3_cocylce 
 export trivial_fusion_category
 export twist
+export twist_scalar
 export twists
 export twisted_graded_vector_spaces
 export twisted_graded_vector_spaces 
@@ -539,6 +549,15 @@ function _version_string()
 end
 
 function __init__() 
+    # Registration mutates Oscar's runtime registry, so the top-level macro's
+    # side effect is not restored when this package is loaded from a cache.
+    for (T,name) in ((SixJCategory,"SixJCategory"),
+                     (SixJObject,"SixJObject"),
+                     (SixJMorphism,"SixJMorphism"))
+        if !haskey(Oscar.Serialization.reverse_type_map,name)
+            Oscar.Serialization.register_serialization_type(T,name,false)
+        end
+    end
     if displaysize(stdout)[2] >= 96
         println(styled"""
       {bright_yellow:X} {bright_yellow:X}        
@@ -567,6 +586,7 @@ end
 
 include("CategoryFramework/AbstractTypes.jl")
 include("CategoryFramework/AbstractMethods.jl")
+include("CategoryFramework/FiniteFieldDecomposition.jl")
 include("CategoryFramework/DecompositionInAbelianCategories.jl")
 include("CategoryFramework/FrameworkChecks.jl")
 include("CategoryFramework/ProductCategory.jl")
@@ -614,12 +634,14 @@ include("TensorCategoryFramework/TensorPowerCategory.jl")
 include("TensorCategoryFramework/TensorFunctors.jl")
 include("TensorCategoryFramework/MonoidalFunctors/MonoidalFunctors.jl")
 include("TensorCategoryFramework/Center/Center.jl")
+include("TensorCategoryFramework/Center/FiniteFieldCenter.jl")
 include("TensorCategoryFramework/Center/center_via_ideals.jl")
 include("TensorCategoryFramework/Center/Induction.jl")
 include("TensorCategoryFramework/Center/InductionMonad.jl")
 include("TensorCategoryFramework/Center/Centralizer.jl")
 include("TensorCategoryFramework/Center/CentralizerInduction.jl")
 include("TensorCategoryFramework/Center/CenterChecks.jl")
+include("CategoryFramework/FiniteFieldSplitting.jl")
 include("TensorCategoryFramework/GTensorAction.jl")
 include("TensorCategoryFramework/SixJCategory/GCrossedFusion.jl")
 include("TensorCategoryFramework/Equivariantization/Equivariantization.jl")
@@ -661,10 +683,9 @@ include("Serialization/symbols_to_csv.jl")
 include("AnyonWiki/AnyonWiki.jl")
 
 
-@register_serialization_type SixJCategory "SixJCategory"
-
-# @register_serialization_type SixJMorphism
-# @register_serialization_type SixJObject
+@register_serialization_type SixJCategory "SixJCategory" uses_id
+@register_serialization_type SixJObject "SixJObject"
+@register_serialization_type SixJMorphism "SixJMorphism"
 # @register_serialization_type CenterCategory
 
 

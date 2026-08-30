@@ -25,50 +25,35 @@ end
 Check the pentagon axiom for all combinations of objects in ```objects```. If
 ```log = true``` an array with the failing combinations is returned
 """
-function pentagon_axiom(objects::Vector{<:Object}, log::Bool = false; show_progress = false)
-    failed = []
-    N = (length(objects)-1)^4
+function pentagon_axiom(objects::Vector{<:Object}, log::Bool=false; show_progress=false)
+    # Check unit-containing quadruples too: a constructor can supply
+    # unnormalised (or invalid) unit F-symbols. EGNO, Definition 2.1.1.
+    # A serial traversal also makes the complete failure list deterministic;
+    # the old threaded push! and counter updates raced on shared state.
+    failed = Tuple{Object,Object,Object,Object}[]
+    N = length(objects)^4
     checked = 0
-
-    Threads.@threads for x ∈ objects
-
-        x == one(parent(x)) && continue
-        
-        for y ∈ objects,  z ∈ objects, w ∈ objects
-            one(parent(y)) ∈ [y,z,w] && continue
-
-            pentagon_axiom(x,y,z,w) ? nothing : push!(failed, (x,y,z,w))
-                
-            if !log && length(failed) > 0 
-                show_progress && print("\n")
-                return false
-            end
-
-            if show_progress
-                checked += 1
-                print("\e[2K\rChecked $(checked) / $N combinations ($(round(checked / N * 100, digits = 2))%)")
-            end
+    for x in objects,y in objects,z in objects,w in objects
+        if !pentagon_axiom(x,y,z,w)
+            push!(failed,(x,y,z,w))
+            !log && return false
         end
+        checked += 1
+        show_progress && print("\rChecked $checked / $N combinations")
     end
-    show_progress && print("\n")
-
-    if log
-        return length(failed) == 0, failed
-    else
-        return length(failed) == 0
-    end
+    show_progress && println()
+    log ? (isempty(failed),failed) : isempty(failed)
 end
 
 function randomized_pentagon_axiom(C::Category, n::Int = 0)
     S = simples(C)
     m = length(S)
-    m == 1 && return true
     if n == 0
         n = m^2
     end
 
     for _ ∈ 1:n
-        if !pentagon_axiom(C[rand(2:m, 4)]...)
+        if !pentagon_axiom(S[rand(1:m, 4)]...)
             return false
         end
     end

@@ -23,7 +23,9 @@ function unique_without_hash(A::AbstractArray{T,N}) where {T,N}
         return A
     end
     B = T[]
-    A2 = deepcopy(A)
+    # Only the container is mutated. Deep-copying categorical elements can
+    # clone mutable parent categories while their matrix parents stay shared.
+    A2 = copy(A)
     while length(A2) > 0
         f = popfirst!(A2)
         B = [B; f]
@@ -61,4 +63,3 @@ function Base.getindex(D::Dict{<:Object,<:Any}, X::Object)
 
     return collect(values(D))[i]
 end
-

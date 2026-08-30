@@ -1,4 +1,5 @@
-
+# This file is currently not included by test/runtests.jl.  Its active testsets
+# document intended behavior but do not contribute to the default test count.
 @testset "ConvolutionCategory Tests" begin
 #     # Test ConvolutionCategory constructor
 #     @testset "Constructor Tests" begin
@@ -40,7 +41,11 @@
 #         @test conv_morph.m == morphism
 #     end
 
-    # Test is_multitensor and is_fusion
+    # The construction is expected to provide a multitensor category.  Its
+    # representation-theoretic part is semisimple precisely when char(K) does
+    # not divide |G|, by Maschke's theorem; this is the fusion criterion tested
+    # here.  See P. Etingof, S. Gelaki, D. Nikshych, and V. Ostrik,
+    # Tensor Categories, AMS (2015), Remark 4.2.14.
     @testset "Category Properties Tests" begin
         G = symmetric_group(3)
         K,_ = finite_field(2)
@@ -90,7 +95,9 @@
     #     @test tensor_prod_morph.m == conv_cat.projectors[2](conv_cat.projectors[1](morphism1) ⊗ conv_cat.projectors[3](morphism2))
     # end
 
-    # Test simple objects
+    # This is an internal-consistency check: simples must return a nonempty
+    # family whose members satisfy the implementation's simplicity predicate.
+    # It does not compare the family with an independent classification.
     @testset "Simple Objects Tests" begin
         G = symmetric_group(3)
         K,_ = finite_field(2)

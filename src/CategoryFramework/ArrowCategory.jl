@@ -27,6 +27,10 @@ struct ArrowMorphism <: Morphism
     right::Morphism
 end
 
+# Direct dispatch avoids repeated scans of all loaded categorical subtypes.
+object_type(::ArrowCategory) = ArrowObject
+morphism_type(::ArrowCategory) = ArrowMorphism
+
 domain(X::ArrowObject) = domain(morphism(X))
 codomain(X::ArrowObject) = codomain(morphism(X))
 morphism(X::ArrowObject) = X.morphism
@@ -46,6 +50,25 @@ end
     Abelian structure 
 ----------------------------------------------------------=#
 is_abelian(C::ArrowCategory) = is_abelian(category(C))
+
+==(X::ArrowObject,Y::ArrowObject) =
+    parent(X) == parent(Y) && morphism(X) == morphism(Y)
+==(f::ArrowMorphism,g::ArrowMorphism) =
+    domain(f) == domain(g) && codomain(f) == codomain(g) &&
+    left(f) == left(g) && right(f) == right(g)
+
+function is_simple(X::ArrowObject)
+    is_abelian(category(parent(X))) ||
+        throw(ArgumentError("an abelian base category is required"))
+    # (0→codomain(X)) is a subobject of every arrow X. Hence a simple arrow
+    # has exactly one zero endpoint and a simple nonzero endpoint.
+    is_zero(domain(X)) && return is_simple(codomain(X))
+    is_zero(codomain(X)) && return is_simple(domain(X))
+    return false
+end
+is_linear(C::ArrowCategory) = is_linear(category(C))
+# Finite-dimensional arrows over Vec are representations of the A2 quiver.
+is_krull_schmidt(C::ArrowCategory) = category(C) isa VectorSpaces
 
 matrix(f::ArrowMorphism) = diagonal_matrix(matrix(f.left), matrix(f.right))
 
@@ -235,7 +258,7 @@ function Hom(X::ArrowObject, Y::ArrowObject)
 
     Rx,x = polynomial_ring(F, n+m)
 
-    eqs = [zero(Rx) for _ ∈ length(base)]
+    eqs = [zero(Rx) for _ ∈ 1:length(base)]
 
     mX = morphism(X)
     mY = morphism(Y)

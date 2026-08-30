@@ -59,6 +59,15 @@ function extension_of_scalars(R::AbstractAssociativeAlgebra, F::Ring)
     A = StructureConstantAlgebra(F, F.(multiplication_table(R)), F.(coefficients(one(R))))
 end
 
+# Oscar uses `embed` for finite fields and `embedding` for the other exact
+# field types. The rational field has its canonical map into every
+# characteristic-zero coefficient field.
+function _scalar_extension_embedding(K,L)
+    K === L && return identity
+    K === QQ && characteristic(L) == 0 && return L
+    K isa FinField && L isa FinField ? Oscar.embed(K,L) : embedding(K,L)
+end
+
 ⊗(F::Ring, R::AbstractAssociativeAlgebra) = extension_of_scalars(R,F)
 ⊗(R::AbstractAssociativeAlgebra, F::Ring) = extension_of_scalars(R,F)
 
@@ -142,41 +151,44 @@ end
 
     is_simple(X::Object)
 
-Check whether ``X`` is a simple object.  
+Check whether ``X`` is a simple object. The generic test applies in a
+semisimple category. Nonsemisimple backends must provide their own test;
+a division endomorphism algebra alone does not imply simplicity.
 """
 function is_simple(X::Object)
-    if hasfield(typeof(X), :__attrs)
-        get_attribute!(X, :is_simple) do
-            B = basis(End(X))
-            if length(B) == 0
-                return false
-            elseif length(B) == 1
-                return true
-            end
-            
-            try 
-                is_simple(endomorphism_ring(X, B))
-            catch
-                false
-            end
+    hasfield(typeof(X), :__attrs) && has_attribute(X, :is_simple) &&
+        return get_attribute(X, :is_simple)
+    is_zero(X) && return false
+    if !is_semisimple(parent(X))
+        if base_ring(X) isa FinField
+            A = endomorphism_ring_by_basis(X,basis(End(X)))
+            # Schur's necessary condition can disprove simplicity. Over a
+            # finite field, a finite division ring is a field.
+            is_commutative(A) && is_semisimple(A) && is_simple(A) || return false
         end
+        throw(ArgumentError(
+            "simplicity in a nonsemisimple category requires a category-specific test; use is_indecomposable for Krull-Schmidt summands"))
     end
-
-    B = basis(End(X))
-    if length(B) == 0
-        return false
-    elseif length(B) == 1
-        return true
-    end
-    
-    try 
-        is_simple(endomorphism_ring(X, B))
-    catch
-        false
-    end
+    return is_indecomposable(X)
 end
 
+"""
+    is_indecomposable(X::Object)
+
+Test whether `X` is indecomposable. Over a finite field, the generic Hom-finite
+fallback tests whether `End(X)` is local; otherwise it uses `decompose(X)`.
+"""
 function is_indecomposable(X::Object)
+    if base_ring(X) isa FinField
+        E = End(X)
+        int_dim(E) == 0 && return false
+        int_dim(E) == 1 && return true
+        A = endomorphism_ring_by_basis(X,basis(E))
+        D = quo(A,radical(A))[1]
+        # End(X) is local iff its semisimple quotient is a division algebra;
+        # over a finite field the latter is a field.
+        return is_commutative(D) && is_simple(D)
+    end
     dec = decompose(X)
     length(dec) == 1 && dec[1][2] == 1
 end
@@ -185,7 +197,7 @@ end
 
     decompose(X::Object)
 
-Decompose an object ``X`` in an abelian category.
+Return the indecomposable summands of ``X`` with multiplicities.
 """
 decompose(X::Object) = decompose_by_endomorphism_ring(X)
 
@@ -213,6 +225,9 @@ decompose(X::T, S::Vector{T}) where T <: Object = decompose_by_simples(X,S)
 
 function decompose_by_endomorphism_ring(X::Object, E = End(X))
     K = base_ring(X)
+    K isa FinField && return _decompose_finite_object(X,basis(E))
+    is_semisimple(parent(X)) || throw(ArgumentError(
+        "nonsemisimple decomposition over this field requires a category-specific backend"))
     if K == QQBarField() || typeof(K) == CalciumField
         return decompose_over_qqbar(X, E)
     end
@@ -250,7 +265,8 @@ end
 
 
 function decompose_over_qqbar(X::Object, E = End(X))
-    #@assert is_semisimple(parent(X))
+    is_semisimple(parent(X)) || throw(ArgumentError(
+        "the algebraic-closure decomposition algorithm requires semisimplicity"))
     if int_dim(E) == 1
         try 
             set_attribute!(X, :is_simple, true)
@@ -279,6 +295,8 @@ end
 
 function decompose_by_simples(X::Object, S = simples(parent(X)))
     C = parent(X)
+    is_semisimple(C) || throw(ArgumentError(
+        "decomposition by simple Hom multiplicities requires semisimplicity; use decompose(X) for indecomposable summands"))
     dimensions = [div(int_dim(Hom(s,X)), int_dim(End(s))) for s ∈ S]
     return [(s,d) for (s,d) ∈ zip(S,dimensions) if d > 0]
 end
@@ -322,14 +340,8 @@ function central_primitive_idempotents(H::AbstractHomSpace)
     base = basis(H)
     A = endomorphism_ring(H.X, base) 
 
-    if !is_semisimple(A) && characteristic(base_ring(H)) == 0 
-        X = semisimplify(domain(H))
-        base = basis(semisimplify(H))
-        A = endomorphism_ring(X, base)
-        base = morphism.(base)
-    end
-
-    A.issemisimple = true
+    is_semisimple(A) || throw(ArgumentError(
+        "central block decomposition requires a semisimple endomorphism algebra; use decompose(X) for finite-field Krull-Schmidt decomposition"))
 
     idems = central_primitive_idempotents(A)
     [sum(base .* coefficients(i)) for i ∈ idems]
@@ -353,7 +365,6 @@ function gens(H::AbstractHomSpace)
     @assert H.X == H.Y "Not an endomorphism algebra"
 
     A = endomorphism_ring(H.X, basis(H))
-    A.issemisimple = true
     gs = gens(A)
     [sum(basis(H) .* coefficients(i)) for i ∈ gs]
 end
@@ -381,13 +392,10 @@ function is_subobject(X::Object, Y::Object)
 end
 
 function is_isomorphic(X::Object, Y::Object)
-    EX = End(X)
-    EY = End(Y)
-    H = Hom(X,Y) 
-
-    mats = [express_in_basis]
-
-    @error "Not implemented"
+    parent(X) == parent(Y) || return false,nothing
+    base_ring(X) isa FinField || throw(ArgumentError(
+        "isomorphism testing over this field requires a category-specific backend"))
+    _is_isomorphic_finite_objects(X,Y)
 end
 
 function morphism_in_subspace(f::T, B::Vector{T}) where T <: Morphism
@@ -637,8 +645,8 @@ end
 
     left_inverse(f::Morphism)
 
-Compute a morphism ``g`` such that ``g ∘ f = id``. Errors if 
-``f``is not mono. 
+Compute a morphism ``g`` such that ``g ∘ f = id``. Errors if
+``f`` is not a split monomorphism.
 """
 function left_inverse(f::Morphism)
     X = domain(f)
@@ -679,7 +687,7 @@ end
     right_inverse(f::Morphism)
 
 Compute a morphism ``g`` such that ``f ∘ g = id``. Errors if ``f``
-is not epi.
+is not a split epimorphism.
 """
 function right_inverse(f::Morphism)
     X = domain(f)
@@ -770,32 +778,24 @@ end
 
 @doc raw""" 
 
-    is_monomoprhism(f::Morphism)
+    is_monomorphism(f::Morphism)
 
-Check whether ``f`` mono.
+Check whether ``f`` is mono in an abelian category.
 """
 function is_monomorphism(f::Morphism)
-    try 
-        left_inverse(f)
-        return true
-    catch
-        false
-    end
+    is_abelian(parent(f)) || throw(ArgumentError("a category-specific monomorphism test is required"))
+    is_zero(kernel(f)[1])
 end
 
 @doc raw""" 
 
     is_epimorphism(f::Morphism)
 
-Check wether ``f``is epi.
+Check whether ``f`` is epi in an abelian category.
 """
 function is_epimorphism(f::Morphism)
-    try 
-        right_inverse(f)
-        return true
-    catch
-        false
-    end
+    is_abelian(parent(f)) || throw(ArgumentError("a category-specific epimorphism test is required"))
+    is_zero(cokernel(f)[1])
 end
 
 
@@ -892,8 +892,9 @@ end
 ----------------------------------------------------------=#
 
 function basis(mors::Vector{<:Morphism})
-    if length(mors) ≤ 1
-        return mors
+    isempty(mors) && return mors
+    if length(mors) == 1
+        return is_zero(only(mors)) ? empty(mors) : mors
     end
 
     X = domain(mors[1])
@@ -939,15 +940,18 @@ function basis(mors::Vector{<:Morphism})
 
     Mrref = hnf(M)
     
-    base = morphism_type(C)[]
+    base = empty(mors)
     mats_morphisms = morphism.(mats)
 
     for k ∈ 1:rank(Mrref)
-        coeffs = express_in_basis(morphism(transpose(matrix(base_ring(C), size(mats[1])..., Mrref[k,:]))), mats_morphisms)
+        # Matrices were flattened column by column. Reconstruct the same
+        # rectangular shape instead of transposing source and target.
+        row_matrix = matrix(base_ring(C),
+            reshape(collect(Mrref[k,:])[:], size(mats[1])))
+        coeffs = express_in_basis(morphism(row_matrix), mats_morphisms)
         f = sum([m*bi for (m,bi) ∈ zip(coeffs, mors)])
         push!(base, f)
     end
     
     return base
 end
-

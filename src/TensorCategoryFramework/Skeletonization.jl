@@ -1,4 +1,11 @@
 
+function _require_split_semisimple_coordinates(C::Category, operation::String)
+    is_multiring(C) || throw(ArgumentError(
+        "$operation requires a semisimple monoidal category"))
+    is_split_semisimple(C) || throw(ArgumentError(
+        "$operation requires split simple endomorphism rings"))
+end
+
 function skeletonize(C::Category, names::Vector{String} = simples_names(C))
     six_j_category(C, names)
 end
@@ -10,15 +17,21 @@ function six_j_category(C::Category, names::Vector{String} = simples_names(C))
 end
 
 function six_j_category(C::Category, S::Vector{<:Object}, names::Vector{String} = simples_names(parent(S[1])))
-    @assert is_ring(C)
-
-    if typeof(C) == SixJCategory 
+    if C isa SixJCategory
         return C
     end
+    is_ring(C) || throw(ArgumentError(
+        "skeletonization as a SixJ category requires a simple unit"))
+    _require_split_semisimple_coordinates(C,"skeletonization")
     
     #S = simples(C)
     n = length(S)
     F = base_ring(C)
+    source_is_spherical = try
+        is_spherical(C)
+    catch
+        false
+    end
 
 
     # prods = [X ⊗ Y for X ∈ S, Y ∈ S]
@@ -30,8 +43,14 @@ function six_j_category(C::Category, S::Vector{<:Object}, names::Vector{String} 
     # Define SixJCategory
     skel_C = six_j_category(F,names)
 
-    # Extract 6j-Symbols
-    ass = six_j_symbols(C, S)
+    # Choose one system of multiplicity-space bases for the associator and
+    # braiding. Recomputing a Hom basis between the two changes their common
+    # gauge and can destroy the hexagon equations.
+    S = copy(S)
+    one_indices = findall(s -> int_dim(Hom(s,one(C))) > 0,S)
+    S[one_indices] = simple_subobjects(one(C))
+    homs = multiplicity_spaces(C,S)
+    ass = six_j_symbols(C,S;homs)
 
     # Recover multiplication table 
     one_index = findfirst(s -> int_dim(Hom(one(C),s)) > 0, S)
@@ -50,13 +69,17 @@ function six_j_category(C::Category, S::Vector{<:Object}, names::Vector{String} 
     try 
         set_pivotal!(skel_C,[F(1) for s ∈ S])
         sp = [dim(S[i]) * inv(dim(skel_C[i])) for i ∈ 1:length(S)]
-        set_pivotal!(skel_C, sp)
+        if source_is_spherical
+            set_spherical!(skel_C,sp)
+        else
+            set_pivotal!(skel_C,sp)
+        end
     catch e 
         print(e.msg)
     end
 
     if is_braided(C)
-        set_braiding!(skel_C, skeletal_braiding(C,S))
+        set_braiding!(skel_C,skeletal_braiding(C,S;homs))
     end
     
     try 
@@ -67,8 +90,8 @@ function six_j_category(C::Category, S::Vector{<:Object}, names::Vector{String} 
     return skel_C
 end
 
-function six_j_symbols(C::Category, S = simples(C))
-    @assert is_semisimple(C)
+function six_j_symbols(C::Category,S=simples(C);homs=nothing)
+    _require_split_semisimple_coordinates(C,"F-symbol computation")
 
     N = length(S)
     C_morphism_type = morphism_type(C)
@@ -77,12 +100,12 @@ function six_j_symbols(C::Category, S = simples(C))
     ass = Array{MatElem}(undef,N,N,N,N)
 
     one_indices = findall(s -> int_dim(Hom(s,one(C))) > 0 , S)
-    one_components = simple_subobjects(one(C))
-
-    # Set unitors to identity
-    S[one_indices] = one_components
-
-    homs = multiplicity_spaces(C)
+    if homs === nothing
+        # Normalize unit representatives before choosing the corresponding
+        # multiplicity-space bases.
+        S[one_indices] = simple_subobjects(one(C))
+        homs = multiplicity_spaces(C,S)
+    end
 
     prods = [domain(homs[(i,j,findfirst(k -> haskey(homs, (i,j,k)), 1:N))]) for i ∈ 1:N, j in 1:N]
 
@@ -151,8 +174,9 @@ function six_j_symbols(C::Category, S = simples(C))
     return ass           
 end
 
-function six_j_symbols_of_construction(C::Category, S = simples(C), mult = nothing; log = nothing)
-    @assert is_semisimple(C)
+function six_j_symbols_of_construction(C::Category,S=simples(C),mult=nothing;
+        log=nothing,homs=nothing)
+    _require_split_semisimple_coordinates(C,"F-symbol computation")
     if typeof(base_ring(C)) <: Union{AcbField,ArbField} && !is_unitary(C)
         @warn("Computing F-symbols is buggy for non unitary numeric categories. Check Results afterwards")
     end
@@ -181,10 +205,10 @@ function six_j_symbols_of_construction(C::Category, S = simples(C), mult = nothi
     ass = Array{MatElem}(undef,N,N,N,N)
 
     one_indices = findall(s -> int_dim(Hom(s,one(C))) > 0 , S)
-    one_components = simple_subobjects(one(C))
-
-    # Set unitors to identity
-    S[one_indices] = one_components
+    if homs === nothing
+        S[one_indices] = simple_subobjects(one(C))
+        homs = multiplicity_spaces(C,S)
+    end
 
     # prods = [X ⊗ Y for X ∈ S, Y ∈ S]
 
@@ -194,8 +218,6 @@ function six_j_symbols_of_construction(C::Category, S = simples(C), mult = nothi
     #     global homs = [morphism.(basis(Hom(prods[i,j],S[k]))) for i ∈ 1:N, j ∈ 1:N, k ∈ 1:N]
     # end  
     
-    homs = multiplicity_spaces(C)
-
     homs = Dict(k => morphism.(basis(v)) for (k,v) in homs)
     missed = [(i,j,k) => C_morphism_type[] for i in 1:N, j in 1:N, k in 1:N if !haskey(homs, (i,j,k))]
     if length(missed) > 0
@@ -298,15 +320,17 @@ end
 function skeletal_spherical(C::Category, Homs)
 end
 
-function skeletal_braiding(C::Category, S = simples(C))
-    @assert is_braided(C)
+function skeletal_braiding(C::Category,S=simples(C);homs=nothing)
+    is_braided(C) || throw(ArgumentError(
+        "R-symbol computation requires a braided category"))
+    _require_split_semisimple_coordinates(C,"R-symbol computation")
+    homs === nothing && (homs = multiplicity_spaces(C,S))
     
     N = length(S)
     C_morphism_type = morphism_type(C)
     F = base_ring(C) 
     braid = Array{MatElem}(undef,N,N,N)
 
-    homs = multiplicity_spaces(C) 
     homs = Dict(k => (basis(v)) for (k,v) in homs)
     missed = [(i,j,k) => C_morphism_type[] for i in 1:N, j in 1:N, k in 1:N if !haskey(homs, (i,j,k))]
     if length(missed) > 0
@@ -340,7 +364,9 @@ function skeletal_braiding(C::Category, S = simples(C))
 end
 
 function skeletal_braiding_of_construction(C::Category, S = simples(C), mult = nothing)
-    @assert is_braided(C)
+    is_braided(C) || throw(ArgumentError(
+        "R-symbol computation requires a braided category"))
+    _require_split_semisimple_coordinates(C,"R-symbol computation")
     
     N = length(S)
     C_morphism_type = morphism_type(C)

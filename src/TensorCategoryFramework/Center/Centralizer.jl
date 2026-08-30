@@ -58,7 +58,24 @@ function isequal_without_parent(X::CentralizerObject, Y::CentralizerObject)
     return object(X) == object(Y) && half_braiding(X) == half_braiding(Y)
 end
 
-is_multifusion(C::CentralizerCategory) = is_multifusion(category(C))
+function is_semisimple(C::CentralizerCategory)
+    is_semisimple(category(C)) || return false
+    # Relative induction averages over the chosen fusion subcategory.  Its
+    # squared-norm dimension must be invertible for the separable construction;
+    # compare Gelaki--Naidu--Nikshych (2009), Remark 2.4(i).  For the full
+    # subcategory this is the center criterion of Bruguières--Virelizier (2013),
+    # Corollary 2.3.
+    !iszero(sum(squared_norm, C.subcategory_simples))
+end
+
+is_weak_multifusion(C::CentralizerCategory) =
+    is_semisimple(C) && is_weak_multifusion(category(C))
+is_weak_fusion(C::CentralizerCategory) =
+    is_weak_multifusion(C) && int_dim(End(one(C))) == 1
+is_multifusion(C::CentralizerCategory) =
+    is_weak_multifusion(C) && all(s -> int_dim(End(s)) == 1, simples(C))
+is_fusion(C::CentralizerCategory) =
+    is_multifusion(C) && int_dim(End(one(C))) == 1
 
 function induction_generators(C::CentralizerCategory) 
     if isdefined(C, :induction_gens)
@@ -123,8 +140,6 @@ Return the image under the forgetful functor.
 """
 morphism(f::CentralizerMorphism) = f.m
 
-is_weakly_fusion(C::CentralizerCategory) = true
-is_fusion(C::CentralizerCategory) = all([int_dim(End(s)) == 1 for s ∈ simples(C)])
 is_abelian(C::CentralizerCategory) = true
 is_linear(C::CentralizerCategory) = true
 is_monoidal(C::CentralizerCategory) = true
@@ -763,22 +778,27 @@ function hom_by_adjunction(X::CentralizerObject, Y::CentralizerObject)
     # Y_Homs = Y_Homs[candidates]
     
 
-    M = zero_matrix(base_ring(C),0,*(size(matrix(zero_morphism(X,Y)))...))
-
-    mors = []
-
-    @threads for i ∈ findall(==(true), candidates)
-        s, X_s, s_Y = S[i], X_Homs[i], Y_Homs[i]
-        Is = relative_induction(s, Z.subcategory_simples, parent_category = Z)
-
-        B = induction_right_adjunction(X_s, X, Is)
-        B2 = induction_adjunction(s_Y, Y, Is)
-
-        # Take all combinations
-        B3 = [h ∘ b for b ∈ B, h in B2][:]
-        mors = [mors; B3]
-        # Build basis
+    indices = findall(candidates)
+    # Populate induction caches serially, then compose independent skeletal
+    # matrix maps in parallel.
+    adjunctions = map(indices) do i
+        Is = relative_induction(S[i],Z.subcategory_simples,parent_category=Z)
+        (induction_right_adjunction(X_Homs[i],X,Is),
+         induction_adjunction(Y_Homs[i],Y,Is))
     end
+    parts = Vector{Vector{CentralizerMorphism}}(undef,length(indices))
+    function compose_batch(k)
+        B,B2 = adjunctions[k]
+        parts[k] = CentralizerMorphism[h ∘ b for b in B for h in B2]
+    end
+    if object(X) isa SixJObject && object(Y) isa SixJObject
+        @threads for k in eachindex(indices)
+            compose_batch(k)
+        end
+    else
+        foreach(compose_batch,eachindex(indices))
+    end
+    mors = reduce(vcat,parts)
     
     mats = matrix.(mors)
     M = transpose(matrix(base_ring(C), hcat(hcat([collect(m)[:] for m in mats]...))))
@@ -788,7 +808,9 @@ function hom_by_adjunction(X::CentralizerObject, Y::CentralizerObject)
     mats_morphisms = morphism.(mats)
 
     for k ∈ 1:rank(Mrref)
-        coeffs = express_in_basis(morphism(transpose(matrix(base_ring(C), size(mats[1])..., Mrref[k,:]))), mats_morphisms)
+        row_matrix = matrix(base_ring(C),
+            reshape(collect(Mrref[k,:])[:], size(mats[1])))
+        coeffs = express_in_basis(morphism(row_matrix), mats_morphisms)
         f = sum([m*bi for (m,bi) ∈ zip(coeffs, mors)])
         push!(base, f)
     end
@@ -809,33 +831,24 @@ function hom_by_linear_equations(X::CentralizerObject, Y::CentralizerObject)
         return HomSpace(X,Y, CentralizerMorphism[])
     end 
 
-    Fx,poly_basis = polynomial_ring(F,n)
-    
-    eqs = []
+    blocks = MatElem[]
 
     S = parent(X).subcategory_simples
 
     for (s,γₛ,λₛ) ∈ zip(S,half_braiding(X), half_braiding(Y))
         Hs = Hom(object(X)⊗s, s⊗object(Y))
-        base = basis(Hs)
-        if length(base) == 0
+        if length(Hs) == 0
             continue
         end
-        eq_i = [zero(Fx) for _ ∈ 1:length(base)]
-        for (f,a) ∈ zip(B,poly_basis)
-            coeffs = express_in_basis((id(s)⊗f)∘γₛ - λₛ∘(f⊗id(s)), base)
-            eq_i = eq_i .+ (a .* coeffs)
+        block = zero_matrix(F,length(Hs),n)
+        for (j,f) in enumerate(B)
+            block[:,j] = express_in_basis(
+                (id(s)⊗f)∘γₛ - λₛ∘(f⊗id(s)),Hs)
         end
-        
-        eqs = [eqs; eq_i]
-
+        push!(blocks,block)
     end
 
-    M = zero(matrix_space(F,length(eqs),n))
-
-    for (i,e) ∈ zip(1:length(eqs),eqs)
-        M[i,:] = [coeff(e, a) for a ∈ poly_basis]
-    end
+    M = isempty(blocks) ? zero_matrix(F,0,n) : reduce(vcat,blocks)
 
     N = nullspace(M)[2]
 
@@ -960,10 +973,5 @@ end
 
 function twist(X::CentralizerObject)
     u = _drinfeld_morphism(X)
-    
-    B,k = is_scalar_multiple(matrix(spherical(object(X))), matrix(u))
-
-    !B && error("Something went wrong")
-
-    return k
+    morphism(X,X,inv(u) ∘ spherical(object(X)))
 end

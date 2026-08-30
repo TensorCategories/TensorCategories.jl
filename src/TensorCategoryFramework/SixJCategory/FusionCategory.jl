@@ -34,20 +34,25 @@ struct SixJMorphism <: Morphism
     m::Vector{<:MatElem}
 end
 
-==(X::SixJObject, Y::SixJObject) = base_ring(X) == base_ring(Y) && X.components == Y.components
+# Component vectors are coordinates relative to a particular skeletal category.
+==(X::SixJObject, Y::SixJObject) =
+    parent(X) === parent(Y) && X.components == Y.components
 
-function ==(C::SixJCategory, D::SixJCategory)
-    base_ring(C) ≠ base_ring(D) && return false 
-    multiplication_table(C) ≠ multiplication_table(D) && return false 
-    if !(typeof(base_ring(C)) <: Union{AcbField,ArbField})
-        if !has_attribute(C, :six_j_symbol)
-            C.ass != D.ass && return false
-        end
-    else
-        !all([overlaps(a,b) for (a,b) in zip(C.ass,D.ass)]) && return false
-    end
-    true 
+Base.hash(X::SixJObject, h::UInt) =
+    hash((objectid(parent(X)), X.components), h)
+
+function _check_sixj_parents(X::SixJObject...)
+    isempty(X) && throw(ArgumentError(
+        "at least one object is needed to determine the parent"))
+    all(Y -> parent(Y) === parent(X[1]), X) || throw(ArgumentError(
+        "skeletal objects must share one parent instance; transport objects explicitly between categories"))
+    return nothing
 end
+
+# Categories carry mutable structural data. Equality means the same parent,
+# not coincident fusion rules/F-symbols (which can have different braidings).
+==(C::SixJCategory,D::SixJCategory) = C === D
+Base.hash(C::SixJCategory,h::UInt) = hash(objectid(C),h)
 
 object_type(::SixJCategory) = SixJObject
 #-------------------------------------------------------------------------------
@@ -56,7 +61,26 @@ object_type(::SixJCategory) = SixJObject
 
 #six_j_category(x...) = six_j_category(x...)
 
-morphism(X::SixJObject, Y::SixJObject, m) = SixJMorphism(X,Y,m)
+function morphism(X::SixJObject, Y::SixJObject, m)
+    _check_sixj_parents(X, Y)
+    C = parent(X)
+    n = rank(C)
+    all(Z -> length(Z.components) == n && all(>=(0),Z.components), (X,Y)) ||
+        throw(ArgumentError("invalid skeletal object multiplicities"))
+    m isa AbstractVector && length(m) == n ||
+        throw(ArgumentError("one matrix block per simple object is required"))
+    # In the row-vector convention, block i has one row per copy in the
+    # source and one column per copy in the target.
+    for i in 1:n
+        m[i] isa MatElem ||
+            throw(ArgumentError("morphism blocks must be matrices"))
+        size(m[i]) == (X.components[i],Y.components[i]) ||
+            throw(ArgumentError("block $i has the wrong dimensions for its endpoints"))
+        base_ring(m[i]) === base_ring(C) ||
+            throw(ArgumentError("morphism blocks must use the category's coefficient field"))
+    end
+    SixJMorphism(X, Y, m)
+end
 
 @doc raw""" 
 
@@ -89,6 +113,22 @@ end
 #   Setters/Getters
 #-------------------------------------------------------------------------------
 
+# Invalidate derived values, but preserve lazy F/R-symbol providers.
+function _invalidate_sixj_structure!(C::SixJCategory;
+                                     pivotal::Bool=true,
+                                     fusion::Bool=true)
+    if isdefined(C,:__attrs)
+        keys = Symbol[:smatrix,:smatrix_by_objects,:twists_current,
+                      :modular,:is_unitary]
+        pivotal && append!(keys,[:pivotal,:spherical,:is_pivotal,:is_spherical])
+        fusion && push!(keys,:multiplication_table)
+        for key in keys
+            delete!(getfield(C,:__attrs),key)
+        end
+    end
+    nothing
+end
+
 @doc raw""" 
 
     set_tensor_product!(F::SixJCategory, mult::Array{Int,4})
@@ -96,6 +136,7 @@ end
 Set the fusion rules of ``F``.
 """
 function set_tensor_product!(F::SixJCategory, tensor)
+    _invalidate_sixj_structure!(F)
     F.tensor_product = tensor
     n = size(tensor,1)
 
@@ -108,6 +149,9 @@ function set_tensor_product!(F::SixJCategory, tensor)
 end
 
 function set_braiding!(F::SixJCategory, braiding)
+    # Braiding changes twists, S, and modularity, but not the pivotal or
+    # spherical structure of the underlying monoidal category.
+    _invalidate_sixj_structure!(F;pivotal=false,fusion=false)
     F.braiding = braiding
 end
 
@@ -121,24 +165,64 @@ end
     set_associator!(F::SixJCategory, i::Int, j::Int, k::Int, l::Int, ass::MatElem) 
     set_associator!(F::SixJCategory, i::Int, j::Int, k::Int, l::Int, m::Int, n::Int, v::RingElem) 
 
-Set the ``F``-symbols of ``F``.
+Set the ``F``-symbols of ``F``. Pass `check=true` to validate normalized unit
+associators; supplied data are trusted by default.
 """
-set_associator!(F::SixJCategory, ass) = F.ass = ass
+# SixJCategory uses strictly normalised unit associators (see associator).
+# Reject conflicting input instead of silently discarding a supplied F=2
+# in the rank-one category. The pentagon itself would force F³=F².
+function _check_normalised_unit_associator(C::SixJCategory,i,j,k,M)
+    if isdefined(C,:one) && sum(C.one) == 1
+        u = findfirst(!iszero,C.one)
+        if u in (i,j,k)
+            M == identity_matrix(base_ring(C),number_of_rows(M)) ||
+                throw(ArgumentError("skeletal unit associators are normalised to identities"))
+        end
+    end
+    nothing
+end
 
-function set_associator!(F::SixJCategory, i::Int, j::Int, k::Int, ass::Vector{<:MatElem})
+function set_associator!(F::SixJCategory,ass; check::Bool=false)
+    if check
+        for i in 1:F.rank,j in 1:F.rank,k in 1:F.rank,l in 1:F.rank
+            isassigned(ass,i,j,k,l) || continue
+            _check_normalised_unit_associator(F,i,j,k,ass[i,j,k,l])
+        end
+    end
+    _invalidate_sixj_structure!(F;fusion=false)
+    F.ass = ass
+end
+
+function set_associator!(F::SixJCategory, i::Int, j::Int, k::Int,
+                         ass::Vector{<:MatElem}; check::Bool=false)
+    _invalidate_sixj_structure!(F;fusion=false)
+    check && foreach(M -> _check_normalised_unit_associator(F,i,j,k,M),ass)
     F.ass[i,j,k,:] = ass
 end
 
-function set_associator!(F::SixJCategory, i::Int, j::Int, k::Int, l::Int, ass::MatElem)
+function set_associator!(F::SixJCategory, i::Int, j::Int, k::Int, l::Int,
+                         ass::MatElem; check::Bool=false)
+    _invalidate_sixj_structure!(F;fusion=false)
+    check && _check_normalised_unit_associator(F,i,j,k,ass)
     F.ass[i,j,k,l] = ass
 end
 
-function set_associator!(F::SixJCategory, i::Int, j::Int, k::Int, l::Int, ass::Array{T,N}) where {T,N}
-    F.ass[i,j,k,l] = matrix(base_ring(F), (N > 1 ? size(ass) : (1,1))..., ass)
+function set_associator!(F::SixJCategory, i::Int, j::Int, k::Int, l::Int,
+                         ass::Array{T,N}; check::Bool=false) where {T,N}
+    set_associator!(F,i,j,k,l,
+        matrix(base_ring(F),(N > 1 ? size(ass) : (1,1))...,ass);check)
 end
 
-function set_associator!(F::SixJCategory, i::Int, j::Int, k::Int, l::Int, m::Int, n::Int, v::RingElem) 
-    F.ass[i,j,k,l][m,n] = v
+function set_associator!(F::SixJCategory, i::Int, j::Int, k::Int, l::Int,
+                         m::Int, n::Int, v::RingElem; check::Bool=false)
+    if check
+        M = deepcopy(F.ass[i,j,k,l])
+        M[m,n] = v
+        set_associator!(F,i,j,k,l,M;check=true)
+    else
+        _invalidate_sixj_structure!(F;fusion=false)
+        F.ass[i,j,k,l][m,n] = v
+    end
 end
 
 @doc raw""" 
@@ -148,51 +232,102 @@ end
 Set the pivotal structure of ``F``. Warning: No checks are performed.
 """
 function set_pivotal!(F::SixJCategory, sp)
+    _invalidate_sixj_structure!(F;fusion=false)
     F.pivotal = sp
+    # Structural data are trusted by default, just like supplied F-symbols.
+    # `is_pivotal(F; check=true)` remains the explicit coherence certificate.
+    set_attribute!(F,:pivotal,true)
 end
 
-function set_spherical!(F::SixJCategory, sp) 
-    F.pivotal = sp
-    @req is_spherical(F) "Not a spherical structure"
-
-end
-
-function is_spherical(F::SixJCategory, sp) 
-    all([s*ev(dual(x))∘coev(x) == inv(s)*ev(dual(x))∘coev(x) for (s,x) ∈ zip(sp,simples(F))]) 
-end
-
-function is_spherical(F::SixJCategory)
-    get_attribute!(F, :is_spherical) do
-        if isdefined(F, :pivotal) 
-            if typeof(base_ring(F)) <: Union{ArbField, ComplexField,AcbField}
-                return all([overlaps(dim(x), dim(dual(x))) for x in simples(F)])
-            end
-            return all([dim(x) == dim(dual(x)) for x in simples(F)])
-        end
-        false
+function set_spherical!(C::SixJCategory,sp; check::Bool=false)
+    if check
+        base_ring(C) isa Union{ArbField,AcbField,ComplexField} &&
+            throw(ArgumentError("a checked spherical setter requires exact coefficients"))
+        is_spherical(C,sp) ||
+            throw(ArgumentError("not a spherical pivotal structure"))
     end
-    
+    set_pivotal!(C,base_ring(C).(sp))
+    set_attribute!(C,:spherical,true)
 end
 
-function set_canonical_spherical!(C::SixJCategory)
-    @assert is_fusion(C)
+function is_spherical(C::SixJCategory,sp)
+    length(sp) == rank(C) || return false
+    sp = base_ring(C).(sp)
+    any(iszero,sp) && return false
+    old = C.pivotal
+    try
+        set_pivotal!(C,copy(sp))
+        return is_spherical(C;check=true)
+    finally
+        set_pivotal!(C,old)
+    end
+end
 
+function is_spherical(C::SixJCategory; check::Bool=false)
+    check && return _sixj_is_spherical(C)
+    get_attribute!(() -> _sixj_is_spherical(C),C,:spherical)
+end
+
+function _sixj_is_spherical(C::SixJCategory)
+    isdefined(C,:pivotal) && length(C.pivotal) == rank(C) || return false
+    any(iszero,C.pivotal) && return false
+    # Ising [1,1,2] has equal dimensions on duals but is NOT pivotal:
+    # the σ⊗σ summands force the σ component to square to one.
+    # EGNO, Definitions 4.7.7 and 4.7.14.
+    is_pivotal(C;check=true) || return false
+    if base_ring(C) isa Union{ArbField,AcbField,ComplexField}
+        return all(overlaps(dim(X),dim(dual(X))) for X in simples(C))
+    end
+    all(dim(X) == dim(dual(X)) for X in simples(C))
+end
+
+"""
+    set_canonical_spherical!(C::SixJCategory; embedding=nothing)
+
+Set the canonical spherical structure of a pseudounitary category whose
+dimensions are the FP dimensions. Pass `check=true` to verify the resulting
+pivotal and spherical identities before storing it.
+This requires exact characteristic-zero coefficients. For a number field,
+specify the complex embedding that determines positivity. Failure preserves
+the previous pivotal data. Existence is not automatic; see EGNO Proposition
+9.5.1.
+"""
+function set_canonical_spherical!(C::SixJCategory; embedding=nothing,
+                                  check::Bool=false)
     K = base_ring(C)
-    
-    set_pivotal!(C, K.([1 for _ ∈ 1:C.rank]))
-    set_pivotal!(C, K.(real.([fpdim(s)*inv(dim(s)) for s ∈ simples(C)])))
-
-    if K isa Union{ArbField, AcbField}
-        p = C.pivotal 
-        for i in 1:rank(C)
-            if overlaps(p[i], K(1))
-                C.pivotal[i] = K(1)
-            elseif overlaps(p[i], K(-1))
-                C.pivotal[i] = K(-1)
-            end
-        end
+    K isa Union{ArbField,AcbField,ComplexField} &&
+        throw(ArgumentError("canonical spherical certification requires exact coefficients"))
+    characteristic(K) == 0 && is_fusion(C) ||
+        throw(ArgumentError("canonical spherical normalization requires a characteristic-zero fusion category"))
+    if K isa NumField
+        embedding === nothing && isdefined(C,:embedding) &&
+            (embedding = C.embedding)
+        embedding isa AbsSimpleNumFieldEmbedding &&
+            number_field(embedding) === K ||
+            throw(ArgumentError("specify a complex embedding of the coefficient number field"))
+        embedding = _qqbar_embedding(embedding)
     end
-    C.pivotal
+    target = [_fpdim_in_base_field(K,fpdim(s),embedding) for s in simples(C)]
+    old = C.pivotal
+    candidate = try
+        set_pivotal!(C,fill(K(1),rank(C)))
+        target ./ dim.(simples(C))
+    finally
+        set_pivotal!(C,old)
+    end
+    set_spherical!(C,candidate;check)
+    copy(C.pivotal)
+end
+
+function _fpdim_in_base_field(K,d,embedding)
+    K isa NumField || return K(d)
+    candidates = roots(change_base_ring(K,minpoly(d)))
+    isempty(candidates) &&
+        throw(ArgumentError("the FP dimension is not in the coefficient field"))
+    matches = filter(c -> embedding(c) == d,candidates)
+    length(matches) == 1 ||
+        throw(ArgumentError("the FP dimension is not in the specified embedded field"))
+    only(matches)
 end
 
 
@@ -201,14 +336,32 @@ end
     set_one!(F::SixJCategory, v::Vector{Int})
     set_one!(F::SixJCategory, i::Int)   
 
-Set the unit of ``F``.
+Set the unit of ``F``. Pass `check=true` to scan stored associators for the
+normalized unit constraint.
 """
-function set_one!(F::SixJCategory, v::Vector) 
-    F.one = v
-end 
+function set_one!(F::SixJCategory,v::Vector; check::Bool=false)
+    length(v) == rank(F) && all(c -> c isa Integer && c >= 0,v) ||
+        throw(ArgumentError("invalid unit multiplicities"))
+    # Unit-normalised associators must be valid even when the unit is set
+    # AFTER an entire array of F-symbols (the usual constructor order).
+    if check && sum(v) == 1 && isdefined(F,:ass)
+        u = findfirst(!iszero,v)
+        for i in 1:rank(F),j in 1:rank(F),k in 1:rank(F),l in 1:rank(F)
+            if u in (i,j,k)
+                isassigned(F.ass,i,j,k,l) || continue
+                M = F.ass[i,j,k,l]
+                M == identity_matrix(base_ring(F),number_of_rows(M)) ||
+                    throw(ArgumentError("skeletal unit associators are normalised to identities"))
+            end
+        end
+    end
+    _invalidate_sixj_structure!(F;fusion=false)
+    F.one = copy(v)
+end
 
-function set_one!(F::SixJCategory, i::Int)
-    F.one = [k == i for k ∈ 1:F.rank]
+function set_one!(F::SixJCategory,i::Int; check::Bool=false)
+    1 <= i <= rank(F) || throw(ArgumentError("unit index out of range"))
+    set_one!(F,[Int(k == i) for k in 1:rank(F)];check)
 end
 
 function set_ribbon!(F::SixJCategory, r)
@@ -216,7 +369,9 @@ function set_ribbon!(F::SixJCategory, r)
 end
 
 function set_twist!(F::SixJCategory, t)
+    _invalidate_sixj_structure!(F;pivotal=false,fusion=false)
     F.twist = t
+    set_attribute!(F,:twists_current,true)
 end
 
 @doc raw""" 
@@ -449,17 +604,49 @@ end
 function r_symbol(C::SixJCategory, i::Int, j::Int, k::Int)
     if ! isassigned(C.braiding, i,j,k)
         r_symbol = get_attribute(C, :r_symbol)
-        C.braiding[i,j,k,l] = r_symbol(i,j,k) 
+        C.braiding[i,j,k] = r_symbol(i,j,k)
     end
     return C.braiding[i,j,k]
 end
 
-function (K::AcbField)(f::SixJMorphism)
-    x = matrix(f)[1,1]
-    if f != x*id(domain(f))
-        @show matrix(f)
-        error("Not a scalar")
+# Capture the old array and provider rather than the category being mutated.
+# Assigned blocks are reused, while missing blocks remain deferred.
+function _sixj_symbol_reader(data, provider)
+    function read(indices...)
+        if !isassigned(data,indices...)
+            data[indices...] = provider(indices...)
+        end
+        data[indices...]
     end
+end
+
+# Some consumers, such as coefficient reduction through an unspecified
+# embedding, genuinely require every structural block at once.
+function _materialize_sixj_symbols!(C::SixJCategory)
+    n = rank(C)
+    for i in 1:n,j in 1:n,k in 1:n,l in 1:n
+        six_j_symbol(C,i,j,k,l)
+    end
+    if is_braided(C)
+        for i in 1:n,j in 1:n,k in 1:n
+            r_symbol(C,i,j,k)
+        end
+    end
+    C
+end
+
+function (K::AcbField)(f::SixJMorphism)
+    domain(f) == codomain(f) || throw(ArgumentError("a scalar morphism must be an endomorphism"))
+    M = matrix(f)
+    n = number_of_rows(M)
+    n > 0 || throw(ArgumentError("the scalar of an endomorphism of zero is not unique"))
+    x = M[1,1]
+    # End(X)=K for a split simple X (EGNO §1.5): extract its coefficient
+    # directly. Forming x*id(X) can widen a ball, so comparing represented
+    # enclosures after that multiplication can reject even a 1×1 matrix.
+    # For larger matrices, overlap alone cannot certify a common scalar.
+    all(i == j ? Base.isequal(M[i,j],x) : iszero(M[i,j])
+        for i in 1:n,j in 1:n) || throw(ArgumentError("not a represented scalar matrix"))
     K(x)
 end
 
@@ -488,12 +675,16 @@ end
 is_simple(X::SixJObject) = sum(X.components) == 1
 
 # ==(X::SixJObject, Y::SixJObject) = parent(X) == parent(Y) && X.components == Y.components
-function ==(f::SixJMorphism, g::SixJMorphism) 
-    if typeof(base_ring(f)) <: Union{AcbField, ComplexField, ArbField}
-        domain(f) == domain(g) && codomain(f) == codomain(g) && overlaps(matrix(f), matrix(g)) 
-    else 
-        domain(f) == domain(g) && codomain(f) == codomain(g) && f.m == g.m
+function ==(f::SixJMorphism,g::SixJMorphism)
+    domain(f) == domain(g) && codomain(f) == codomain(g) || return false
+    if base_ring(f) isa Union{ArbField,AcbField,ComplexField}
+        # Equality of represented enclosures is transitive; overlap is not.
+        return Base.isequal(f.m,g.m)
     end
+    f.m == g.m
+end
+function overlaps(f::SixJMorphism,g::SixJMorphism)
+    domain(f) == domain(g) && codomain(f) == codomain(g) && overlaps(matrix(f),matrix(g))
 end
 
 
@@ -545,8 +736,17 @@ function +(f::SixJMorphism, g::SixJMorphism)
 end
 
 function tr(f::SixJMorphism)
-    # Make use of the fact that the trace is invariant under basis transformation.
-    return sum([left_trace(f[i]) for i ∈ 1:parent(f).rank])
+    domain(f) == codomain(f) ||
+        throw(ArgumentError("trace requires an endomorphism"))
+    C = parent(f)
+    result = zero_morphism(one(C),one(C))
+    # On the isotypic block S_i^n, the pivotal trace is the ordinary matrix
+    # trace times dim(S_i); see EGNO, Definition 4.7.1 and Proposition 4.7.3.
+    for (S,M) in zip(simples(C),matrices(f))
+        t = tr(M)
+        iszero(t) || (result += t*left_trace(id(S)))
+    end
+    result
 end
 
 """
@@ -695,8 +895,8 @@ function simple_objects_ev(X::SixJObject)
     return inv(factor) * unscaled_ev
 end
 
-function spherical(X::SixJObject)
-    @req is_spherical(parent(X)) "Not spherical"
+function spherical(X::SixJObject; check::Bool=false)
+    check && !is_spherical(parent(X);check=true) && throw(ArgumentError("Not spherical"))
     pivotal(X)
 end
 
@@ -709,24 +909,37 @@ function pivotal(X::SixJObject)
     return morphism(X,X,mats)
 end
 
-function twists(C::SixJCategory)
-    # if isdefined(C, :twist)
-    #     return C.twist
-    # end
+"""
+    twists(C::SixJCategory; check=false)
+
+Return the twist scalars of the supplied braided pivotal structure. The
+structure is assumed valid; `check=true` verifies pivotal coherence. Values
+are cached until structural data are changed through a setter.
+"""
+function twists(C::SixJCategory; check::Bool=false)
+    check && !is_pivotal(C;check=true) &&
+        throw(ArgumentError("a pivotal structure is required"))
+    get_attribute(C,:twists_current,false) && return C.twist
     K = base_ring(C)
+    # theta_X = u_X^{-1}j_X (EGNO, Section 8.10). On a split simple both
+    # maps are scalars, so divide their coefficients directly.
+    C.twist = [C.pivotal[i] / K(drinfeld_morphism(X))
+               for (i,X) in enumerate(simples(C))]
+    set_attribute!(C,:twists_current,true)
+    C.twist
+end
 
-    if is_spherical(C)
-        t = [dim(X) * inv(K(tr(inv(braiding(X,X))))) for X in simples(C)]
-        C.twist = t
-        return t
+# The cache key records the ordered object coordinates. Setters invalidate the
+# cache, and a copy prevents callers from corrupting the stored matrix.
+function smatrix(C::SixJCategory, objects=simples(C))
+    all(X -> parent(X) === C,objects) ||
+        throw(ArgumentError("objects outside the category"))
+    key = Tuple(Tuple(X.components) for X in objects)
+    cache = get_attribute!(() -> Dict{Tuple,MatElem}(),C,:smatrix_by_objects)
+    S = get!(cache,key) do
+        invoke(smatrix,Tuple{Category,typeof(objects)},C,objects)
     end
-
-    if is_pivotal(C)
-        t = [K(inv(drinfeld_morphism(X)) ∘ pivotal(X)) for X in simples(C)]
-        t.twist = t
-        return t
-    end
-    throw(ErrorException("Cannot compute twists"))
+    deepcopy(S)
 end
 
 function twist(X::SixJObject)
@@ -795,7 +1008,7 @@ end
 
 
 function tensor_product(X::SixJObject, Y::SixJObject)
-    #@assert parent(X) == parent(Y) "Mismatching parents"
+    _check_sixj_parents(X, Y)
     C = parent(X)
     n = C.rank
     T = [0 for i ∈ 1:n]
@@ -886,6 +1099,7 @@ end
 # end
 
 function direct_sum(X::SixJObject...)
+    _check_sixj_parents(X...)
     if length(X) == 1
         return X...,[id(X...)], [id(X...)]
     end
@@ -913,6 +1127,7 @@ end
 
 
 function ⊕(X::SixJObject...) 
+    _check_sixj_parents(X...)
     SixJObject(parent(X[1]), vec(sum(hcat([x.components for x in X]...), dims = 2)))
 end
 
@@ -957,6 +1172,7 @@ end
 zero(C::SixJCategory) = SixJObject(C,[0 for i ∈ 1:C.rank])
 
 function zero_morphism(X::SixJObject, Y::SixJObject)
+    _check_sixj_parents(X, Y)
     return SixJMorphism(X,Y,[zero(matrix_space(base_ring(X), cX, cY)) for (cX,cY) ∈ zip(X.components, Y.components)])
 end
 
@@ -964,7 +1180,7 @@ function is_isomorphic(X::SixJObject, Y::SixJObject)
     if X != Y
         return false, nothing
     else
-        return true, id(X)
+        return true, morphism(X, Y, matrices(id(X)))
     end
 end
 #-------------------------------------------------------------------------------
@@ -977,24 +1193,70 @@ function simples(C::SixJCategory)
 end
 
 
+"""
+    sort_simples!(C::SixJCategory, order::Vector{Int})
+
+Relabel simple `order[i]` as `i`, transporting the intermediate fusion-channel
+bases as well as the outer F- and R-symbol indices. Deferred symbols remain
+deferred. Existing objects and functors are not transported and should not be
+reused after this mutation.
+"""
 function sort_simples!(C::SixJCategory, order::Vector{Int})
-    C.tensor_product = [C.tensor_product[i,j,k] for i ∈ order, j ∈ order, k ∈ order]
-
     n = C.rank
-   
-
-    C.ass = C.ass[order,order,order,order]
-    # for i ∈ 1:n, j ∈ 1:n, k ∈ 1:n, l ∈ 1:n 
-    #     C.ass[order[[i,j,k,l]]...] = ass[i,j,k,l]
-    # end
-    
+    structure_flags = Dict(key => get_attribute(C,key)
+        for key in (:pivotal,:spherical) if has_attribute(C,key))
+    sort(order) == collect(1:n) ||
+        throw(ArgumentError("order must be a permutation of the simple labels"))
+    order = copy(order)
+    N = C.tensor_product
+    old_ass = C.ass
+    readF = _sixj_symbol_reader(old_ass,
+                                get_attribute(C,:six_j_symbol,nothing))
+    transportedF = function(i,j,k,l)
+        a,b,c,d = order[i],order[j],order[k],order[l]
+        rows = _fusion_channel_permutation(
+            [N[a,b,e]*N[e,c,d] for e in 1:n],order)
+        cols = _fusion_channel_permutation(
+            [N[b,c,f]*N[a,f,d] for f in 1:n],order)
+        readF(a,b,c,d)[rows,cols]
+    end
+    ass = Array{MatElem,4}(undef,n,n,n,n)
+    for I in CartesianIndices(ass)
+        i,j,k,l = Tuple(I)
+        isassigned(old_ass,order[i],order[j],order[k],order[l]) || continue
+        ass[I] = transportedF(i,j,k,l)
+    end
+    if isdefined(C,:braiding)
+        old_R = C.braiding
+        readR = _sixj_symbol_reader(old_R,get_attribute(C,:r_symbol,nothing))
+        transportedR = (i,j,k) -> readR(order[i],order[j],order[k])
+        R = Array{MatElem,3}(undef,n,n,n)
+        for I in CartesianIndices(R)
+            i,j,k = Tuple(I)
+            isassigned(old_R,order[i],order[j],order[k]) || continue
+            R[I] = transportedR(i,j,k)
+        end
+        C.braiding = R
+        set_attribute!(C,:r_symbol,transportedR)
+    end
+    C.tensor_product = N[order,order,order]
+    C.ass = ass
+    set_attribute!(C,:six_j_symbol,transportedF)
     C.simples_names = C.simples_names[order]
 
     isdefined(C, :one) && (C.one = C.one[order])
     isdefined(C, :pivotal) && (C.pivotal = C.pivotal[order])
-    isdefined(C, :braiding) && (C.braiding = [C.braiding[i,j,k] for i ∈ order, j ∈ order, k ∈ order])
     isdefined(C, :twist) && (C.twist = C.twist[order])
+    _invalidate_sixj_structure!(C)
+    for (key,value) in structure_flags
+        set_attribute!(C,key,value)
+    end
     return C
+end
+
+function _fusion_channel_permutation(sizes,order)
+    offsets = cumsum([0; sizes])
+    [r for e in order for r in offsets[e]+1:offsets[e+1]]
 end
 
 function sort_simples_by_dimension!(C::SixJCategory)
@@ -1057,7 +1319,7 @@ struct SixJHomSpace<: AbstractHomSpace
 end
 
 function Hom(X::SixJObject, Y::SixJObject)
-    #@assert parent(X) == parent(Y) "Mismatching parents"
+    _check_sixj_parents(X, Y)
     Xi, Yi = X.components, Y.components
     F = base_ring(X)
 
@@ -1079,7 +1341,12 @@ function Hom(X::SixJObject, Y::SixJObject)
 end
 
 function express_in_basis(f::SixJMorphism, H::SixJHomSpace)
-   vcat((collect(m)[:] for m ∈ matrices(f))...)
+    domain(f) == domain(H) && codomain(f) == codomain(H) ||
+        throw(ArgumentError("morphism and Hom basis must have the same endpoints"))
+    # Hom constructs matrix units in block, row, column order. Julia's
+    # column-major vec would permute the coefficients within rectangular blocks.
+    [M[i,j] for M in matrices(f)
+            for i in 1:number_of_rows(M) for j in 1:number_of_columns(M)]
 end
 
 
@@ -1133,54 +1400,60 @@ end
 
 Return the category ``C⊗K``.
 """
-function extension_of_scalars(C::SixJCategory, L::Ring; embedding = embedding(base_ring(C), L))
-
-    try
-        D = six_j_category(L, C.tensor_product, simples_names(C))
-
-        set_name!(D, C.name)
-        
-        if isdefined(C, :ass)
-            D.ass = [matrix(L, size(a)..., embedding.(collect(a))) for a ∈ C.ass]
-        end
-        if isdefined(C, :one)
-            D.one = C.one
-        end
-        if isdefined(C, :pivotal)
-            D.pivotal = embedding.(C.pivotal)
-            # D.pivotal = [L(1) for i ∈ 1:rank(C)]
-            # D.pivotal = [embedding(dim(C[i])) * inv(dim(D[i])) for i ∈ 1:rank(C)]
-
-            # If L is a numeric Field we need to make sure, that the precision is set right
-            if L isa Union{ArbField, AcbField}
-                D.pivotal = L.(D.pivotal)
-            end
-        end
-        if  isdefined(C, :braiding)
-            D.braiding = [matrix(L, size(a)..., embedding.(collect(a))) for a ∈ C.braiding]
-        end
-        if isdefined(C, :twist) 
-            D.twist = f.(C.twist)
-        end
-        set_name!(D, C.name)
-
-        if L isa NumField && isdefined(C, :embedding) 
-            emb = getfield(C, :embedding) 
-            _embeddings = complex_embeddings(L)
-
-            # Note: If K == QQ the embedding numberfield is a NumField of degree 1, and base_ring(C) == QQ
-            K = number_field(emb)
-            D.embedding = _embeddings[findfirst(e -> overlaps(e(embedding(gen(base_ring(C)))), emb(gen(K))), _embeddings)]
-        end
-        return D
-    catch 
-        error("Extension of scalars not possible")
+function extension_of_scalars(C::SixJCategory, L::Ring;
+                              embedding = _scalar_extension_embedding(base_ring(C),L))
+    # Avoid placeholder associators and do not force deferred structural data.
+    D = SixJCategory()
+    D.base_ring = L
+    D.rank = rank(C)
+    D.tensor_product = copy(C.tensor_product)
+    D.simples_names = copy(simples_names(C))
+    isdefined(C,:name) && set_name!(D,C.name)
+    if isdefined(C,:ass)
+        D.ass = _transport_sixj_array!(D,C,:ass,:six_j_symbol,L,embedding)
     end
+    if isdefined(C,:one)
+        D.one = copy(C.one)
+    end
+    if isdefined(C,:pivotal)
+        D.pivotal = embedding.(C.pivotal)
+        L isa Union{ArbField,AcbField} && (D.pivotal = L.(D.pivotal))
+        for key in (:pivotal,:spherical)
+            has_attribute(C,key) && set_attribute!(D,key,get_attribute(C,key))
+        end
+    end
+    if isdefined(C,:braiding)
+        D.braiding = _transport_sixj_array!(D,C,:braiding,:r_symbol,L,embedding)
+    end
+    if get_attribute(C,:twists_current,false)
+        set_twist!(D,embedding.(C.twist))
+    end
+    D
+end
+
+function _transport_sixj_array!(D,C,field,key,L,embedding)
+    data = getfield(C,field)
+    read = _sixj_symbol_reader(data,get_attribute(C,key,nothing))
+    convert_matrix = a -> matrix(L,size(a)...,embedding.(collect(a)))
+    out = similar(data)
+    for I in CartesianIndices(data)
+        isassigned(data,Tuple(I)...) || continue
+        out[I] = convert_matrix(data[I])
+    end
+    set_attribute!(D,key,(indices...) -> convert_matrix(read(indices...)))
+    out
 end
 
 complex_embedding_of_base_ring(C::SixJCategory) = C.embedding
 
-function extension_of_scalars(C::SixJCategory, K::FqField)
+function extension_of_scalars(C::SixJCategory, K::FqField; embedding=nothing)
+    if embedding !== nothing || is_finite(base_ring(C))
+        e = embedding === nothing ?
+            _scalar_extension_embedding(base_ring(C),K) : embedding
+        return invoke(extension_of_scalars,Tuple{SixJCategory,Ring},C,K;
+                      embedding=e)
+    end
+    _materialize_sixj_symbols!(C)
     denom = if base_ring(C) == QQ 
         lcm([isempty(m) ? ZZ(1) : lcm(denominator.(collect(m))[:]) for m ∈ C.ass][:])
     else 
@@ -1234,13 +1507,47 @@ function complex_embeddings(C::SixJCategory)
 end
 
 
-function extension_of_scalars(C::SixJCategory, K::QQBarField, e::AbsSimpleNumFieldEmbedding = complex_embeddings(base_ring(C))[1])
-    if base_ring(C) == QQ 
-        to_qqbar = QQBarField()
-    else
-        to_qqbar = x -> guess(QQBarField(), e(x,2048), maximum([1,degree(x)]))
-    end   
-    extension_of_scalars(C,K, embedding = to_qqbar)
+function extension_of_scalars(C::SixJCategory, K::QQBarField; embedding=nothing)
+    if embedding isa AbsSimpleNumFieldEmbedding
+        return extension_of_scalars(C,K,embedding)
+    end
+    if embedding !== nothing || base_ring(C) isa Union{QQField,QQBarField}
+        e = embedding === nothing ? K : embedding
+        return invoke(extension_of_scalars,Tuple{SixJCategory,Ring},C,K;
+                      embedding=e)
+    end
+    e = isdefined(C,:embedding) ? C.embedding :
+        first(complex_embeddings(base_ring(C)))
+    extension_of_scalars(C,K,e)
+end
+
+function extension_of_scalars(C::SixJCategory, K::QQBarField,
+                              e::AbsSimpleNumFieldEmbedding)
+    number_field(e) === base_ring(C) ||
+        throw(ArgumentError("embedding has the wrong source field"))
+    invoke(extension_of_scalars,Tuple{SixJCategory,Ring},C,K;
+           embedding=_qqbar_embedding(e))
+end
+
+# Choose one algebraic image of the primitive element using the certified
+# complex embedding, then evaluate every coefficient through that same root.
+# This gives a field homomorphism rather than independent algebraic guesses.
+function _qqbar_embedding(e::AbsSimpleNumFieldEmbedding)
+    L = number_field(e)
+    K = QQBarField()
+    a = gen(L)
+    candidates = roots(K,minpoly(a))
+    for prec in (64,128,256,512,1024,2048,4096)
+        image = e(a,prec)
+        A = AcbField(prec)
+        matches = filter(r -> overlaps(image,A(r)),candidates)
+        if length(matches) == 1
+            r = only(matches)
+            return x -> foldr((c,y) -> K(c)+r*y,coefficients(L(x));
+                              init=K(0))
+        end
+    end
+    throw(ArgumentError("could not isolate the specified number-field embedding"))
 end
 
 """ 
@@ -1262,7 +1569,8 @@ end
 
 Return the category ``C⊗K``.
 """
-function extension_of_scalars(m::SixJMorphism, L::Ring, CL::SixJCategory; embedding = embedding(base_ring(m), L))
+function extension_of_scalars(m::SixJMorphism, L::Ring, CL::SixJCategory;
+                              embedding = _scalar_extension_embedding(base_ring(m),L))
     try 
         if CL === nothing
             CL = extension_of_scalars(parent(m), L, embedding = embedding)
@@ -1327,6 +1635,24 @@ function autoequivalences(C::SixJCategory)
     equivs
 end
 
+"""
+    autoequivalence_candidates(C; check=false)
+
+Return tensor autoequivalence candidates; completeness is not claimed.  The
+solved equations impose coherence, and `check=true` additionally re-evaluates
+the monoidal functor axioms on every returned candidate.
+"""
+function autoequivalence_candidates(C::SixJCategory; check::Bool=false)
+    fusion_ring_autos = automorphisms(split_grothendieck_ring(C))
+    result = MonoidalFunctor[]
+    for f in fusion_ring_autos
+        images = [findfirst(==(a),f.images) for a in basis(domain(f))]
+        F = functor(C,C,simples(C)[images])
+        append!(result,monoidal_structure_candidates(F;check))
+    end
+    result
+end
+
 
 #=----------------------------------------------------------
     Reverse braided  
@@ -1370,18 +1696,22 @@ end
     Unitary
 ----------------------------------------------------------=#    
 
+"""
+    is_unitary(C::SixJCategory)
+
+Whether the supplied exact structure is certified unitary in its stored bases.
+`false` also covers coefficient fields without such a certificate; it does not
+prove that no unitary realization exists.
+"""
 function is_unitary(C::SixJCategory)
     get_attribute!(C, :is_unitary) do 
-        if base_ring(C) isa Union{QQField, NumField, FqField}
+        if base_ring(C) isa Union{QQField,NumField,FqField,ArbField,
+                                  AcbField,ComplexField}
             return false
         end
 
-        !is_spherical(C) && return false
-        if base_ring(C) isa Union{ArbField, AcbField}
-            !all([overlaps(fpdim(s), dim(s)) for s ∈ simples(C)]) && return false
-        else
-            !all([fpdim(s) == dim(s) for s ∈ simples(C)]) && return false
-        end
+        !is_spherical(C;check=true) && return false
+        !all(fpdim(s) == dim(s) for s in simples(C)) && return false
 
         for x ∈ simples(C), y ∈ simples(C), z ∈ simples(C) 
             !is_unitary(associator(x,y,z)) && return false 
@@ -1391,8 +1721,35 @@ function is_unitary(C::SixJCategory)
 end
 
 function is_unitary(f::SixJMorphism)
+    base_ring(f) isa Union{ArbField,AcbField,ComplexField} &&
+        throw(ArgumentError("approximate coefficients cannot certify unitarity; use is_unitary_numeric"))
     !is_invertible(f) && return false
     f ∘ dagger(f) == id(codomain(f))    
+end
+
+"""
+    is_unitary_numeric(f::SixJMorphism)
+    is_unitary_numeric(C::SixJCategory)
+
+Test compatibility of ball enclosures with the unitarity equations in the
+stored bases. This is numerical evidence, not an exact certificate or a test
+for the existence of another unitary gauge.
+"""
+function is_unitary_numeric(f::SixJMorphism)
+    base_ring(f) isa Union{ArbField,AcbField} ||
+        throw(ArgumentError("ball coefficients required"))
+    domain(f).components == codomain(f).components || return false
+    overlaps(f ∘ dagger(f),id(codomain(f))) &&
+        overlaps(dagger(f) ∘ f,id(domain(f)))
+end
+
+function is_unitary_numeric(C::SixJCategory)
+    base_ring(C) isa Union{ArbField,AcbField} ||
+        throw(ArgumentError("ball coefficients required"))
+    is_spherical(C;check=true) || return false
+    S = simples(C)
+    all(s -> overlaps(fpdim(s),dim(s)),S) || return false
+    all(is_unitary_numeric(associator(x,y,z)) for x in S,y in S,z in S)
 end
 
 function dagger(f::SixJMorphism)
@@ -1484,7 +1841,7 @@ function F_symbols(C::SixJCategory)
 
     for (a,b,c,d) ∈ collect(Base.product(1:N, 1:N, 1:N, 1:N))
 
-        sym = collect(C.ass[a,b,c,d])[:]
+        sym = collect(six_j_symbol(C,a,b,c,d))[:]
   
         for e in 1:N, f in 1:N 
             if mult[a,b,e] * mult[e,c,d] * mult[b,c,f] * mult[a,f,d] == 0 
@@ -1577,7 +1934,7 @@ function R_symbols(C::SixJCategory)
     mult = multiplication_table(C)
 
     for (a,b,c) ∈ collect(Base.product(1:N, 1:N, 1:N))
-        sym = collect(C.braiding[a,b,c])[:]
+        sym = collect(r_symbol(C,a,b,c))[:]
 
         if mult[a,b,c] == 0 
             continue 

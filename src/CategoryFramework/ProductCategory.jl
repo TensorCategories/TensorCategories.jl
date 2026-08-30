@@ -19,9 +19,8 @@ end
 
 Construct the product category
 """
-product_category(C::Vector{Category}) = ProductCategory{length(C)}{tuple(C)}
-
-
+product_category(C::AbstractVector{<:Category}) =
+    ProductCategory{length(C)}(Tuple(C))
 product_category(C::Category...) = ProductCategory{length(C)}(C)
 
 @doc raw""" 
@@ -30,7 +29,8 @@ product_category(C::Category...) = ProductCategory{length(C)}(C)
 
 Construct the product in the product category
 """
-product_object(X::Object...) = ProductObject{length(X)}(ProductCategory(parent.(X)...), X)
+product_object(X::Object...) =
+    ProductObject{length(X)}(product_category(parent.(X)...), X)
 
 @doc raw""" 
 
@@ -40,12 +40,12 @@ Construct the product morphism in the product category
 """
 product_morphism(f::Morphism...) = morphism(f...)
 
-×(C::Category, D::Category) = ProductCategory(C,D)
+×(C::Category, D::Category) = product_category(C,D)
 
 function morphism(f::Morphism...)
-    dom = ProductObject(domain.(f)...)
-    cod = ProductObject(codomain.(f)...)
-    ProductMorphism{length(X)}(dom,cod,f)
+    dom = product_object(domain.(f)...)
+    cod = product_object(codomain.(f)...)
+    ProductMorphism{length(f)}(dom,cod,f)
 end
 
 function morphism(X::ProductObject{N}, Y::ProductObject{N}, f::NTuple{N,Morphism}) where N

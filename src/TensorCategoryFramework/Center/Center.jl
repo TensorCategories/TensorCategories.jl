@@ -78,18 +78,22 @@ end
 #=----------------------------------------------------------
     Framework checks 
 ----------------------------------------------------------=#
-is_multifusion(C::CenterCategory) = is_multifusion(category(C))
 is_semisimple(C::CenterCategory) = dim(category(C)) != 0 && is_semisimple(category(C))
-is_modular(C::CenterCategory) = is_fusion(category(C)) 
+is_weak_multifusion(C::CenterCategory) =
+    is_semisimple(C) && is_weak_multifusion(category(C))
+is_multifusion(C::CenterCategory) =
+    is_weak_multifusion(C) && all(S -> int_dim(End(S)) == 1,simples(C))
+is_modular(C::CenterCategory) = is_fusion(C) && is_spherical(C)
 is_braided(C::CenterCategory) = true
 is_rigid(C::CenterCategory) = is_rigid(category(C))
 is_ring(C::CenterCategory) = is_ring(category(C))
 
-
-is_weakly_fusion(C::CenterCategory) = dim(category(C)) != 0
+is_weak_fusion(C::CenterCategory) =
+    is_weak_multifusion(C) && int_dim(End(one(C))) == 1
 
 function is_fusion(C::CenterCategory) 
     get_attribute!(C, :is_fusion) do 
+        is_multifusion(C) || return false
         dim(category(C)) == 0 && return false 
         if base_ring(C) isa Union{ArbField,AcbField} 
             overlaps(dim(C), sum(squared_norm(object(x)) for x ∈ simples(C)))
@@ -101,7 +105,29 @@ end
 is_abelian(C::CenterCategory) = true
 is_linear(C::CenterCategory) = true
 is_monoidal(C::CenterCategory) = true
-is_spherical(C::CenterCategory) = is_spherical(category(C))
+# The component j_(X,γ) is the underlying j_X. Thus a chosen pivotal, and in
+# particular spherical, structure is inherited from C by Z(C); compare EGNO,
+# Corollary 8.20.14 for the resulting modular structure in the spherical case.
+is_pivotal(C::CenterCategory; check::Bool=false) =
+    is_pivotal(category(C);check)
+is_spherical(C::CenterCategory; check::Bool=false) =
+    is_spherical(category(C);check)
+
+function is_simple(X::CenterObject)
+    C = parent(X)
+    is_semisimple(C) && return invoke(is_simple,Tuple{Object},X)
+    # A central subobject is in particular a subobject after forgetting the
+    # half-braiding, so a simple underlying object implies a simple center one.
+    is_simple(object(X)) && return true
+    if isdefined(C,:simples)
+        return any(S -> is_isomorphic(X,S)[1],C.simples)
+    end
+    # Do not trigger ambient simple enumeration for a local query.
+    invoke(is_simple,Tuple{Object},X)
+end
+
+is_monomorphism(f::CenterMorphism) = is_monomorphism(morphism(f))
+is_epimorphism(f::CenterMorphism) = is_epimorphism(morphism(f))
 
 # Norms 
 squared_norm(X::CenterObject) = squared_norm(object(X))
@@ -439,6 +465,8 @@ function decompose(X::CenterObject)
 
     if isdefined(C, :simples) && is_semisimple(C)
         return decompose_by_simples(X,simples(C))
+    elseif is_finite(K)
+        return _decompose_finite_center(X)
     else
         try
             return decompose_by_endomorphism_ring(X)
@@ -613,6 +641,9 @@ Check if ```X≃Y```. Return ```(true, m)``` where ```m```is an isomorphism if t
 else return ```(false,nothing)```.
 """
 function is_isomorphic(X::CenterObject, Y::CenterObject)
+    if is_finite(base_ring(X))
+        return _is_isomorphic_finite_center(X,Y)
+    end
     # TODO: Fix This. How to compute a central isomorphism?
 
     if ! is_isomorphic(object(X),object(Y))[1]
@@ -880,6 +911,27 @@ function multiplicity_spaces(C::CenterCategory)
     end
 end
 
+function multiplicity_spaces(C::CenterCategory,S::Vector{<:Object})
+    canonical = simples(C)
+    if length(S) == length(canonical) &&
+       all(isequal_without_parent(s,t) for (s,t) in zip(S,canonical))
+        # Reuse the specialized cached center computation when the explicit
+        # representatives agree with the canonical ordered simples.
+        return multiplicity_spaces(C)
+    end
+    homs = Dict{NTuple{3,Int},HomSpace}()
+    for (i,X) in pairs(S),(j,Y) in pairs(S)
+        XY = X ⊗ Y
+        for (k,Z) in pairs(S)
+            H = hom_by_linear_equations(XY,Z)
+            isempty(basis(H)) && continue
+            homs[(i,j,k)] = is_unitary(C) ?
+                HomSpace(XY,Z,orthonormal_basis(H)) : H
+        end
+    end
+    homs
+end
+
 #-------------------------------------------------------------------------------
 #   Pretty Printing
 #-------------------------------------------------------------------------------
@@ -1053,8 +1105,17 @@ end
 Extend the scalars of the center category C such that it is split semisimple after karoubian closure.
 If the flag `absolute` is set `false` the extension field is chosen to be a relative numberfield that includes the original field as is.
 The splitting field is not minimal in general and usually chosen to be a cyclotomic extension of the base field.
+Over a finite field, split the simple objects over one finite extension. This
+does not make a nonsemisimple center semisimple; use `split(objects)` to split
+a finite family without enumerating all ambient simples.
 """
 function split(C::CenterCategory; absolute = true)
+    if is_finite(base_ring(C))
+        result = split(simples(C))
+        result.category.simples = unique_simples(
+            [X for dec in result.decompositions for (X,_) in dec])
+        return result.category,result.embedding
+    end
     Ends = End.(simples(C))
     K = base_ring(C)
 
@@ -1228,23 +1289,29 @@ function hom_by_adjunction(X::CenterObject, Y::CenterObject)
     # Y_Homs = Y_Homs[candidates]
     
 
-    M = zero_matrix(base_ring(C),0,*(size(matrix(zero_morphism(X,Y)))...))
-
-    mors = CenterMorphism[]
-
-    @threads for i ∈ findall(==(true), candidates)
-        s, X_s, s_Y = S[i], X_Homs[i], Y_Homs[i]
-        Is = induction(s, parent_category = Z)
-        
-        B = induction_right_adjunction(X_s, X, Is)
-        B2 = induction_adjunction(s_Y, Y, Is)
-
-        # Take all combinations
-        B3 = [h ∘ b for b ∈ B, h in B2][:]
-        
-        mors = [mors; B3]
-        # Build basis
+    indices = findall(candidates)
+    # Induction and structural-map construction populate shared caches. Finish
+    # that work serially before composing independent skeletal matrix maps.
+    adjunctions = map(indices) do i
+        Is = induction(S[i],parent_category=Z)
+        (induction_right_adjunction(X_Homs[i],X,Is),
+         induction_adjunction(Y_Homs[i],Y,Is))
     end
+    parts = Vector{Vector{CenterMorphism}}(undef,length(indices))
+    function compose_batch(k)
+        B,B2 = adjunctions[k]
+        parts[k] = CenterMorphism[h ∘ b for b in B for h in B2]
+    end
+    # Other backends may enter GAP even during parent/equality operations and
+    # cannot in general be called concurrently from Julia threads.
+    if object(X) isa SixJObject && object(Y) isa SixJObject
+        @threads for k in eachindex(indices)
+            compose_batch(k)
+        end
+    else
+        foreach(compose_batch,eachindex(indices))
+    end
+    mors = reduce(vcat,parts)
 
     mats = matrix.(mors)
 
@@ -1286,7 +1353,10 @@ function hom_by_adjunction(X::CenterObject, Y::CenterObject)
     mats_morphisms = morphism.(mats)
 
     for k ∈ 1:rank(Mrref)
-        coeffs = express_in_basis(morphism(transpose(matrix(base_ring(C), size(mats[1])..., Mrref[k,:]))), mats_morphisms)
+        # Preserve the rectangular shape and column-major coordinate order.
+        row_matrix = matrix(base_ring(C),
+            reshape(collect(Mrref[k,:])[:], size(mats[1])))
+        coeffs = express_in_basis(morphism(row_matrix), mats_morphisms)
         f = sum([m*bi for (m,bi) ∈ zip(coeffs, mors)])
         push!(base, f)
     end
@@ -1307,34 +1377,24 @@ function hom_by_linear_equations(X::CenterObject, Y::CenterObject, ind = 1:rank(
         return HomSpace(X,Y, CenterMorphism[])
     end 
 
-    Fx,poly_basis = polynomial_ring(F,n)
-    
-    eqs = []
+    blocks = MatElem[]
 
     S = simples(parent(object(X)))
 
     for (s,γₛ,λₛ) ∈ zip(S[ind],half_braiding(X)[ind], half_braiding(Y)[ind])
         Hs = Hom(object(X)⊗s, s⊗object(Y))
-        base = basis(Hs)
-        if length(base) == 0
+        if length(Hs) == 0
             continue
         end
-        eq_i = [zero(Fx) for _ ∈ 1:length(base)]
-        for (f,a) ∈ zip(B,poly_basis)
-            coeffs = express_in_basis((id(s)⊗f)∘γₛ - λₛ∘(f⊗id(s)), base)
-            eq_i = eq_i .+ (a .* coeffs)
+        block = zero_matrix(F,length(Hs),n)
+        for (j,f) in enumerate(B)
+            block[:,j] = express_in_basis(
+                (id(s)⊗f)∘γₛ - λₛ∘(f⊗id(s)),Hs)
         end
-        
-        eqs = [eqs; eq_i]
-
+        push!(blocks,block)
     end
 
-    M = zero(matrix_space(F,length(eqs),n))
-
-    for (i,e) ∈ zip(1:length(eqs),eqs)
-        M[i,:] = [coeff(e, a) for a ∈ poly_basis]
-    end
-    M
+    M = isempty(blocks) ? zero_matrix(F,0,n) : reduce(vcat,blocks)
     # If Basering is numeric field, we need to be careful 
     # if typeof(F) <: Union{ArbField, ComplexField, AcbField}
     #     basically_zero = findall(a -> overlaps(a, F(0)), M)
@@ -1409,7 +1469,9 @@ inner_product(f::CenterMorphism, g::CenterMorphism) = inner_product(morphism(f),
 function extension_of_scalars(C::CenterCategory, L::Field; embedding = nothing)
     K = base_ring(C)
     if embedding === nothing 
-        if typeof(K) == typeof(L)
+        if K isa FinField && L isa FinField
+            embedding = _scalar_extension_embedding(K,L)
+        elseif typeof(K) == typeof(L)
             embedding = is_subfield(base_ring(C), L)[2]
         else
             embedding = L 
@@ -1443,13 +1505,8 @@ function extension_of_scalars(C::CenterCategory, L::Field; embedding = nothing)
     if isdefined(C, :induction_gens)
         CL.induction_gens = [extension_of_scalars(is, L, category(CL),  embedding = embedding) for is ∈ C.induction_gens]
     end
-    if has_attribute(C, :multiplication_table)
-        set_attribute!(CL, :multiplication_table, multiplication_table(C))
-    end
-    if has_attribute(C, :multiplicity_spaces)
-        mults = Dict(k => extension_of_scalars(h, L, CL, embedding = embedding) for (k,h) in multiplicity_spaces(C))
-        set_attribute!(CL, :multiplicity_spaces, mults)
-    end
+    # Simple objects can split and change order after base change. Fusion and
+    # multiplicity-space caches indexed by the old simples must be recomputed.
 
     sort_simples_by_dimension!(CL)
     return CL
@@ -1463,19 +1520,23 @@ function _extension_of_scalars(C::CenterCategory, L::Field, cL::Category)
     CenterCategory(L,cL)
 end
 
-function extension_of_scalars(X::CenterObject, L::Field;  embedding = embedding(base_ring(X), L))
+function extension_of_scalars(X::CenterObject, L::Field;
+                              embedding=_scalar_extension_embedding(base_ring(X),L))
     extension_of_scalars(X,L,_extension_of_scalars(parent(X),L,embedding = embedding), embedding = embedding)
 end
 
-function extension_of_scalars(X::CenterObject, L::Field, CL::CenterCategory;  embedding = embedding(base_ring(X), L))
+function extension_of_scalars(X::CenterObject, L::Field, CL::CenterCategory;
+                              embedding=_scalar_extension_embedding(base_ring(X),L))
     CenterObject(CL, extension_of_scalars(object(X), L, category(CL), embedding = embedding), [extension_of_scalars(f, L, category(CL),  embedding = embedding) for f ∈ half_braiding(X)])
 end
 
-function extension_of_scalars(f::CenterMorphism, L::Field;  embedding = embedding(base_ring(f), L))
+function extension_of_scalars(f::CenterMorphism, L::Field;
+                              embedding=_scalar_extension_embedding(base_ring(f),L))
     extension_of_scalars(f, L, _extension_of_scalars(parent(f), L, embedding = embedding), embedding = embedding)
 end
 
-function extension_of_scalars(f::CenterMorphism, L::Field, CL::CenterCategory;  embedding = embedding(base_ring(f), L))
+function extension_of_scalars(f::CenterMorphism, L::Field, CL::CenterCategory;
+                              embedding=_scalar_extension_embedding(base_ring(f),L))
     dom = extension_of_scalars(domain(f), L, CL,  embedding = embedding)
     cod = extension_of_scalars(codomain(f), L, CL,  embedding = embedding)
     m = extension_of_scalars(morphism(f), L, category(CL),  embedding = embedding)
@@ -1536,12 +1597,9 @@ end
 
 function twist(X::CenterObject)
     u = _drinfeld_morphism(X)
-    
-    B,k = is_scalar_multiple(matrix(spherical(object(X))), matrix(u))
-
-    !B && error("Something went wrong")
-
-    return k
+    # EGNO §8.10: theta_X = u_X^-1 j_X is an endomorphism, including on
+    # direct sums with different simple twist eigenvalues.
+    morphism(X,X,inv(u) ∘ spherical(object(X)))
 end
 
 
@@ -1613,10 +1671,10 @@ end
 # end
 
 
-function six_j_symbols(C::CenterCategory, S = simples(C))
+function six_j_symbols(C::CenterCategory,S=simples(C);homs=nothing)
     @assert is_semisimple(C)
 
-    six_j_symbols_of_construction(C, S)
+    six_j_symbols_of_construction(C,S;homs)
 end
 
 

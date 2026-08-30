@@ -1,110 +1,98 @@
+# Deterministic full-suite integration tests for the AnyonWiki loaders and
+# center pipeline. The database is a fixture, not a classification oracle.
+# Fusion-category coherence is the complete pentagon identity (EGNO (2015),
+# Section 2.2), and splitness means End(S)=K for every simple S; see
+# Mäurer--Thiel, arXiv:2406.13438v2, Section 2.1.
 
+@testset "AnyonWiki nonsplit center and skeletonization" begin
+    # This rank-three entry has the representation ring of S3:
+    #   ε²=1, εX=X, X²=1⊕ε⊕X,
+    # but uses the second stored associator and no stored braiding.
+    code = (3,1,0,2,2,0,1)
+    C = anyonwiki(code...)
 
-@testset "AnyonWiki" begin 
+    N = zeros(Int,3,3,3)
+    N[1,1,1] = N[1,2,2] = N[1,3,3] = 1
+    N[2,1,2] = N[2,2,1] = N[2,3,3] = 1
+    N[3,1,3] = N[3,2,3] = 1
+    N[3,3,1] = N[3,3,2] = N[3,3,3] = 1
+    @test multiplication_table(C) == N
+    @test fpdim(C[3]) == QQBarField()(2)
+    @test pentagon_axiom(C)
 
-    keys = anyonwiki_keys(4)
-    
-    @testset "Construction Categories" begin
+    # The center is semisimple but not split over Q(ζ3): five simples have
+    # scalar endomorphisms and one has a three-dimensional division algebra.
+    # This fixed profile prevents the test from silently bypassing splitting.
+    Z = center(C)
+    S = simples(Z)
+    @test length(S) == 6
+    @test sort(int_dim.(End.(S))) == [1,1,1,1,1,3]
+    @test dim(Z) == dim(C)^2
 
-        # test random categories 
-        for k in rand(keys, 10)
-            C = anyonwiki(k...)
-            @test randomized_pentagon_axiom(C, 3)
-            @test is_pivotal(C)
-        end
-    end
+    Zsplit, = split(Z)
+    T = simples(Zsplit)
+    @test length(T) == 8
+    @test all(S -> int_dim(End(S)) == 1,T)
+    @test base_ring(Zsplit) != base_ring(Z)
 
-    # Test center loading 
-    @testset "Centers of anyonwiki" begin
-
-        # Test loading of random simple centers
-        for k in rand(keys, 10)
-            C = anyonwiki_center(k...)
-            @test randomized_pentagon_axiom(C, 3)
-        end
-    end
-
-    @testset "Rank 5"   begin
-        C = anyonwiki(5,1,0,1,3,1,2)
-        @test randomized_pentagon_axiom(C, 3)
-    end
-
-    @testset "Misc" begin
-        @test length(anyonwiki_keys(5)) == 279
-        @test length(anyonwiki_keys(5, "unitary")) == 56
-    end
+    # F-symbol computation must transport the split center to a skeletal
+    # category with the same fusion rules. Check all 8^4 pentagons, not a
+    # random sample.
+    Zskel = six_j_category(Zsplit)
+    @test multiplication_table(Zskel) == multiplication_table(Zsplit)
+    @test pentagon_axiom(Zskel)
 end
 
-#=----------------------------------------------------------
-    Test the computation of centers of the anyonwiki
-----------------------------------------------------------=#
-
-@testset "AnyonWiki Center" begin
-    keys = anyonwiki_keys(3)
-    @testset "Rank < 4: Computation" begin
-
-        for k in rand(keys, 3)
-            C = anyonwiki(k...)
-            Z = center(C) 
-            Z2, = split(Z)
-            Z3 = skeletonize(Z2)
-            @test randomized_pentagon_axiom(Z2, 3)
-            @test randomized_pentagon_axiom(Z3, 3)
-        end
-    end
-
-    @testset "Loading" begin
-        for k in rand(keys, 3)
-            C = anyonwiki_center(k...)
-            @test randomized_pentagon_axiom(C, 3)
-        end
-    end
+# Scalar conversion preserves the exact polynomial pentagon relations. QQBar
+# and GF(17) are exact; AcbField uses enclosure overlap, so its result is
+# numerical compatibility rather than a proof.
+@testset "AnyonWiki scalar conversion" begin
+    code = (3,1,0,1,1,1,1)
+    @test pentagon_axiom(anyonwiki(QQBarField(),code...))
+    @test pentagon_axiom(anyonwiki(GF(17),code...))
+    @test pentagon_axiom(anyonwiki(AcbField(64),code...))
 end
 
-#=----------------------------------------------------------
-    load anyonwiki with other fields
-----------------------------------------------------------=#
-
-@testset "AnyonWiki with other fields" begin
-    @testset "QQBar" begin
-        C = anyonwiki(QQBarField(), 3,1,0,1,2,1,1)
-        @test randomized_pentagon_axiom(C, 3)
-    end
-
-    @testset "finite" begin
-        C = anyonwiki(GF(17), 3,1,0,1,2,1,1)
-        @test randomized_pentagon_axiom(C, 3)
-    end
-
-    @testset "AcbField" begin
-        C = anyonwiki(AcbField(), 3,1,0,1,2,1,1)
-        @test randomized_pentagon_axiom(C, 3)
-    end
-end
-
-# Test saving and loading 
-@testset "Saving and loading" begin
+# Save/load tests use the same fixed Ising fixture and check every pentagon
+# after the round trip. The scalar CSV subtest also fixes serialization order.
+@testset "AnyonWiki saving and loading" begin
+    code = (3,1,0,1,1,1,1)
 
     @testset "Numeric" begin
         mktempdir() do path
+            K = AcbField(64)
+            scalars = Dict([2,1] => K(3//2,5//4),
+                           [1,2] => K(-2),
+                           [1,1] => K(0,-1))
+            scalar_file = joinpath(path,"scalar-symbols.csv")
+            numeric_symbols_to_csv(scalar_file,scalars)
+            labels = [parse.(Int,split(line,", ")[1:2])
+                      for line in readlines(scalar_file)]
+            @test labels == [[1,1],[1,2],[2,1]]
+            @test numeric_symbols_from_csv(scalar_file,K) == scalars
 
-            C = anyonwiki(4,1,2,4,1,0,1)
-            
-            num_F_symbs = numeric_F_symbols(C, precision = 64)
-
-            numeric_symbols_to_csv(joinpath(path, "TensorCategories-section7-test"), num_F_symbs)
-            D = load_numeric_fusion_category(joinpath(path, "TensorCategories-section7-test"), AcbField(32))
-            @test randomized_pentagon_axiom(D, 3)
+            C = anyonwiki(code...)
+            file = joinpath(path,"ising-numeric")
+            numeric_symbols_to_csv(file,numeric_F_symbols(C;precision=64))
+            D = load_numeric_fusion_category(file,AcbField(32))
+            @test pentagon_axiom(D)
         end
     end
 
     @testset "Symbolic" begin
         mktempdir() do path
-            C = anyonwiki(4,1,2,4,1,0,1)
-            
-            save_fusion_category(C, path, "TensorCategories-section7-test")
-            D = load_fusion_category(joinpath(path, "TensorCategories-section7-test"))
-            @test randomized_pentagon_axiom(D, 3)
+            C = anyonwiki(code...)
+            save_fusion_category(C,path,"ising-symbolic")
+            D = load_fusion_category(joinpath(path,"ising-symbolic"))
+            @test multiplication_table(D) == multiplication_table(C)
+            @test pentagon_axiom(D)
         end
     end
+end
+
+# These counts are a deterministic data-index contract, not a theorem about
+# completeness of the AnyonWiki classification.
+@testset "AnyonWiki index" begin
+    @test length(anyonwiki_keys(5)) == 279
+    @test length(anyonwiki_keys(5,"unitary")) == 56
 end

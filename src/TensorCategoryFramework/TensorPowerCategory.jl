@@ -1,6 +1,8 @@
 mutable struct TensorPowerCategory <: Category
+    category::Category
     generator::Vector{Object}
     indecomposables::Vector
+    degrees::Vector{Int}
     complete::Bool
     max_exponent::Int
     #multiplication_table::Dict
@@ -9,29 +11,36 @@ mutable struct TensorPowerCategory <: Category
 
 end
 
-function tensor_power_category(X::Object...) 
+"""
+    tensor_power_category(X::Object...)
+    tensor_power_category(X::Vector{<:Object})
+
+The additive closure of direct summands of tensor words in `X`, including the
+unit. Use `indecomposables(C,k)` for words of length at most `k`. This does not
+automatically close under extensions, subquotients, or duals.
+"""
+function tensor_power_category(X::Object...)
+    isempty(X) && throw(ArgumentError("at least one generator is required"))
+    all(x -> parent(x) == parent(X[1]),X) ||
+        throw(ArgumentError("generators must have the same parent"))
     C = TensorPowerCategory()
-    C.generator = unique_indecomposables(vcat([[k for (k,_) ∈ decompose(x)] for x ∈ X]...))
-    C.indecomposables = typeof(X)[]
-    
-    C.complete = X == zero(parent(X[1])) ? true : false
+    C.category = parent(X[1])
+    generators = Object[s for x in X for (s,_) in decompose(x)]
+    C.generator = isempty(generators) ? generators :
+        unique_indecomposables(generators)
+    units = Object[s for (s,_) in decompose(one(C.category))]
+    C.indecomposables = TensorPowerObject[
+        TensorPowerObject(C,s) for s in units]
+    C.degrees = zeros(Int,length(units))
+    C.complete = isempty(C.generator)
     C.max_exponent = 0
-    return C
+    C
 end
 
-function tensor_power_category(X::Vector{<:Object})
-    C = TensorPowerCategory()
-    C.generator = unique_indecomposables(vcat([[k for (k,_) ∈ decompose(x)] for x ∈ X]...))
-
-    C.indecomposables = typeof(X)[]
-    
-    C.complete = X == zero(parent(X[1])) ? true : false
-    C.max_exponent = 0
-    return C
-end
+tensor_power_category(X::Vector{<:Object}) = tensor_power_category(X...)
 
 function ==(C::TensorPowerCategory, D::TensorPowerCategory)
-    C.generator == D.generator
+    category(C) == category(D) && C.generator == D.generator
 end
 
 struct TensorPowerObject <: Object 
@@ -46,18 +55,28 @@ struct TensorPowerMorphism <: Morphism
 end
 
 is_additive(::TensorPowerCategory) = true
+is_linear(::TensorPowerCategory) = true
+is_monoidal(::TensorPowerCategory) = true
+is_braided(C::TensorPowerCategory) = is_braided(category(C))
 
 object(X::TensorPowerObject) = X.object
 morphism(f::TensorPowerMorphism) = f.morphism
-category(C::TensorPowerCategory) = parent(C.generator[1])
+category(C::TensorPowerCategory) = C.category
 morphism(X::TensorPowerObject, Y::TensorPowerObject, f::Morphism) = TensorPowerMorphism(X,Y,f)
-matrix(f::TensorPowerObject) = matrix(f.morphism)
 
 base_ring(C::TensorPowerCategory) = base_ring(category(C))
 
 dim(X::TensorPowerObject) = dim(object(X))
 
-tr(f::TensorPowerMorphism) = TensorPowerMorphism(domain(f), codomain(f), tr(morphism(f)))
+function tr(f::TensorPowerMorphism)
+    t = tr(morphism(f))
+    C = parent(f)
+    morphism(TensorPowerObject(C,domain(t)),
+             TensorPowerObject(C,codomain(t)),t)
+end
+
+express_in_basis(f::TensorPowerMorphism,B::Vector{TensorPowerMorphism}) =
+    express_in_basis(morphism(f),morphism.(B))
 
 (F::Ring)(f::TensorPowerMorphism) =F(morphism(f))
 
@@ -189,52 +208,41 @@ function spherical(X::TensorPowerObject)
     morphism(dom, cod, sp)
 end
 
-zero(T::TensorPowerCategory) = TensorPowerObject(T, zero(parent(T.generator[1])))
+zero(T::TensorPowerCategory) = TensorPowerObject(T,zero(category(T)))
 
 function zero_morphism(X::TensorPowerObject, Y::TensorPowerObject)
     morphism(X,Y, zero_morphism(object(X), object(Y)))
 end
 
-function indecomposables(C::TensorPowerCategory, k = Inf)
-    if C.complete
-        return C.indecomposables
-    end
+"""
+    indecomposables(C::TensorPowerCategory,k=Inf)
 
-   
-    n1 = 0
-    j = 2
-
-    indecs_in_X = C.generator
-    new_indecs = [one(category(C))]
-    new_indecs = unique_indecomposables([new_indecs; indecs_in_X])
-    indecomposabls = new_indecs
-
-    while j ≤ k
-        new_indecs_temp = []
-        for V ∈ indecs_in_X, W ∈ new_indecs
-            summands_of_VW = [x for (x,k) ∈ decompose(W ⊗ V)]
-            new_indecs_temp = [new_indecs_temp; [x for x ∈ summands_of_VW]]
-            indecomposabls = unique_indecomposables(Object[indecomposabls; new_indecs_temp])
+Representatives occurring in tensor words of length at most `k`, with the unit
+at depth zero. Results are cached by first occurrence, so a later shallower
+query remains shallow. `Inf` runs until closure and need not terminate.
+"""
+function indecomposables(C::TensorPowerCategory,k=Inf)
+    (k isa Integer && k >= 0) || k == Inf ||
+        throw(ArgumentError("depth must be a nonnegative integer or Inf"))
+    while !C.complete && C.max_exponent < k
+        depth = C.max_exponent+1
+        frontier = object.(C.indecomposables[C.degrees .== C.max_exponent])
+        new_objects = Object[]
+        for W in frontier,V in C.generator
+            for (s,_) in decompose(W ⊗ V)
+                if all(t -> !is_isomorphic(s,object(t))[1],C.indecomposables) &&
+                   all(t -> !is_isomorphic(s,t)[1],new_objects)
+                    push!(new_objects,s)
+                end
+            end
         end
-        new_indecs = new_indecs_temp
-        if length(indecomposabls) == n1
-            indecomposabls = TensorPowerObject[TensorPowerObject(C,s) for s ∈ indecomposabls]
-            C.indecomposables = indecomposabls
-            C.complete = true
-            C.max_exponent = j-1
-            return indecomposabls
-        end
-        n1 = length(indecomposabls)
-        #Y = Y ⊗ X
-        j = j+1
+        append!(C.indecomposables,
+                [TensorPowerObject(C,s) for s in new_objects])
+        append!(C.degrees,fill(depth,length(new_objects)))
+        C.complete = isempty(new_objects)
+        C.max_exponent = depth
     end
-    indecomposabls = [TensorPowerObject(C,s) for s ∈ indecomposabls]
-    C.indecomposables = indecomposabls
-    C.complete = false
-    C.max_exponent = k
-
-    return indecomposabls
- 
+    C.indecomposables[C.degrees .<= k]
 end
 
 function decompose(X::TensorPowerObject)

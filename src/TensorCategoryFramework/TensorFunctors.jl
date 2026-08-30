@@ -34,6 +34,8 @@ codomain(F::IdentityFunctor) = F.C
 (::IdentityFunctor)(f::Morphism) = f
 
 id(C::Category) = IdentityFunctor(C)
+is_additive(F::IdentityFunctor) = is_additive(F.C)
+is_linear(F::IdentityFunctor) = is_linear(F.C)
 
 compose(F::IdentityFunctor...) = IdentityFunctor(F[1].C)
 

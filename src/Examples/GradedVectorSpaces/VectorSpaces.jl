@@ -21,6 +21,7 @@ struct VSMorphism <: VectorSpaceMorphism
 end
 
 is_fusion(::VectorSpaces) = true
+is_braided(::VectorSpaces) = true
 
 #-----------------------------------------------------------------
 #   Constructors
@@ -68,9 +69,11 @@ Return a morphism in the category of vector spaces defined by m.
 """
 function morphism(X::VectorSpaceObject, Y::VectorSpaceObject, m::MatElem)
     if parent(X) != parent(Y)
-        throw(ErrorException("Missmatching parents."))
+        throw(ArgumentError("mismatching parents"))
     elseif size(m) != (int_dim(X),int_dim(Y))
-        throw(ErrorException("Mismatching dimensions"))
+        throw(ArgumentError("mismatching dimensions"))
+    elseif base_ring(m) != base_ring(X)
+        throw(ArgumentError("mismatching base fields"))
     else
         return VSMorphism(m,X,Y)
     end
@@ -435,6 +438,13 @@ zero_morphism(V::VectorSpaceObject,W::VectorSpaceObject) = morphism(V,W, zero(ma
 
 function express_in_basis(f::VectorSpaceMorphism, B::Vector{<:VectorSpaceMorphism})
     F = base_ring(f)
+    if isempty(B)
+        is_zero(f) || throw(ArgumentError(
+            "a nonzero morphism is not in the span of an empty basis"))
+        return elem_type(F)[]
+    end
+    all(b -> domain(b) == domain(f) && codomain(b) == codomain(f), B) ||
+        throw(ArgumentError("basis morphisms must have the same endpoints"))
     if typeof(F) <: Union{AcbField, ComplexField, ArbField}
         return express_in_basis_numeric(f,B)
     end
@@ -466,3 +476,18 @@ end
 (F::Field)(f::VectorSpaceMorphism) = F(matrix(f)[1,1])
 (F::QQBarField)(f::VectorSpaceMorphism) = F(matrix(f)[1,1])
 (F::CalciumField)(f::VectorSpaceMorphism) = F(matrix(f)[1,1])
+
+# Apply a represented linear map between Hom spaces to a morphism. Coordinates
+# are row vectors, consistently with the package's matrix convention.
+function (f::VSMorphism)(h::Morphism)
+    H,L = domain(f),codomain(f)
+    H isa AbstractHomSpace && L isa AbstractHomSpace ||
+        throw(ArgumentError(
+            "morphism application requires Hom-space endpoints"))
+    domain(h) == domain(H) && codomain(h) == codomain(H) ||
+        throw(ArgumentError("argument is not in the domain Hom space"))
+    K = base_ring(f)
+    c = matrix(K,1,int_dim(H),express_in_basis(h,basis(H))) * matrix(f)
+    sum((c[1,j]*b for (j,b) in enumerate(basis(L)));
+        init=zero_morphism(domain(L),codomain(L)))
+end
