@@ -96,6 +96,32 @@ end
     @test is_linear(A) && TensorCategories.is_krull_schmidt(A)
 end
 
+# The categorical product has objects and arrows componentwise, with
+# Hom((X_i),(Y_i)) = direct_sum_i Hom(X_i,Y_i).  The tensor product is the
+# bifunctor C x C -> C on both objects and arrows; see EGNO (2015),
+# Sections 1.1 and 2.1.
+@testset "Product category and tensor bifunctor" begin
+    V = VectorSpaces(QQ)
+    X, Y = VectorSpaceObject(V,2), VectorSpaceObject(V,3)
+    f = morphism(X, X, matrix(QQ, [1 2; 0 1]))
+    g = morphism(Y, Y, matrix(QQ, [1 0 0; 0 2 0; 0 0 3]))
+
+    P = product_category([V,V])
+    @test P == product_category(V,V) == V × V
+
+    XY = product_object(X,Y)
+    fg = product_morphism(f,g)
+    @test parent(XY) == P
+    @test domain(fg) == XY && codomain(fg) == XY
+    @test int_dim(Hom(XY,XY)) == 4 + 9
+
+    T = TensorCategories.TensorProductFunctor(V)
+    @test domain(T) == P && codomain(T) == V
+    @test T(XY) == X ⊗ Y
+    @test T(fg) == f ⊗ g
+    @test T(id(XY)) == id(T(XY))
+end
+
 # In a skeletal semisimple category, a component vector records multiplicities
 # relative to the chosen simple objects of one parent; see EGNO (2015),
 # Sections 1.1 and 4.9. Equal coordinates in different categories do not define
