@@ -266,7 +266,11 @@ function right_dim(X::Object)
 end 
 
 dim(X::Object) = left_dim(X)
-dim(C::Category) = sum(squared_norm(s) for s ∈ simples(C))
+function dim(C::Category)
+    is_multifusion(C) || throw(ArgumentError(
+        "the generic category-dimension formula requires a multifusion category"))
+    sum(squared_norm(s) for s ∈ simples(C))
+end
 #-------------------------------------------------------
 # S-Matrix
 #-------------------------------------------------------
@@ -353,11 +357,14 @@ end
 -------------------------------------------------=#
 
 function coev(X::Object)
+    C = parent(X)
+    is_multifusion(C) || throw(ArgumentError(
+        "generic coevaluation reconstruction requires a multifusion category; " *
+        "provide a category-specific coev method"))
     if is_simple(X)
         return simple_objects_coev(X)
     end
 
-    C = parent(X)
     𝟙 = one(C)
 
     summands = vcat([[x for _ ∈ 1:k] for (x,k) ∈ decompose(X)]...)
@@ -372,10 +379,13 @@ function coev(X::Object)
 end
 
 function ev(X::Object)
+    C = parent(X)
+    is_multifusion(C) || throw(ArgumentError(
+        "generic evaluation reconstruction requires a multifusion category; " *
+        "provide a category-specific ev method"))
     if is_simple(X)
         return simple_objects_ev(X)
     end
-    C = parent(X)
     𝟙 = one(C)
 
     summands = vcat([[x for _ ∈ 1:k] for (x,k) ∈ decompose(X)]...)

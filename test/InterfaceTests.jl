@@ -503,6 +503,18 @@ end
     @test is_semisimple(R) && is_weak_fusion(R)
     @test is_braided(R)
     @test !is_split_semisimple(R) && !is_fusion(R)
+    # Rigidity gives Hom(1,X⊗X*) ≅ End(X). For the two-dimensional simple X,
+    # End(X)=F4 has F2-dimension two, so the generic split fallback must not
+    # choose an arbitrary first basis vector. The representation backend's
+    # explicit duality remains available.
+    X = only(filter(X -> int_dim(X) == 2,simples(R)))
+    @test coev(X) isa TensorCategories.GroupRepresentationMorphism
+    @test ev(X) isa TensorCategories.GroupRepresentationMorphism
+    @test_throws ArgumentError invoke(coev,Tuple{Object},X)
+    @test_throws ArgumentError invoke(ev,Tuple{Object},X)
+    # The unweighted sum of squared norms is likewise the split formula; a
+    # weak fusion category needs the arbitrary-field categorical dimension.
+    @test_throws ArgumentError dim(R)
     @test is_fusion(representation_category(GF(5), cyclic_group(2)))
     M = representation_category(GF(3), cyclic_group(3))
     @test !is_weak_fusion(M) && !is_fusion(M)
