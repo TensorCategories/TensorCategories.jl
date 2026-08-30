@@ -50,11 +50,11 @@ end
     set_pivotal!(C,QQ.([1]))
     ZC = center(C)
     @test length(simples(ZC)) == 1
-    @test is_fusion(ZC) && is_spherical(ZC) && is_modular(ZC)
+    @test is_fusion(ZC) && is_spherical(ZC;check=true) && is_modular(ZC)
 
     set_pivotal!(C,QQ.([2]))
-    @test is_fusion(C) && !is_spherical(C)
-    @test is_fusion(ZC) && !is_spherical(ZC) && !is_modular(ZC)
+    @test is_fusion(C) && !is_spherical(C;check=true)
+    @test is_fusion(ZC) && !is_spherical(ZC;check=true) && !is_modular(ZC)
 end
 
 # Splitting the C₃ centralizer representations separates its two-dimensional
@@ -69,9 +69,12 @@ end
     @test all([int_dim(End(s)) == 1 for s in simples(Z3)])
 end
 
-# A change of basis in each multiplicity space transports both F- and
-# R-symbols. They must use the same bases for the pentagon and hexagon to refer
-# to one braided category; see EGNO (2015), Sections 2.4, 4.9, and 8.1.
+# A change of basis in each multiplicity space transports F-, R-, and pivotal
+# data. They must use the same ordered simples and bases for the coherence
+# equations to refer to one braided pivotal category; see EGNO (2015),
+# Sections 2.4, 4.7, 4.9, and 8.1. Reversing the simple order below is a
+# regression for the former center cache mismatch that produced invalid
+# 2/3 and 3/2 pivotal components in two AnyonWiki center records.
 @testset "Shared center multiplicity-space bases" begin
     S = simples(Z)
     H = TensorCategories.multiplicity_spaces(Z)
@@ -81,6 +84,7 @@ end
 
     W = skeletonize(Z)
     @test pentagon_axiom(W) && hexagon_axiom(W)
+    @test is_pivotal(W;check=true) && is_spherical(W;check=true)
 
     R = reverse(S)
     HR = TensorCategories.multiplicity_spaces(Z,R)
@@ -88,4 +92,9 @@ end
                           HomSpace(R[i]⊗R[j],R[k],CenterMorphism[]))) ==
               int_dim(Hom(R[i]⊗R[j],R[k]))
               for i in eachindex(R),j in eachindex(R),k in eachindex(R))
+
+    WR = six_j_category(Z,R,reverse(simples_names(Z)))
+    @test dim.(simples(WR)) == dim.(R)
+    @test pentagon_axiom(WR) && hexagon_axiom(WR)
+    @test is_pivotal(WR;check=true) && is_spherical(WR;check=true)
 end

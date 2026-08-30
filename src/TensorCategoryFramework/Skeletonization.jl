@@ -27,6 +27,11 @@ function six_j_category(C::Category, S::Vector{<:Object}, names::Vector{String} 
     #S = simples(C)
     n = length(S)
     F = base_ring(C)
+    source_is_spherical = try
+        is_spherical(C)
+    catch
+        false
+    end
 
 
     # prods = [X ⊗ Y for X ∈ S, Y ∈ S]
@@ -64,7 +69,11 @@ function six_j_category(C::Category, S::Vector{<:Object}, names::Vector{String} 
     try 
         set_pivotal!(skel_C,[F(1) for s ∈ S])
         sp = [dim(S[i]) * inv(dim(skel_C[i])) for i ∈ 1:length(S)]
-        set_pivotal!(skel_C, sp)
+        if source_is_spherical
+            set_spherical!(skel_C,sp)
+        else
+            set_pivotal!(skel_C,sp)
+        end
     catch e 
         print(e.msg)
     end

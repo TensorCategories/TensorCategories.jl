@@ -546,7 +546,22 @@ function topologize(S::Vector{<:Object})
     object.(indecomposables(T))
 end
 
-function is_pivotal(C::Category) 
+"""
+    is_pivotal(C::Category; check=false)
+
+Return whether `C` carries a declared pivotal structure. For categories with
+attribute storage, an explicitly installed and trusted structure is a constant
+time query. Pass `check=true` to verify invertibility and monoidality on simple
+objects.
+"""
+function is_pivotal(C::Category; check::Bool=false)
+    if !check && hasfield(typeof(C), :__attrs) && has_attribute(C, :pivotal)
+        return get_attribute(C, :pivotal)
+    end
+    _is_pivotal(C)
+end
+
+function _is_pivotal(C::Category)
     if typeof(base_ring(C)) <: Union{ArbField, ComplexField, AcbField}
         return is_pivotal_numeric(C)
     end

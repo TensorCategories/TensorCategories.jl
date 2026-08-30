@@ -61,11 +61,11 @@ end
     # dimensions but violates monoidality of the pivotal structure.
     old = copy(I.pivotal)
     @test_throws ArgumentError set_spherical!(I,L.([1,1,2]);check=true)
-    @test I.pivotal == old && is_spherical(I)
+    @test I.pivotal == old && is_spherical(I;check=true)
     set_pivotal!(I,L.([1,1,-1]))
     fresh = matrix(L,[L(tr(braiding(A,B) ∘ braiding(B,A)))
                       for A in simples(I),B in simples(I)])
-    @test is_pivotal(I) && smatrix(I) == fresh && fresh != S
+    @test is_pivotal(I;check=true) && smatrix(I) == fresh && fresh != S
     cached = smatrix(I)
     cached[1,1] = 100
     @test smatrix(I) == fresh
@@ -99,7 +99,7 @@ end
     S = smatrix(C)
     F = copy(C.ass)
     TensorCategories.sort_simples!(C,p)
-    @test pentagon_axiom(C) && hexagon_axiom(C) && is_pivotal(C)
+    @test pentagon_axiom(C) && hexagon_axiom(C) && is_pivotal(C;check=true)
     @test dim.(simples(C)) == dims[p]
     @test smatrix(C) == S[p,p]
 
@@ -159,10 +159,15 @@ end
     R,x = polynomial_ring(QQ,"x")
     L,r = number_field(x^2-2,"r")
     B = ising_category(L,r)
+    # RSW Section 5.3.2 supplies this spherical Ising structure. Its
+    # declaration, as well as its coefficients, must cross the same embedding.
+    set_spherical!(B,copy(B.pivotal))
     embedding = complex_embedding(L,sqrt(AcbField(128)(2)))
     D = extension_of_scalars(B,QQBarField(),embedding)
+    @test is_pivotal(D) && is_spherical(D)
     @test pentagon_axiom(D)
     @test dim(D[3]) == sqrt(QQBarField()(2))
+    @test is_pivotal(D;check=true) && is_spherical(D;check=true)
     E = extension_of_scalars(B,QQBarField();embedding=embedding)
     @test E.ass == D.ass && E.pivotal == D.pivotal
 end
@@ -208,7 +213,7 @@ end
                 loaded = TensorCategories.F_symbols(D)
                 @test Set(keys(loaded)) == Set(keys(original))
                 @test all(overlaps(loaded[k],P(v)) for (k,v) in original)
-                @test D.pivotal == K.(A.pivotal) && is_pivotal(D)
+                @test D.pivotal == K.(A.pivotal) && is_pivotal(D;check=true)
                 @test pentagon_axiom(D)
                 with_R && @test hexagon_axiom(D)
             end
@@ -254,7 +259,7 @@ end
             # the positive Fibonacci dimension character.
             @test_throws ArgumentError set_canonical_spherical!(C;check=true)
             @test C.pivotal == old
-            @test is_pivotal(C) && dim(C[2]) == d
+            @test is_pivotal(C;check=true) && dim(C[2]) == d
 
             # Numeric import must likewise leave this dimension character
             # alone rather than silently claim a positive spherical structure.
@@ -264,12 +269,12 @@ end
                 numeric_symbols_to_csv(file,Dict(k => A(v)
                     for (k,v) in TensorCategories.F_symbols(C)))
                 D = load_numeric_fusion_category(file,AcbField(64))
-                @test is_pivotal(D)
+                @test is_pivotal(D;check=true)
                 @test overlaps(dim(D[2]),AcbField(64)(d))
             end
         else
             set_canonical_spherical!(C;check=true)
-            @test is_spherical(C) && dim(C[2]) == d
+            @test is_spherical(C;check=true) && dim(C[2]) == d
         end
     end
 
@@ -289,7 +294,7 @@ end
     @test B.pivotal == old
     embedding = complex_embedding(L,sqrt(AcbField(128)(2)))
     set_canonical_spherical!(B;embedding=embedding,check=true)
-    @test is_spherical(B) && dim(B[3]) == r
+    @test is_spherical(B;check=true) && dim(B[3]) == r
 end
 
 # Rowell--Stong--Wang, arXiv:0712.1377v4, Section 5.3.4: the Ising Hadamard
@@ -775,7 +780,8 @@ end
     # RSW §5.3.1: the nontrivial cocycle and braiding satisfy both coherence axioms.
     @test pentagon_axiom(C) && hexagon_axiom(C)
     # Positive dimension is obtained from the pivotal convention explained above.
-    @test is_pivotal(C) && is_spherical(C) && dim.(simples(C))==K.([1,1])
+    @test is_pivotal(C;check=true) && is_spherical(C;check=true) &&
+          dim.(simples(C))==K.([1,1])
     @test smatrix(C)==matrix(K,[1 1;1 -1]) && tmatrix(C)==diagonal_matrix([K(1),z^2])
     modular_checks(C)
     D=toric_fixture()
@@ -877,7 +883,8 @@ flush(stdout)
     # categorical dim(m) is signed, while FPdim(m)=sqrt(|A|) stays positive.
     for sign in (1,-1)
         C=tambara_yamagami(QQ,abelian_group(PcGroup,[2,2]),QQ(sign*2)); S=simples(C)
-        @test pentagon_axiom(C) && is_pivotal(C) && is_spherical(C)
+        @test pentagon_axiom(C) && is_pivotal(C;check=true) &&
+              is_spherical(C;check=true)
         @test dim.(S)==QQ.([1,1,1,1,sign*2]) && sum(dim(s)^2 for s in S)==8
         @test C[5]⊗C[5]==direct_sum(S[1:4])[1]
     end

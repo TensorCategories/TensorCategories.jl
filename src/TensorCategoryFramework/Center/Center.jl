@@ -105,7 +105,13 @@ end
 is_abelian(C::CenterCategory) = true
 is_linear(C::CenterCategory) = true
 is_monoidal(C::CenterCategory) = true
-is_spherical(C::CenterCategory) = is_spherical(category(C))
+# The component j_(X,γ) is the underlying j_X. Thus a chosen pivotal, and in
+# particular spherical, structure is inherited from C by Z(C); compare EGNO,
+# Corollary 8.20.14 for the resulting modular structure in the spherical case.
+is_pivotal(C::CenterCategory; check::Bool=false) =
+    is_pivotal(category(C);check)
+is_spherical(C::CenterCategory; check::Bool=false) =
+    is_spherical(category(C);check)
 
 function is_simple(X::CenterObject)
     C = parent(X)
