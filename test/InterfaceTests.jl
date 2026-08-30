@@ -7,6 +7,13 @@ struct MultifusionShortcutAuditCategory <: Category end
 TensorCategories.is_multifusion(::MultifusionShortcutAuditCategory) = true
 TensorCategories.is_fusion(::MultifusionShortcutAuditCategory) =
     error("the fusion predicate must not be needed here")
+struct SpuriousSMatrixAuditCategory <: Category end
+TensorCategories.smatrix(::SpuriousSMatrixAuditCategory) = identity_matrix(QQ,1)
+struct BrokenModularAuditCategory <: Category end
+TensorCategories.is_fusion(::BrokenModularAuditCategory) = true
+TensorCategories.is_braided(::BrokenModularAuditCategory) = true
+TensorCategories.is_spherical(::BrokenModularAuditCategory) = true
+TensorCategories.smatrix(::BrokenModularAuditCategory) = error("broken S-matrix")
 
 # The center-specific SixJ implementation reuses precomputed central Hom bases.
 # Keyword dispatch must retain that specialization; falling back to `Category`
@@ -30,6 +37,13 @@ end
     C = UndeclaredAuditCategory()
     # Previously these two queries called each other indefinitely.
     @test !is_additive(C) && !is_abelian(C) && !is_linear(C) && !is_monoidal(C)
+
+    # EGNO (2015), Section 8.13 requires a braided spherical fusion category:
+    # an arbitrary nonsingular matrix does not establish modularity.
+    @test !is_modular(SpuriousSMatrixAuditCategory())
+    # Once all hypotheses are asserted, an implementation failure in S must
+    # remain visible rather than being converted into the mathematical answer.
+    @test_throws ErrorException is_modular(BrokenModularAuditCategory())
 
     D = DeclaredAuditCategory(Dict{Symbol, Any}(
         :additive => true,
@@ -76,7 +90,8 @@ end
     @test is_split_semisimple(F)
 
     V = vector_spaces(QQ)
-    @test is_braided(V) && is_additive(id(V)) && is_linear(id(V))
+    @test is_braided(V) && is_spherical(V)
+    @test is_additive(id(V)) && is_linear(id(V))
     A = ArrowCategory(V)
     @test is_linear(A) && TensorCategories.is_krull_schmidt(A)
 end
@@ -484,6 +499,10 @@ end
     L = AcbField(32)
     D = six_j_category(L,ones(Int,1,1,1))
     set_one!(D,1)
+    set_braiding!(D,[identity_matrix(L,1) for _ in 1:1,_ in 1:1,_ in 1:1])
+    # Ball overlap can support a numerical modularity check, but cannot prove
+    # exact nondegeneracy of S.
+    @test_throws ArgumentError is_modular(D)
     U = one(D)
     a = L("0.4142135624 +/- 2.72e-11")*L(0,1)
     h = morphism(U,U,[matrix(L,1,1,[a])])
