@@ -50,7 +50,16 @@ end
 
     W = DeclaredAuditCategory(Dict{Symbol, Any}(:weak_fusion => true))
     @test is_weak_fusion(W) && is_weak_multifusion(W) && is_semisimple(W)
+    # Weak fusion categories retain the simple unit of a tensor category; only
+    # splitness is dropped. Hence weak fusion implies tensor and ring.
+    @test is_tensor(W) && is_multitensor(W) && is_ring(W) && is_multiring(W)
     @test !is_fusion(W) && !is_multifusion(W)
+
+    WM = DeclaredAuditCategory(Dict{Symbol, Any}(:weak_multifusion => true))
+    # A weak multifusion category may have a non-simple unit, so it implies the
+    # multi-variants but not the tensor/ring variants.
+    @test is_weak_multifusion(WM) && is_multitensor(WM) && is_multiring(WM)
+    @test !is_weak_fusion(WM) && !is_tensor(WM) && !is_ring(WM)
 
     M = DeclaredAuditCategory(Dict{Symbol, Any}(:multifusion => true))
     @test is_multifusion(M) && is_weak_multifusion(M) && is_semisimple(M)

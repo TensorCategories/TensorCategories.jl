@@ -18,7 +18,7 @@ function is_split_semisimple(C::Category)
     is_semisimple(C) && all(s -> int_dim(End(s)) == 1, simples(C))
 end
 
-is_tensor(C::Category) = is_fusion(C) || _declared_structure(C, :tensor)
+is_tensor(C::Category) = is_weak_fusion(C) || _declared_structure(C, :tensor)
 is_multitensor(C::Category) = is_tensor(C) || is_weak_multifusion(C) ||
     _declared_structure(C, :multitensor)
 is_ring(C::Category) = is_tensor(C) || _declared_structure(C, :ring)
