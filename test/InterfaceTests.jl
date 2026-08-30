@@ -534,6 +534,11 @@ end
     # The unweighted sum of squared norms is likewise the split formula; a
     # weak fusion category needs the arbitrary-field categorical dimension.
     @test_throws ArgumentError dim(R)
+    # F- and R-symbol arrays use scalar multiplicity spaces. They cannot encode
+    # the F4 endomorphisms of X as if Schur's lemma gave End(X)=F2.
+    @test_throws ArgumentError six_j_category(R)
+    @test_throws ArgumentError TensorCategories.six_j_symbols(R)
+    @test_throws ArgumentError TensorCategories.skeletal_braiding(R)
     @test is_fusion(representation_category(GF(5), cyclic_group(2)))
     M = representation_category(GF(3), cyclic_group(3))
     @test !is_weak_fusion(M) && !is_fusion(M)

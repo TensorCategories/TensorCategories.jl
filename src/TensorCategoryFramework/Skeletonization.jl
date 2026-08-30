@@ -1,4 +1,11 @@
 
+function _require_split_semisimple_coordinates(C::Category, operation::String)
+    is_multiring(C) || throw(ArgumentError(
+        "$operation requires a semisimple monoidal category"))
+    is_split_semisimple(C) || throw(ArgumentError(
+        "$operation requires split simple endomorphism rings"))
+end
+
 function skeletonize(C::Category, names::Vector{String} = simples_names(C))
     six_j_category(C, names)
 end
@@ -10,11 +17,12 @@ function six_j_category(C::Category, names::Vector{String} = simples_names(C))
 end
 
 function six_j_category(C::Category, S::Vector{<:Object}, names::Vector{String} = simples_names(parent(S[1])))
-    @assert is_ring(C)
-
-    if typeof(C) == SixJCategory 
+    if C isa SixJCategory
         return C
     end
+    is_ring(C) || throw(ArgumentError(
+        "skeletonization as a SixJ category requires a simple unit"))
+    _require_split_semisimple_coordinates(C,"skeletonization")
     
     #S = simples(C)
     n = length(S)
@@ -74,7 +82,7 @@ function six_j_category(C::Category, S::Vector{<:Object}, names::Vector{String} 
 end
 
 function six_j_symbols(C::Category,S=simples(C);homs=nothing)
-    @assert is_semisimple(C)
+    _require_split_semisimple_coordinates(C,"F-symbol computation")
 
     N = length(S)
     C_morphism_type = morphism_type(C)
@@ -159,7 +167,7 @@ end
 
 function six_j_symbols_of_construction(C::Category,S=simples(C),mult=nothing;
         log=nothing,homs=nothing)
-    @assert is_semisimple(C)
+    _require_split_semisimple_coordinates(C,"F-symbol computation")
     if typeof(base_ring(C)) <: Union{AcbField,ArbField} && !is_unitary(C)
         @warn("Computing F-symbols is buggy for non unitary numeric categories. Check Results afterwards")
     end
@@ -303,9 +311,11 @@ end
 function skeletal_spherical(C::Category, Homs)
 end
 
-function skeletal_braiding(C::Category,S=simples(C);
-        homs=multiplicity_spaces(C,S))
-    @assert is_braided(C)
+function skeletal_braiding(C::Category,S=simples(C);homs=nothing)
+    is_braided(C) || throw(ArgumentError(
+        "R-symbol computation requires a braided category"))
+    _require_split_semisimple_coordinates(C,"R-symbol computation")
+    homs === nothing && (homs = multiplicity_spaces(C,S))
     
     N = length(S)
     C_morphism_type = morphism_type(C)
@@ -345,7 +355,9 @@ function skeletal_braiding(C::Category,S=simples(C);
 end
 
 function skeletal_braiding_of_construction(C::Category, S = simples(C), mult = nothing)
-    @assert is_braided(C)
+    is_braided(C) || throw(ArgumentError(
+        "R-symbol computation requires a braided category"))
+    _require_split_semisimple_coordinates(C,"R-symbol computation")
     
     N = length(S)
     C_morphism_type = morphism_type(C)
