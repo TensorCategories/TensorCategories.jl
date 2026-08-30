@@ -58,7 +58,24 @@ function isequal_without_parent(X::CentralizerObject, Y::CentralizerObject)
     return object(X) == object(Y) && half_braiding(X) == half_braiding(Y)
 end
 
-is_multifusion(C::CentralizerCategory) = is_multifusion(category(C))
+function is_semisimple(C::CentralizerCategory)
+    is_semisimple(category(C)) || return false
+    # Relative induction averages over the chosen fusion subcategory.  Its
+    # squared-norm dimension must be invertible for the separable construction;
+    # compare Gelaki--Naidu--Nikshych (2009), Remark 2.4(i).  For the full
+    # subcategory this is the center criterion of Bruguières--Virelizier (2013),
+    # Corollary 2.3.
+    !iszero(sum(squared_norm, C.subcategory_simples))
+end
+
+is_weak_multifusion(C::CentralizerCategory) =
+    is_semisimple(C) && is_weak_multifusion(category(C))
+is_weak_fusion(C::CentralizerCategory) =
+    is_weak_multifusion(C) && int_dim(End(one(C))) == 1
+is_multifusion(C::CentralizerCategory) =
+    is_weak_multifusion(C) && all(s -> int_dim(End(s)) == 1, simples(C))
+is_fusion(C::CentralizerCategory) =
+    is_multifusion(C) && int_dim(End(one(C))) == 1
 
 function induction_generators(C::CentralizerCategory) 
     if isdefined(C, :induction_gens)
@@ -123,8 +140,6 @@ Return the image under the forgetful functor.
 """
 morphism(f::CentralizerMorphism) = f.m
 
-is_weakly_fusion(C::CentralizerCategory) = true
-is_fusion(C::CentralizerCategory) = all([int_dim(End(s)) == 1 for s ∈ simples(C)])
 is_abelian(C::CentralizerCategory) = true
 is_linear(C::CentralizerCategory) = true
 is_monoidal(C::CentralizerCategory) = true

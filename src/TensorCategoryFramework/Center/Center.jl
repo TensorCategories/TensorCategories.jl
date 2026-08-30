@@ -83,13 +83,13 @@ is_weak_multifusion(C::CenterCategory) =
     is_semisimple(C) && is_weak_multifusion(category(C))
 is_multifusion(C::CenterCategory) =
     is_weak_multifusion(C) && all(S -> int_dim(End(S)) == 1,simples(C))
-is_modular(C::CenterCategory) = is_fusion(C)
+is_modular(C::CenterCategory) = is_fusion(C) && is_spherical(C)
 is_braided(C::CenterCategory) = true
 is_rigid(C::CenterCategory) = is_rigid(category(C))
 is_ring(C::CenterCategory) = is_ring(category(C))
 
-
-is_weakly_fusion(C::CenterCategory) = dim(category(C)) != 0
+is_weak_fusion(C::CenterCategory) =
+    is_weak_multifusion(C) && int_dim(End(one(C))) == 1
 
 function is_fusion(C::CenterCategory) 
     get_attribute!(C, :is_fusion) do 
