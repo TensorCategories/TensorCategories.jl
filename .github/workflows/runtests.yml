@@ -15,10 +15,11 @@ jobs:
     env:
       TENSORCATEGORIES_TEST_SUITE: ${{ github.event_name == 'workflow_dispatch' && 'full' || 'quick' }}
     strategy:
+      # Run expensive full-suite coverage once; keep the quick compatibility matrix.
       matrix:
-        julia-version: ['1.11', '1.12']
+        julia-version: ${{ fromJSON(github.event_name == 'workflow_dispatch' && '["1.12"]' || '["1.11", "1.12"]') }}
         julia-arch: [x64]
-        os: [ubuntu-latest, macOS-latest] # [ubuntu-latest, windows-latest, macOS-latest]
+        os: ${{ fromJSON(github.event_name == 'workflow_dispatch' && '["ubuntu-latest"]' || '["ubuntu-latest", "macOS-latest"]') }}
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@latest

@@ -54,8 +54,10 @@ and Krause, [arXiv:1410.2822v1](https://arxiv.org/pdf/1410.2822v1).
 
 Push and pull-request runs select **quick** on the existing Julia 1.11/1.12 and
 Ubuntu/macOS matrix. Open **Actions → Runtests → Run workflow** to run **full**
-manually on a release-candidate branch or tag. A manual full run is not
-cancelled by a later push, while superseded automatic runs are cancelled.
+manually on a release-candidate branch or tag. Manual full-suite runs use one
+Ubuntu runner with Julia 1.12, avoiding four repetitions of the expensive
+coverage workload. A manual full run is not cancelled by a later push, while
+superseded automatic runs are cancelled.
 
 Only full runs collect and upload coverage, so a quick result does not replace
 the comprehensive coverage report. The upload uses `CODECOV_TOKEN` when that
