@@ -48,11 +48,29 @@ morphism(X::EquivariantObject, Y::EquivariantObject, f::Morphism) = EquivariantM
 
 id(X::EquivariantObject) = morphism(X,X,id(object(X)))
 
-is_multifusion(E::Equivariantization) = is_multifusion(category(E))
-is_fusion(E::Equivariantization) = is_fusion(category(E))
-
-is_multitesnsor(E::Equivariantization) = is_multitensor(category(E))
+is_multitensor(E::Equivariantization) = is_multitensor(category(E))
 is_tensor(E::Equivariantization) = is_tensor(category(E))
+
+# Averaging an equivariant splitting requires |G| to be invertible in the base
+# field.  Without this hypothesis even Vec_k^G = Rep_k(G) need not be
+# semisimple (Maschke's theorem); see EGNO, Section 4.15.  The condition below
+# is sufficient rather than necessary for a general action, so false remains a
+# conservative answer in modular characteristic.
+_group_order_is_invertible(E::Equivariantization) =
+    !iszero(base_ring(E)(order(group(E))))
+
+is_weak_multifusion(E::Equivariantization) =
+    is_weak_multifusion(category(E)) && _group_order_is_invertible(E)
+is_weak_fusion(E::Equivariantization) =
+    is_weak_multifusion(E) && is_tensor(E)
+
+# Equivariantization can introduce nonsplit stabilizer representations even
+# when the original category is split.  Determine splitting from the simple
+# endomorphism rings instead of inheriting it from the original category.
+is_multifusion(E::Equivariantization) =
+    is_weak_multifusion(E) && all(S -> int_dim(End(S)) == 1, simples(E))
+is_fusion(E::Equivariantization) =
+    is_multifusion(E) && int_dim(End(one(E))) == 1
 
 group(E::Equivariantization) = E.group
 #=----------------------------------------------------------
@@ -269,4 +287,3 @@ end
 function show(io::IO, f::EquivariantMorphism)
     print(io, "EquivariantMorphism: $(morphism(f))")
 end
-
