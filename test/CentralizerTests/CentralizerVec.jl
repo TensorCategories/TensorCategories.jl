@@ -21,6 +21,8 @@ VecH = graded_vector_spaces(F,H,c)
 
     simps = simples(Z)
 
+    @test is_weak_fusion(Z) && is_fusion(Z)
+
     for s ∈ simps
         @test is_central(s)
     end
@@ -61,6 +63,7 @@ end
     Z = centralizer(C,simples(C))
     S = simples(Z)
     theta = twist_scalar.(S)
+    @test is_weak_fusion(Z) && is_fusion(Z)
     @test length(S) == 4
     @test count(==(QQ(1)),theta) == 3
     @test count(==(QQ(-1)),theta) == 1

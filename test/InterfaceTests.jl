@@ -578,8 +578,12 @@ end
     C = six_j_category(GF(2),N)
     set_one!(C,1)
     Z = center(C)
+    RZ = centralizer(C,simples(C))
     @test is_fusion(C) && iszero(dim(C))
-    @test !is_semisimple(Z) && !is_multifusion(Z) && !is_modular(Z)
+    @test !is_semisimple(Z) && !is_weak_fusion(Z)
+    @test !is_multifusion(Z) && !is_modular(Z)
+    @test !is_semisimple(RZ) && !is_weak_fusion(RZ)
+    @test !is_multifusion(RZ) && !is_fusion(RZ)
 end
 
 # Exact ordinary-characteristic representations exercise a different backend

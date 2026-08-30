@@ -16,6 +16,12 @@ Z2 = center(V2)
     
     @test length(simples(Z)) == 4
     @test length(simples(Z2)) == 7
+    @test is_weak_fusion(Z) && is_fusion(Z) && is_modular(Z)
+    # The rational two-dimensional C3-representation in Z(Vec_S3) has
+    # endomorphism field Q(zeta_3).  Hence the center is weak fusion but not
+    # split fusion; see EGNO, Example 8.5.4, and Mäurer--Thiel,
+    # arXiv:2406.13438v2, Section 2.1.
+    @test is_weak_fusion(Z2) && !is_fusion(Z2) && !is_modular(Z2)
 
     # Hom_Z(1,1⊕1) has dimension two, represented by 1×2 matrices. The
     # adjunction basis reduction must preserve those endpoints (EGNO §9.2).
@@ -31,6 +37,24 @@ Z2 = center(V2)
     @test int_dim(Hlinear) == 2
     @test all(domain(f) == X && codomain(f) == Y for f in basis(Hlinear))
 
+end
+
+# Under the package convention, modular means braided spherical fusion with a
+# nonsingular S-matrix.  EGNO, Corollary 8.20.14 proves modularity of the center
+# for a spherical fusion category; fusion alone does not supply the spherical
+# structure.  Changing the rank-one pivotal component to 2 violates pivotal
+# monoidality while leaving the underlying fusion category unchanged.
+@testset "Center modularity requires spherical structure" begin
+    C = six_j_category(QQ,ones(Int,1,1,1),["1"])
+    set_one!(C,[1])
+    set_pivotal!(C,QQ.([1]))
+    ZC = center(C)
+    @test length(simples(ZC)) == 1
+    @test is_fusion(ZC) && is_spherical(ZC) && is_modular(ZC)
+
+    set_pivotal!(C,QQ.([2]))
+    @test is_fusion(C) && !is_spherical(C)
+    @test is_fusion(ZC) && !is_spherical(ZC) && !is_modular(ZC)
 end
 
 # Splitting the C₃ centralizer representations separates its two-dimensional
