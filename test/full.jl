@@ -45,3 +45,5 @@ include("Anyonwiki/QuickTest.jl")
 include("Anyonwiki/AnyonwikiTest.jl")
 
 #include("CoherentSheaves/ConvolutionCategoryTests.jl")
+
+include("SixJCategoryTests/SymbolConventions.jl")

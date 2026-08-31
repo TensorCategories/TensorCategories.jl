@@ -8,3 +8,5 @@ include("VectorSpacesTest/VSTest.jl")
 include("SixJCategoryTests/RingCatTests.jl")
 include("InterfaceTests.jl")
 include("Anyonwiki/QuickTest.jl")
+
+include("SixJCategoryTests/SymbolConventions.jl")

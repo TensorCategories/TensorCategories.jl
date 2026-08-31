@@ -130,15 +130,16 @@ function anyonwiki_center_artifact_path(i,j,k,l,m,n,o)
     end
 end
 
-function dict_to_associator(ass::Dict)
+function dict_to_associator(ass::Dict; convention::Symbol=:column_major_packing)
     isempty(ass) && throw(ArgumentError("an F-symbol dictionary must be nonempty"))
     # Every simple label appears among the four object indices, independently
     # of where the unit is listed or whether the first simple is invertible.
     N = maximum(maximum(k[1:4]) for k in keys(ass))
-    dict_to_associator(N, parent(first(ass)[2]), ass)
+    dict_to_associator(N, parent(first(ass)[2]), ass; convention)
 end
 
-function dict_to_associator(N::Int, K::Field, ass::Dict)
+function dict_to_associator(N::Int, K::Field, ass::Dict; convention::Symbol=:column_major_packing)
+    _check_symbol_convention(convention)
     # Transform associator dict to Matrices 
 
     ass_matrices = Array{MatElem,4}(undef,N,N,N,N)
@@ -150,20 +151,73 @@ function dict_to_associator(N::Int, K::Field, ass::Dict)
             ass_matrices[a,b,c,d] = zero_matrix(K,0,0)
             continue
         end
-        D = groups[[a,b,c,d]]
-        abc_d = collect(keys(D))
-        l = isqrt(length(abc_d))
-        l^2 == length(abc_d) || throw(ArgumentError("incomplete square F-symbol block"))
-        if length(first(keys(ass))) == 6 
-            abc_d = sort(abc_d, by = v -> v[[6,5]])
-        else
-            abc_d = sort(abc_d, by = v -> v[[8,5,10,9,7,6]])
-        end
-        M = matrix(K,l,l, [D[v] for v ∈ abc_d])
-        ass_matrices[a,b,c,d] = transpose(M)
+        ass_matrices[a,b,c,d] = _F_symbol_matrix(K, groups[[a,b,c,d]], convention)
     end
 
     ass_matrices 
+end
+
+# Oscar's matrix(K,n,n,entries) reads rows, whereas the historical symbol
+# dictionaries pack columns. Keep that decoding separate from fusion paths.
+function _F_symbol_matrix(K, D, convention)
+    ks = collect(keys(D))
+    n = isqrt(length(ks))
+    n^2 == length(ks) || throw(ArgumentError("incomplete square F-symbol block"))
+    isempty(ks) && return zero_matrix(K,0,0)
+    width = length(first(ks))
+    width in (6,10) && all(k -> length(k) == width, ks) ||
+        throw(ArgumentError("F-symbol labels must consistently have length 6 or 10"))
+    if convention == :column_major_packing
+        order = width == 6 ? [6,5] : [8,5,10,9,7,6]
+        sort!(ks; by=k -> k[order])
+        return transpose(matrix(K,n,n,[D[k] for k in ks]))
+    end
+    left(k) = width == 6 ? (k[5],1,1) : Tuple(k[5:7])
+    right(k) = width == 6 ? (k[6],1,1) : Tuple(k[8:10])
+    rows = sort!(unique(left.(ks)))
+    cols = sort!(unique(right.(ks)))
+    length(rows) == length(cols) == n ||
+        throw(ArgumentError("incomplete Cartesian block of fusion paths"))
+    ri = Dict(v => i for (i,v) in enumerate(rows))
+    ci = Dict(v => i for (i,v) in enumerate(cols))
+    A = zero_matrix(K,n,n)
+    for k in ks
+        A[ri[left(k)],ci[right(k)]] = D[k]
+    end
+    A
+end
+
+function _R_symbol_matrix(K, D, convention)
+    ks = sort!(collect(keys(D)))
+    n = isqrt(length(ks))
+    n^2 == length(ks) || throw(ArgumentError("incomplete square R-symbol block"))
+    isempty(ks) && return zero_matrix(K,0,0)
+    width = length(first(ks))
+    width in (3,5) && all(k -> length(k) == width, ks) ||
+        throw(ArgumentError("R-symbol labels must consistently have length 3 or 5"))
+    if width == 5
+        [k[4:5] for k in ks] == [[i,j] for i in 1:n for j in 1:n] ||
+            throw(ArgumentError("R-symbol basis indices must fill a square block starting at 1"))
+    end
+    A = matrix(K,n,n,[D[k] for k in ks])
+    convention == :column_major_packing ? transpose(A) : A
+end
+
+# Version 1 adds an explicit convention; older, untagged archives retain the
+# historical interpretation. Never infer a convention from matrix entries.
+function _symbol_file_convention(meta, requested)
+    requested === nothing || _check_symbol_convention(requested)
+    tagged = haskey(meta, "symbol_format_version") || haskey(meta, "symbol_convention")
+    if tagged
+        get(meta, "symbol_format_version", nothing) == 1 ||
+            throw(ArgumentError("unsupported symbol format version"))
+        haskey(meta, "symbol_convention") || throw(ArgumentError("missing symbol convention"))
+        stored = _check_symbol_convention(Symbol(meta["symbol_convention"]))
+        requested === nothing || requested == stored ||
+            throw(ArgumentError("requested convention conflicts with the file metadata"))
+        return stored
+    end
+    requested === nothing ? :column_major_packing : requested
 end
 
 function anyonwiki_keys(n::Int = 7, attrs::String...)
@@ -191,23 +245,19 @@ function group_dict_keys_by(f::Function, D::Dict)
     return groups 
 end
 
-function dict_to_braiding(ass::Dict)
+function dict_to_braiding(ass::Dict; convention::Symbol=:column_major_packing)
     isempty(ass) && throw(ArgumentError("an R-symbol dictionary must be nonempty"))
     N = maximum(maximum(k[1:3]) for k in keys(ass))
-    dict_to_braiding(N, parent(first(ass)[2]), ass)
+    dict_to_braiding(N, parent(first(ass)[2]), ass; convention)
 end
 
-function dict_to_braiding(N::Int, K::Field, braid::Dict)
-    # Transform associator dict to Matrices 
+function dict_to_braiding(N::Int, K::Field, braid::Dict; convention::Symbol=:column_major_packing)
+    _check_symbol_convention(convention)
+    groups = group_dict_keys_by(k -> k[1:3], braid)
     braiding_array = Array{MatElem,3}(undef,N,N,N)
-
-    for a ∈ 1:N, b ∈ 1:N, c ∈ 1:N
-        ab_c = filter(e -> e[[1,2,3]] == [a,b,c], collect(keys(braid)))
-        l = isqrt(length(ab_c))
-        l^2 == length(ab_c) || throw(ArgumentError("incomplete square R-symbol block"))
-        sort!(ab_c)
-        M = matrix(K,l,l, [braid[v] for v ∈ ab_c])
-        braiding_array[a,b,c] = transpose(M)
+    for a in 1:N, b in 1:N, c in 1:N
+        D = get(groups, [a,b,c], Dict())
+        braiding_array[a,b,c] = _R_symbol_matrix(K,D,convention)
     end
     braiding_array
 end
@@ -337,19 +387,29 @@ end
     Save to anyonwiki 
 ----------------------------------------------------------=#
 
-function save_fusion_category(C::SixJCategory, path::String, name::String)
+"""
+    save_fusion_category(C::SixJCategory, path, name; convention=:column_major_packing)
+
+Save exact F/R symbols in the chosen dictionary convention (see [`F_symbols`](@ref)
+and [`R_symbols`](@ref)), together with the field, pivotal structure and category
+metadata. New archives record format version 1 and the convention. Existing
+archives are not changed. This is the symbol archive format, not Oscar's native
+`save`/`load` serialization of structural matrices.
+"""
+function save_fusion_category(C::SixJCategory, path::String, name::String; convention::Symbol=:column_major_packing)
+    _check_symbol_convention(convention)
     cat_path = joinpath(path, name)
 
     mkdir(cat_path)
 
-    save_fusion_category_meta_data(C, joinpath(cat_path, "$(name)_meta"))
+    save_fusion_category_meta_data(C, joinpath(cat_path, "$(name)_meta"); convention)
 
-    save_symbols(F_symbols(C), joinpath(cat_path, "$(name)_F_symbols"), 4)
+    save_symbols(F_symbols(C; convention), joinpath(cat_path, "$(name)_F_symbols"), 4; convention)
 
     save_symbols(P_symbols(C), joinpath(cat_path, "$(name)_P_symbols"))
     
     if is_braided(C) 
-        save_symbols(R_symbols(C), joinpath(cat_path, "$(name)_R_symbols"))
+        save_symbols(R_symbols(C; convention), joinpath(cat_path, "$(name)_R_symbols"); convention)
     end
     return nothing
 end
@@ -361,11 +421,21 @@ function anyonwiki_center_meta(i,j,k,l,m,n,o)
     meta = include(joinpath(p, "$(name)_meta"))
 end
 
-function load_fusion_category(file::String)
+"""
+    load_fusion_category(file; convention=nothing)
+
+Load an exact symbol archive. By default use its recorded convention, or
+`:column_major_packing` for an older archive without convention metadata.
+An explicit convention declares the encoding of an untagged archive; it must
+agree with any metadata present. See [`save_fusion_category`](@ref).
+"""
+function load_fusion_category(file::String; convention::Union{Nothing,Symbol}=nothing)
     
     name = splitpath(file)[end]
 
     meta = include(joinpath(file, "$(name)_meta"))
+
+    convention = _symbol_file_convention(meta, convention)
 
     K = meta["field"]
     rank = meta["rank"]
@@ -374,7 +444,7 @@ function load_fusion_category(file::String)
     one = meta["one"]
 
     # include F/P/R-symbols as coefficient vectors, convert to number field elements and then to matrices
-    F_symbols = load_F_symbols(rank,K,joinpath(file, "$(name)_F_symbols"))
+    F_symbols = load_F_symbols(rank,K,joinpath(file, "$(name)_F_symbols"); convention)
 
     P_symbols = include(joinpath(file, "$(name)_P_symbols"))
     P_symbols = [K == QQ ? K(P_symbols[k]...) : K(P_symbols[k]) for k ∈ sort(collect(keys(P_symbols)))]
@@ -393,7 +463,7 @@ function load_fusion_category(file::String)
     end
     
     if isfile(joinpath(file, "$(name)_R_symbols"))
-        R_symbols = load_R_symbols(rank,K,joinpath(file, "$(name)_R_symbols"))
+        R_symbols = load_R_symbols(rank,K,joinpath(file, "$(name)_R_symbols"); convention)
         set_braiding!(C, R_symbols)
     end
 
@@ -429,51 +499,54 @@ function anyonwiki_center_grothendieck_ring(i,j,k,l,m,n,o)
 end
 
 
-function load_F_symbols(rank::Int, K::Field, path::String)
-    ass = Array{MatElem,4}(undef, rank,rank,rank,rank)
+"""
+    load_F_symbols(rank, K, path; convention=:column_major_packing)
 
-    for i ∈ 1:rank, j ∈ 1:rank, k ∈ 1:rank, l ∈ 1:rank 
-        _file = joinpath(path, "[$(i), $(j), $(k), $l]")
-
-        if isfile(_file)
-            symbols = include(_file)
-            symbols_keys = collect(keys(symbols))
-            if length(first(keys(symbols))) == 6 
-                symbols_keys = sort(symbols_keys, by = v -> v[[6,5]])
-            else
-               symbols_keys = sort(symbols_keys, by = v -> v[[8,5,10,9,7,6]])
-            end
-            n = Int(sqrt(length(symbols_keys)))
-            vals = [K == QQ ? K(symbols[v]...) : K(symbols[v]) for v ∈ symbols_keys]
-            M = matrix(K,n,n, vals)
-            ass[i,j,k,l] = transpose(M)
+Decode a directory of exact coefficient dictionaries into associator matrices.
+Unlike `load_fusion_category`, this low-level reader has no category metadata;
+`convention` must describe the supplied dictionaries.
+"""
+function load_F_symbols(rank::Int, K::Field, path::String; convention::Symbol=:column_major_packing)
+    _check_symbol_convention(convention)
+    ass = Array{MatElem,4}(undef,rank,rank,rank,rank)
+    for i in 1:rank, j in 1:rank, k in 1:rank, l in 1:rank
+        file = joinpath(path, "[$i, $j, $k, $l]")
+        if isfile(file)
+            data = include(file)
+            D = Dict(key => (K == QQ ? K(v...) : K(v)) for (key,v) in data)
+            ass[i,j,k,l] = _F_symbol_matrix(K,D,convention)
         else
             ass[i,j,k,l] = zero_matrix(K,0,0)
         end
     end
-    ass 
+    ass
 end
 
-function load_R_symbols(rank::Int, K::Field, path::String)
-    braid = [zero_matrix(K,0,0) for _ ∈ 1:rank, _ ∈ 1:rank, _ ∈ 1:rank]
-    symbols = include(path)
-    chunks = group_dict_keys_by(e -> e[1:3], symbols)
+"""
+    load_R_symbols(rank, K, path; convention=:column_major_packing)
 
-    for ((i,j,k), D) ∈ chunks 
-        
-        symbols_keys = sort(collect(keys(D)))
-        n = Int(sqrt(length(D)))
-        vals = [K == QQ ? K(D[v]...) : K(D[v]) for v ∈ symbols_keys]
-
-        M = matrix(K,n,n, vals)
-        braid[i,j,k] = transpose(M)
-    end
-    braid 
+Decode an exact coefficient dictionary into braiding matrices. Supply the
+encoding explicitly when reading nondefault data without category metadata.
+"""
+function load_R_symbols(rank::Int, K::Field, path::String; convention::Symbol=:column_major_packing)
+    data = include(path)
+    D = Dict(key => (K == QQ ? K(v...) : K(v)) for (key,v) in data)
+    dict_to_braiding(rank,K,D; convention)
 end
 
 
 
-function save_symbols(S::Dict, path::String, chunk::Int = 0)
+"""
+    save_symbols(S::Dict, path, chunk=0; convention=:column_major_packing)
+
+Write an already encoded dictionary as exact coefficient vectors. As for
+`numeric_symbols_to_csv`, the keyword declares the supplied encoding and does
+not convert it. Nondefault files carry a comment identifying the convention;
+low-level readers still require it explicitly. Use `save_fusion_category` for
+category metadata and automatic convention selection on loading.
+"""
+function save_symbols(S::Dict, path::String, chunk::Int = 0; convention::Symbol=:column_major_packing)
+    _check_symbol_convention(convention)
     K = parent(first(S)[2])
 
     if chunk != 0
@@ -482,6 +555,7 @@ function save_symbols(S::Dict, path::String, chunk::Int = 0)
 
         for (k,ch) ∈ chunks
             open(joinpath(path, "$k"), "w") do io 
+                convention == :column_major_packing || write(io,"# symbol_convention=$convention\n")
                 write(io, "Dict(\n")
                 
                 if K == QQ
@@ -495,6 +569,7 @@ function save_symbols(S::Dict, path::String, chunk::Int = 0)
         end
     else
         open(path, "w") do io 
+            convention == :column_major_packing || write(io,"# symbol_convention=$convention\n")
             write(io, "Dict(\n")
             
             if K == QQ
@@ -508,11 +583,14 @@ function save_symbols(S::Dict, path::String, chunk::Int = 0)
     end
 end
 
-function save_fusion_category_meta_data(C::SixJCategory, file::String)
+function save_fusion_category_meta_data(C::SixJCategory, file::String; convention::Symbol=:column_major_packing)
+    _check_symbol_convention(convention)
     open(file, "w") do io 
         write(io, "# Meta data for $C\n\n")
         write(io, """Dict(\n
         \t\"name\" => \"$(C.name)\",\n""")
+        write(io, "\t\"symbol_format_version\" => 1,\n")
+        write(io, "\t\"symbol_convention\" => :$convention,\n")
         if base_ring(C) == QQ 
             write(io, "\t\"field\" => QQ,\n")
         else
