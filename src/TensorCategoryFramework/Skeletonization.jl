@@ -530,37 +530,42 @@ end
     Export Skeletal categories as dicts 
 ----------------------------------------------------------=#
 
-function save_F_symbols(C::SixJCategory, file::String)  
+"""
+    save_F_symbols(C::SixJCategory, file; convention=:column_major_packing)
 
-    F = F_symbols(C)
-    S,T = typeof(F).parameters
-    pol = polynomial(QQ,collect(coefficients(base_ring(C).pol)))
-
-    open(file, "w") do io
-        write(io, "# Field with defining polynomial $pol \n# relative to the basis 1,...,x^$(degree(pol)-1)\n\n ")
-
-        write(io,"Dict{$S,$T}(")
-
-        write(io, join(["\t$k => $(coefficients(v))" for (k,v) in F], ",\n"))
-
-        write(io, "\n)")
-    end
-    nothing
+Write exact F-symbols as a Julia dictionary of field-coefficient vectors, with
+comments identifying the field and convention. The keyword is forwarded to
+[`F_symbols`](@ref). `include(file)` returns coefficient vectors, not field
+elements; use `save_fusion_category` for a self-contained, loadable category.
+"""
+function save_F_symbols(C::SixJCategory, file::String; convention::Symbol=:column_major_packing)
+    _save_exact_symbol_dictionary(F_symbols(C; convention),file,convention)
 end
 
-function save_R_symbols(C::SixJCategory, file::String)  
+"""
+    save_R_symbols(C::SixJCategory, file; convention=:column_major_packing)
 
-    R = R_symbols(C)
-    S,T = typeof(R).parameters
-    pol = polynomial(QQ,collect(coefficients(base_ring(C).pol)))
+Write exact R-symbol coefficient vectors as for [`save_F_symbols`](@ref),
+forwarding `convention` to [`R_symbols`](@ref).
+"""
+function save_R_symbols(C::SixJCategory, file::String; convention::Symbol=:column_major_packing)
+    _save_exact_symbol_dictionary(R_symbols(C; convention),file,convention)
+end
 
-    open(file, "w") do io
-        write(io, "# Field with defining polynomial $pol \n# relative to the basis 1,...,x^$(degree(pol)-1)\n\n ")
-        write(io,"Dict{$S,$T}(")
-
-        write(io, join(["\t$k => $(coefficients(v))" for (k,v) in R], ",\n"))
-
-        write(io, "\n)")
+function _save_exact_symbol_dictionary(D, file, convention)
+    K = parent(first(values(D)))
+    open(file,"w") do io
+        if K == QQ
+            write(io,"# Field: QQ; coefficients are singleton rational vectors\n")
+        else
+            pol = polynomial(QQ,collect(coefficients(K.pol)))
+            write(io,"# Field with defining polynomial $pol\n# Relative to the basis 1,...,x^$(degree(pol)-1)\n")
+        end
+        write(io,"# symbol_format_version=1 symbol_convention=$convention\nDict(\n")
+        # Coefficient vectors must not be annotated with the field-element type.
+        entries = sort!(collect(D);by=first)
+        write(io,join(["\t$k => $(K == QQ ? [v] : collect(coefficients(v)))" for (k,v) in entries],",\n"))
+        write(io,"\n)\n")
     end
     nothing
 end

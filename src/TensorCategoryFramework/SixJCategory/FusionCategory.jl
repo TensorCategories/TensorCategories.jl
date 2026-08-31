@@ -1810,13 +1810,48 @@ end
     Export F-symbols as Dict 
 ----------------------------------------------------------=#
 
-@doc raw""" 
+# Dictionary conventions change coordinates at the API boundary, never the
+# associator/braiding matrices, fusion bases, or the category itself.
+function _check_symbol_convention(convention::Symbol)
+    convention in (:column_major_packing, :bonderson) ||
+        throw(ArgumentError("unknown symbol convention $convention; use :column_major_packing or :bonderson"))
+    convention
+end
 
-    F_symbols(C::SixJCategory)
+@doc raw"""
+    F_symbols(C::SixJCategory; convention=:column_major_packing)
 
-Return a Dictionary of the F-symbols of ``C``.
+Return a dictionary containing all F-symbol entries, including zeros.
+
+* `:bonderson`: keys are `[a,b,c,d,e,f]` in a multiplicity-free category,
+  otherwise `[a,b,c,d,e,μ,ν,f,ρ,σ]`. The left fusion path is
+  ``a b \xrightarrow{\mu} e,\ e c \xrightarrow{\nu} d``;
+  the right path is ``b c \xrightarrow{\rho} f,\ a f \xrightarrow{\sigma} d``.
+  Writing ``L_u`` and ``R_v`` for these projection trees and
+  ``\alpha:(a\otimes b)\otimes c\to a\otimes(b\otimes c)``, the entry is
+  ``A_{u v}`` in ``R_v\circ\alpha=\sum_u A_{u v}L_u``.
+  Equivalently, in composition-dual splitting bases,
+  ``\alpha\circ L^u=\sum_v A_{u v}R^v``. These are the coefficients of
+  Bonderson, *Non-Abelian Anyons and Interferometry* (2007), Eq. (2.6), p. 14,
+  https://thesis.caltech.edu/2447/02/thesis.pdf.
+  Rows of the stored matrix are ordered `(e,μ,ν)`, columns `(f,ρ,σ)`,
+  with the last index varying fastest.
+* `:column_major_packing` (default): preserves the historical dictionary
+  layout. In each `(a,b,c,d)` block, consume the stored matrix down columns
+  while traversing keys `[a,b,c,d,f,e]` in `(e,f)` order, or keys
+  `[a,b,c,d,f,σ,ρ,e,μ,ν]` in `(e,f,ν,μ,ρ,σ)` order. These key positions
+  do not, in general, label the matrix entry's fusion paths. Conversion
+  requires unpacking the block; a fixed permutation of key positions is
+  insufficient.
+
+The result is a plain `Dict`: it does not record its convention. Keep track of
+it when passing dictionaries to other functions. Neither choice changes gauge,
+inverts the associator, nor changes the internal matrices. These coordinates
+use the split skeletal bases of `SixJCategory`.
 """
-function F_symbols(C::SixJCategory)
+function F_symbols(C::SixJCategory; convention::Symbol=:column_major_packing)
+    _check_symbol_convention(convention)
+    convention == :bonderson && return _bonderson_F_symbols(C)
 
     S = simples(C)
 
@@ -1881,15 +1916,37 @@ function F_symbols(C::SixJCategory)
     return F_dict           
 end 
 
+function _bonderson_F_symbols(C::SixJCategory)
+    N = multiplication_table(C)
+    n = rank(C)
+    mf = multiplicity(C) == 1
+    F = Dict{Vector{Int},elem_type(base_ring(C))}()
+    for a in 1:n, b in 1:n, c in 1:n, d in 1:n
+        A = six_j_symbol(C,a,b,c,d)
+        row = 0
+        for e in 1:n, μ in 1:N[a,b,e], ν in 1:N[e,c,d]
+            row += 1
+            col = 0
+            for f in 1:n, ρ in 1:N[b,c,f], σ in 1:N[a,f,d]
+                col += 1
+                key = mf ? [a,b,c,d,e,f] : [a,b,c,d,e,μ,ν,f,ρ,σ]
+                F[key] = A[row,col]
+            end
+        end
+    end
+    F
+end
+
 @doc raw""" 
 
-    numeric_F_symbols(C::SixJCategory; precision = 128)
-    numeric_F_symbols(C::SixJCategory, e::AbsSimpleNumFieldEmbedding; precision = 128)
+    numeric_F_symbols(C::SixJCategory; precision=128, convention=:column_major_packing)
+    numeric_F_symbols(C::SixJCategory, e::AbsSimpleNumFieldEmbedding; precision=128, convention=:column_major_packing)
 
-Return a Dictionary of the F-symbols of ``C`` evaluated under the embedding ``e``. 
+Return [`F_symbols`](@ref) evaluated under the embedding ``e``. The keyword
+`convention=:column_major_packing` has the same meaning as for `F_symbols`.
 """
-function numeric_F_symbols(C::SixJCategory, e::AbsSimpleNumFieldEmbedding; precision = 128)
-    F = F_symbols(C)
+function numeric_F_symbols(C::SixJCategory, e::AbsSimpleNumFieldEmbedding; precision = 128, convention::Symbol=:column_major_packing)
+    F = F_symbols(C; convention)
 
     if base_ring(C) == QQ 
         return Dict(k => e(number_field(e)(v), precision) for (k,v) ∈ F)
@@ -1898,18 +1955,45 @@ function numeric_F_symbols(C::SixJCategory, e::AbsSimpleNumFieldEmbedding; preci
     end
 end
 
-function numeric_F_symbols(C::SixJCategory; precision = 128)
+function numeric_F_symbols(C::SixJCategory; precision = 128, convention::Symbol=:column_major_packing)
     !isdefined(C, :embedding) && error("No embedding has been specified")
-    numeric_F_symbols(C, getfield(C, :embedding), precision = precision)
+    numeric_F_symbols(C, getfield(C, :embedding); precision, convention)
 end
 
-@doc raw""" 
+@doc raw"""
+    R_symbols(C::SixJCategory; convention=:column_major_packing)
 
-    R_symbols(C::SixJCategory)
+Return all R-symbol entries, including zeros. In a multiplicity-free category,
+keys are `[a,b,c]` and both conventions agree. Otherwise keys are `[a,b,c,μ,ν]`.
 
-Return a Dictionary of the R-symbols of ``C``.
+For `:bonderson`, the value is ``B_{\mu\nu}`` defined by
+``p^{ba}_{c,\nu}\circ c_{a,b}=\sum_\mu B_{\mu\nu}p^{ab}_{c,\mu}``,
+where ``p`` are the fixed projection bases and ``c_{a,b}:a\otimes b\to b\otimes a``
+is the braiding. Equivalently, on composition-dual splitting bases,
+``c_{a,b}\circ s_{ab}^\mu=\sum_\nu B_{\mu\nu}s_{ba}^\nu``.
+Thus the input basis index comes first, as in Bonderson,
+*Non-Abelian Anyons and Interferometry* (2007), Eq. (2.54), p. 25,
+https://thesis.caltech.edu/2447/02/thesis.pdf.
+
+The default `:column_major_packing` preserves the historical dictionary:
+the same key has value ``B_{\nu\mu}``. This is a transpose of the two
+multiplicity indices, **not** the inverse braiding or a change of gauge.
+As with [`F_symbols`](@ref), the plain dictionary does not record its convention.
 """
-function R_symbols(C::SixJCategory)
+function R_symbols(C::SixJCategory; convention::Symbol=:column_major_packing)
+    _check_symbol_convention(convention)
+    if convention == :bonderson
+        N = multiplication_table(C)
+        mf = multiplicity(C) == 1
+        R = Dict{Vector{Int},elem_type(base_ring(C))}()
+        for a in 1:rank(C), b in 1:rank(C), c in 1:rank(C)
+            B = r_symbol(C,a,b,c)
+            for μ in 1:N[a,b,c], ν in 1:N[b,a,c]
+                R[mf ? [a,b,c] : [a,b,c,μ,ν]] = B[μ,ν]
+            end
+        end
+        return R
+    end
 
     S = simples(C)
 
@@ -1957,20 +2041,21 @@ end
 
 @doc raw""" 
 
-    numeric_R_symbols(C::SixJCategory; precision = 2048)
-    numeric_R_symbols(C::SixJCategory, e::AbsSimpleNumFieldEmbedding; precision = 2048)
+    numeric_R_symbols(C::SixJCategory; precision=2048, convention=:column_major_packing)
+    numeric_R_symbols(C::SixJCategory, e::AbsSimpleNumFieldEmbedding; precision=2048, convention=:column_major_packing)
 
-Return a Dictionary of the R-symbols of ``C`` evaluated under the embedding ``e``.
+Return [`R_symbols`](@ref) evaluated under the embedding ``e``. The keyword
+`convention=:column_major_packing` has the same meaning as for `R_symbols`.
 """
-function numeric_R_symbols(C::SixJCategory, e::AbsSimpleNumFieldEmbedding; precision = 2048)
-    R = R_symbols(C)
+function numeric_R_symbols(C::SixJCategory, e::AbsSimpleNumFieldEmbedding; precision = 2048, convention::Symbol=:column_major_packing)
+    R = R_symbols(C; convention)
 
-    Dict(k => e(v, precision) for (k,v) ∈ R)
+    Dict(k => e(base_ring(C) == QQ ? number_field(e)(v) : v, precision) for (k,v) ∈ R)
 end
 
-function numeric_R_symbols(C::SixJCategory; precision = 2048)
+function numeric_R_symbols(C::SixJCategory; precision = 2048, convention::Symbol=:column_major_packing)
     !isdefined(C, :embedding) && error("No embedding has been specified")
-    numeric_R_symbols(C, getfield(C, :embedding), precision = precision)
+    numeric_R_symbols(C, getfield(C, :embedding); precision, convention)
 end
 
 @doc raw""" 
