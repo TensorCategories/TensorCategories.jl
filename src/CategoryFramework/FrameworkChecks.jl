@@ -46,10 +46,11 @@ end
 
 function _is_modular(C::Category) 
     is_fusion(C) && is_braided(C) && is_spherical(C) || return false
-    base_ring(C) isa Union{ArbField,AcbField,ComplexField} &&
-        throw(ArgumentError(
-            "numerical overlap does not certify modularity; use exact category data"))
-    !iszero(det(smatrix(C)))
+    d = det(smatrix(C))
+    if base_ring(C) isa Union{ArbField,AcbField,ComplexField}
+        return !Oscar.contains_zero(d)
+    end
+    !iszero(d)
 end
 
 """

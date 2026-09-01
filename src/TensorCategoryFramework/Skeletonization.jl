@@ -177,7 +177,7 @@ end
 function six_j_symbols_of_construction(C::Category,S=simples(C),mult=nothing;
         log=nothing,homs=nothing)
     _require_split_semisimple_coordinates(C,"F-symbol computation")
-    if typeof(base_ring(C)) <: Union{AcbField,ArbField} && !is_unitary(C)
+    if base_ring(C) isa Union{AcbField,ArbField,ComplexField} && !is_unitary(C)
         @warn("Computing F-symbols is buggy for non unitary numeric categories. Check Results afterwards")
     end
 
@@ -290,7 +290,7 @@ function six_j_symbols_of_construction(C::Category,S=simples(C),mult=nothing;
                 # end
 
                 # Use a different method for the numeric case
-                associator_XYZ_W = if typeof(base_ring(C)) <: Union{AcbField,ArbField} && is_unitary(C)
+                associator_XYZ_W = if base_ring(C) isa Union{AcbField,ArbField,ComplexField} && is_unitary(C)
                     # Assumes orthogonal bases
                     correction = [inv(F(f ∘ dagger(f))) for f ∈ B_XY_Z_W]
                     [c * F(f ∘ a ∘ dagger(g)) for (g,c) in zip(B_XY_Z_W, correction), f in B_X_YZ_W]
