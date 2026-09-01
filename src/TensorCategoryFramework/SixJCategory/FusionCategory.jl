@@ -640,14 +640,19 @@ function (K::AcbField)(f::SixJMorphism)
     M = matrix(f)
     n = number_of_rows(M)
     n > 0 || throw(ArgumentError("the scalar of an endomorphism of zero is not unique"))
-    x = M[1,1]
-    # End(X)=K for a split simple X (EGNO §1.5): extract its coefficient
-    # directly. Forming x*id(X) can widen a ball, so comparing represented
-    # enclosures after that multiplication can reject even a 1×1 matrix.
-    # For larger matrices, overlap alone cannot certify a common scalar.
-    all(i == j ? Base.isequal(M[i,j],x) : iszero(M[i,j])
-        for i in 1:n,j in 1:n) || throw(ArgumentError("not a represented scalar matrix"))
+    x = sum(M[i,i] for i in 1:n) / K(n)
+    all(_acb_approximately_equal(M[i,j],i == j ? x : zero(K))
+        for i in 1:n,j in 1:n) ||
+        throw(ArgumentError("not a numerically represented scalar matrix"))
     K(x)
+end
+
+function _acb_approximately_equal(x::AcbFieldElem,y::AcbFieldElem)
+    overlaps(x,y) && return true
+    p = precision(parent(x))
+    A = parent(abs(x))
+    guard = min(32,div(p,2))
+    abs(x-y) < (one(A) + abs(x) + abs(y)) * A(2)^(-p+guard)
 end
 
 #-------------------------------------------------------------------------------
@@ -1699,16 +1704,15 @@ end
 """
     is_unitary(C::SixJCategory)
 
-Whether the supplied exact structure is certified unitary in its stored bases.
-`false` also covers coefficient fields without such a certificate; it does not
-prove that no unitary realization exists.
+Test whether the supplied structure is unitary in its stored bases. For ball
+coefficients, the equations are tested at the precision of the base field.
 """
 function is_unitary(C::SixJCategory)
-    get_attribute!(C, :is_unitary) do 
-        if base_ring(C) isa Union{QQField,NumField,FqField,ArbField,
-                                  AcbField,ComplexField}
-            return false
-        end
+    get_attribute!(C, :is_unitary) do
+        K = base_ring(C)
+        K isa Union{ArbField,AcbField,ComplexField} &&
+            return is_unitary_numeric(C)
+        K isa Union{QQField,NumField,FqField} && return false
 
         !is_spherical(C;check=true) && return false
         !all(fpdim(s) == dim(s) for s in simples(C)) && return false
@@ -1722,7 +1726,7 @@ end
 
 function is_unitary(f::SixJMorphism)
     base_ring(f) isa Union{ArbField,AcbField,ComplexField} &&
-        throw(ArgumentError("approximate coefficients cannot certify unitarity; use is_unitary_numeric"))
+        return is_unitary_numeric(f)
     !is_invertible(f) && return false
     f ∘ dagger(f) == id(codomain(f))    
 end
@@ -1736,7 +1740,7 @@ stored bases. This is numerical evidence, not an exact certificate or a test
 for the existence of another unitary gauge.
 """
 function is_unitary_numeric(f::SixJMorphism)
-    base_ring(f) isa Union{ArbField,AcbField} ||
+    base_ring(f) isa Union{ArbField,AcbField,ComplexField} ||
         throw(ArgumentError("ball coefficients required"))
     domain(f).components == codomain(f).components || return false
     overlaps(f ∘ dagger(f),id(codomain(f))) &&
@@ -1744,7 +1748,7 @@ function is_unitary_numeric(f::SixJMorphism)
 end
 
 function is_unitary_numeric(C::SixJCategory)
-    base_ring(C) isa Union{ArbField,AcbField} ||
+    base_ring(C) isa Union{ArbField,AcbField,ComplexField} ||
         throw(ArgumentError("ball coefficients required"))
     is_spherical(C;check=true) || return false
     S = simples(C)

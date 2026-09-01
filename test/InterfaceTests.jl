@@ -534,16 +534,16 @@ end
     L = AcbField(32)
     D = six_j_category(L,ones(Int,1,1,1))
     set_one!(D,1)
+    set_spherical!(D,[L(1)])
     set_braiding!(D,[identity_matrix(L,1) for _ in 1:1,_ in 1:1,_ in 1:1])
-    # Ball overlap can support a numerical modularity check, but cannot prove
-    # exact nondegeneracy of S.
-    @test_throws ArgumentError is_modular(D)
+    # Nondegeneracy is tested at the precision of the coefficient field.
+    @test is_modular(D)
     U = one(D)
     a = L("0.4142135624 +/- 2.72e-11")*L(0,1)
     h = morphism(U,U,[matrix(L,1,1,[a])])
-    @test Base.isequal(L(h),a)
+    @test overlaps(L(h),a)
     A = U⊕U
-    bad = morphism(A,A,[matrix(L,2,2,[a,L("0 +/- 1"),L(0),a])])
+    bad = morphism(A,A,[matrix(L,2,2,[a,L(1),L(0),a])])
     @test_throws ArgumentError L(bad)
 end
 
