@@ -134,26 +134,6 @@ Choosing an embedding and enlarging the coefficient field should be
 distinguished. The former selects a conjugate realization of the coefficients;
 the latter can also create new direct-sum decompositions of objects.
 
-## Numerical evaluation
-
-Keep exact data for algebraic constructions and evaluate it afterwards when a
-numerical matrix is wanted:
-
-```@example fields
-e = first(complex_embeddings(K))
-numeric_data = numeric_F_symbols(C, e; precision = 128)
-@assert length(numeric_data) == length(F_symbols(C))
-e(s)
-show(stdout, MIME"text/plain"(), e(s)); println() # hide
-```
-
-Inspect `e(s)` to see which embedding was selected. Precision is measured in
-bits. Complex balls represent enclosures; overlapping balls do not prove exact
-equality. Higher working precision cannot recover data lost through earlier
-rounding. Numerical evaluation does not itself supply a unitary structure. The
-full numerical workflow is described under
-[Numerical computations](@ref numerical-computations).
-
 ## Splitting over the chosen field
 
 A simple object can decompose after scalar extension. In the finite semisimple

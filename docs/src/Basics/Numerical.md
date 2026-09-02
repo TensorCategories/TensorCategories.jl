@@ -56,6 +56,30 @@ To study stability, construct a fresh numerical category from the exact source
 at each precision. Raising the precision of a field cannot restore information
 that was already lost when decimal or low-precision data were imported.
 
+## Evaluating exact fusion data
+
+Exact data over a number field do not by themselves choose a complex
+realization. Select a complex embedding and then evaluate the structural data
+at the required precision:
+
+```@example numerical_evaluation
+using TensorCategories, Oscar
+K, s = quadratic_field(2)
+C = ising_category(K, s)
+e = first(complex_embeddings(K))
+numeric_data = numeric_F_symbols(C, e; precision = 128)
+@assert length(numeric_data) == length(F_symbols(C))
+e(s)
+show(stdout, MIME"text/plain"(), e(s)); println() # hide
+```
+
+Inspect `e(s)` to see which embedding was selected. Precision is measured in
+bits. Complex balls represent enclosures; overlapping balls do not prove exact
+equality. Higher working precision cannot recover data lost through earlier
+rounding. Numerical evaluation does not itself supply a unitary structure. See
+[Base fields and exact computation](@ref base-fields) for number fields,
+complex embeddings, and Galois conjugation.
+
 ## Equality and overlap
 
 Structural equality `==` remains an equivalence relation. It is not replaced by
