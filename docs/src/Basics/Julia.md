@@ -2,7 +2,7 @@
 
 This manual assumes familiarity with categories, but no previous experience with
 Julia. We introduce the language features we need as we go. For more about the
-language itself, see the [Julia manual](https://docs.julialang.org/en/v1/manual/).
+language itself, see [Getting Started in the Julia manual](https://docs.julialang.org/en/v1/manual/getting-started/).
 
 Julia's type system and multiple dispatch let us use the same mathematical
 operation for quite different representations of categories.
