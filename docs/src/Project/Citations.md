@@ -15,6 +15,4 @@ Categories* [maeurer2026thesis](@cite).
 
 ## Further mentioning
 
-1. [JuliaCon 2026 talk by T.J. Osborne](https://pretalx.com/juliacon-2026/talk/RN8YTY/)
-
-2. [AnyonWiki](https://anyonwiki.github.io/pages/Lists/losmffc.html)
+1. [AnyonWiki](https://anyonwiki.github.io/pages/Lists/losmffc.html)
