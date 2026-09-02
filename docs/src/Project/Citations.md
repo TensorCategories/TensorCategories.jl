@@ -2,9 +2,14 @@
 
 ## TensorCategories.jl
 
-The software framework, its center and module-category algorithms, and the
-principal computed examples are developed in *Algorithmic Aspects of Tensor
-Categories* [maeurer2026thesis](@cite).
+TensorCategories.jl and its algorithm for computing Drinfeld centers are
+introduced in *Computing the center of a fusion category*
+[maurer2024computing](@cite). Please cite this paper when the software
+contributes to your research.
+
+The mathematical algorithms and their implementation are developed
+systematically in *Algorithmic Aspects of Tensor Categories*
+[maeurer2026thesis](@cite).
 
 ## Papers
 

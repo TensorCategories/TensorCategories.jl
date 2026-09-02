@@ -5,9 +5,6 @@
 
 TensorCategories.jl is an open-source software package for computations with tensor categories, especially fusion categories. Built on the [Julia](https://julialang.org/) programming language and the [OSCAR](https://www.oscar-system.org/) computer algebra system, it is designed to closely follow the standard mathematical framework for tensor categories as presented, for example, in [Tensor Categories](https://math.mit.edu/~etingof/egnobookfinal.pdf) by Etingof, Gelaki, Nikshych, and Ostrik: objects, morphisms, tensor products, associators, and other categorical structures are represented as such, while concrete combinatorial descriptions, such as F-symbols, are also supported. The package supports exact symbolic computations over arbitrary base fields, including number fields and fields of positive characteristic, as well as numerical computations intended for applications in mathematical physics such as anyon models and conformal field theory.
 
-The mathematical algorithms and their implementation are developed systematically
-in [maeurer2026thesis](@cite).
-
 Current highlights include:
 
 * A general, extensible framework for implementing categories together with additional structures, such as additive, linear, abelian, monoidal, tensor, and fusion structures.
