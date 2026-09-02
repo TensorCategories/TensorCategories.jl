@@ -136,13 +136,17 @@ the latter can also create new direct-sum decompositions of objects.
 
 ## Splitting over the chosen field
 
-A simple object can decompose after scalar extension. In the finite semisimple
-setting, *split* means that the endomorphism algebra of each simple is the base
-field. The familiar identification of simple endomorphisms with scalars needs
-this hypothesis; see [EGNO](@citet), §4.16, pp. 87–88. A category can be split
-over a number field even though that field is not algebraically closed. When it
-is not split, a simple object may instead have a finite-dimensional division
-algebra over the base field as its endomorphism algebra. This is the main source
+For a simple object $S$, Schur's lemma says that
+$D_S=\operatorname{End}_{\mathcal C}(S)$ is a finite-dimensional division
+algebra over the base field $k$. In the finite semisimple setting, *split* means
+that the canonical map $k\to D_S$ is an isomorphism for every simple $S$. This
+is automatic over an algebraically closed field, but not over a number field.
+The familiar identification of simple endomorphisms with scalars therefore
+requires the split hypothesis; see [EGNO](@citet), §4.16, pp. 87–88.
+
+A category can be split over a number field even though that field is not
+algebraically closed. When it is not split, a simple object can decompose after
+a suitable scalar extension. The division algebras $D_S$ are the main source
 of the additional phenomena over non-algebraically closed fields
 [sanford2025fusion](@cite).
 
@@ -161,5 +165,10 @@ The terminology used by the package is summarized under
 algorithms over non-splitting fields are developed by
 [maurer2024computing](@citet), §2.1.
 
-Positive characteristic introduces a separate issue: a category can fail to be
-semisimple. Changing the coefficient field does not repair this failure.
+TensorCategories.jl also supports coefficient fields of positive
+characteristic, such as `GF(p)`. This is an important feature: the
+characteristic is part of the mathematical input and can change semisimplicity,
+splitting, and the behavior of categorical constructions. In positive
+characteristic a category can fail to be semisimple, independently of whether
+its simple objects are split. Enlarging the coefficient field within the same
+characteristic does not repair such a failure of semisimplicity.
