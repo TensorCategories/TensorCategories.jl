@@ -8,14 +8,16 @@ a_{X,Y,Z}:(X\otimes Y)\otimes Z\longrightarrow X\otimes(Y\otimes Z).
 ```
 
 `associator(X,Y,Z)` returns this map; `inv_associator` returns its inverse.
-Write parentheses explicitly. A skeletal category need not have identity
-associators even when these endpoint objects are equal.
+Write parentheses explicitly. A [skeletal category](@ref skeletal-fusion) need
+not have identity associators even when these endpoint objects are equal.
 
 ## Units and coherence
 
 The supplied tensor-category algorithms use normalized units: tensoring with
 the unit is identified with the original object, with identity unit constraints.
-`SixJCategory` also normalizes associators with a unit input to identities.
+`SixJCategory`, described under
+[skeletal fusion categories](@ref skeletal-fusion), also normalizes associators
+with a unit input to identities.
 `set_associator!(...; check=true)` checks supplied unit blocks, not the full
 pentagon.
 
@@ -40,7 +42,7 @@ The dual object alone does not determine these maps. Generic semisimple
 fallbacks have splitting assumptions; concrete representations supply dualities
 directly.
 
-## Pivotal and braided structures
+## [Pivotal and braided structures](@id pivotal-braided)
 
 `pivotal(X)` represents a map $X\to X^{**}$. These maps and the dualities determine
 pivotal traces. Equality of left and right dimensions alone does not check
@@ -53,3 +55,4 @@ $\theta_X=u_X^{-1}j_X$, where $j$ is pivotal and $u$ is the Drinfeld morphism
 `normalized_smatrix(C)` is separate and involves a square-root choice.
 The stored coefficients are described under [Structural data](@ref symbol-data).
 
+Continue with [Fusion and splitting](@ref tensor-conventions).

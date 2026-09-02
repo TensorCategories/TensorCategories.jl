@@ -76,3 +76,5 @@ nonidentity F-matrix in those bases. See [F-symbol conventions](@ref f-conventio
 For non-split or nonsemisimple categories, the concrete model still supports
 categorical operations even though the scalar F-symbol model does not apply.
 [EGNO](@citet), §§2.3 and 5.1, describes the underlying forgetful functors.
+
+Continue with the [implementation checklist](../Interface/Generic.md).

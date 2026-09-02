@@ -31,7 +31,8 @@ c
 ```
 
 A Hom basis is a choice, not an invariant. Changing fusion-space bases changes
-F- and R-symbols. Keep a common set of bases for related structural maps.
+[F- and R-symbols](@ref f-conventions). Keep a common set of bases for related
+structural maps.
 
 ## Implementing the linear structure
 
@@ -48,3 +49,5 @@ For a non-split simple $S$, its multiplicity in $X$ is the dimension of
 $\operatorname{Hom}(S,X)$ over $\operatorname{End}(S)$, not generally its
 dimension over $k$.
 See [Splitting](@ref tensor-conventions).
+
+Continue with [Matrix realizations and fiber functors](@ref matrix-realizations).

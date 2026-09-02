@@ -11,7 +11,8 @@ the `base_ring`, even when the mathematics requires a field. A method accepting
 
 ## Fusion categories and algebraic closure
 
-The usual characteristic-zero theory of fusion categories works over an
+The usual characteristic-zero theory of
+[fusion categories](@ref tensor-conventions) works over an
 algebraically closed field $k$. In particular, the endomorphism algebra of every
 simple object is then $k$, so semisimple categories are split.
 [EGNO](@citet) use this setting for most of their treatment and discuss
@@ -55,7 +56,9 @@ true
 
 A **number field** is a finite extension of $\mathbb Q$. OSCAR presents it by
 an algebraic generator and a polynomial relation. For example, to use a square
-root of $2$ exactly, construct $K=\mathbb Q(s)$ with $s^2=2$:
+root of $2$ exactly, construct $K=\mathbb Q(s)$ with $s^2=2$. The supplied
+Ising constructor is used here only to show that a category retains this field;
+its categorical operations appear in [A first computation](@ref first-category).
 
 ```@example fields
 using TensorCategories, Oscar
@@ -95,7 +98,8 @@ The exact field element $s$ and its value $\iota(s)$ play different roles.
 TensorCategories.jl stores structural coefficients in the exact field. A
 complex embedding selects their numerical realization, represented by
 certified complex balls. This choice can determine which realization is
-unitary and which signs or phases appear in F- and R-symbols.
+unitary and which signs or phases appear in
+[F- and R-symbols](@ref f-conventions).
 
 `K(3)` constructs a scalar in `K`. Independently constructed isomorphic fields
 do not automatically identify their chosen roots. Specify the intended embedding
@@ -107,7 +111,7 @@ D = extension_of_scalars(C, L; embedding = iota)
 
 Here `iota` maps the old field into `L`, and scalar extension applies it to every
 coefficient of the structural maps. An embedding, a change of basis, and a
-change of pivotal structure are different operations.
+change of [pivotal structure](@ref pivotal-braided) are different operations.
 
 ## Galois conjugation
 
@@ -150,9 +154,10 @@ a suitable scalar extension. The division algebras $D_S$ are the main source
 of the additional phenomena over non-algebraically closed fields
 [sanford2025fusion](@cite).
 
-The distinction is computationally important. The scalar F-symbol model assumes
-split simples and chosen bases of their fusion spaces. The general category
-interface can also represent non-split categories, but multiplicities,
+The distinction is computationally important. The scalar
+[F-symbol model](@ref skeletal-fusion) assumes split simples and chosen bases of
+their fusion spaces. The general category interface can also represent
+non-split categories, but multiplicities,
 decomposition, scalar extension, and center computations must then retain the
 simple endomorphism algebras. Treating them as copies of the base field gives
 wrong multiplicities.
@@ -172,3 +177,5 @@ splitting, and the behavior of categorical constructions. In positive
 characteristic a category can fail to be semisimple, independently of whether
 its simple objects are split. Enlarging the coefficient field within the same
 characteristic does not repair such a failure of semisimplicity.
+
+Continue with [A first computation](@ref first-category).

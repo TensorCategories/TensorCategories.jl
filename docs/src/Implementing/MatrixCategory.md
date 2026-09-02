@@ -80,3 +80,5 @@ A categorical property and an effective implementation of it are distinct.
 The [interface checklist](../Interface/Generic.md) records further primitives.
 The next page explains how the same design models graded spaces and group
 representations, without F-symbol input.
+
+Continue with [Concrete models: graded spaces and representations](ConcreteModels.md).

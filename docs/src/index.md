@@ -3,7 +3,7 @@
 
 [![Citation](https://img.shields.io/badge/Citation-arXiv%3A2406.13438-B31B1B?logo=arxiv)](https://arxiv.org/abs/2406.13438)
 
-TensorCategories.jl is an open-source software package for computations with tensor categories, especially fusion categories. Built on the [Julia](https://julialang.org/) programming language and the [OSCAR](https://www.oscar-system.org/) computer algebra system, it is designed to closely follow the standard mathematical framework for tensor categories as presented, for example, in [Tensor Categories](https://math.mit.edu/~etingof/egnobookfinal.pdf) by Etingof, Gelaki, Nikshych, and Ostrik: objects, morphisms, tensor products, associators, and other categorical structures are represented as such, while concrete combinatorial descriptions, such as F-symbols, are also supported. The package supports exact symbolic computations over arbitrary base fields, including number fields and fields of positive characteristic, as well as numerical computations intended for applications in mathematical physics such as anyon models and conformal field theory.
+TensorCategories.jl is an open-source software package for computations with tensor categories, especially [fusion categories](@ref tensor-conventions). Built on the [Julia](https://julialang.org/) programming language and the [OSCAR](https://www.oscar-system.org/) computer algebra system, it is designed to closely follow the standard mathematical framework for tensor categories as presented, for example, in [Tensor Categories](https://math.mit.edu/~etingof/egnobookfinal.pdf) by Etingof, Gelaki, Nikshych, and Ostrik: objects, morphisms, tensor products, associators, and other categorical structures are represented as such, while concrete combinatorial descriptions, such as [F-symbols](@ref skeletal-fusion), are also supported. The package supports exact symbolic computations over arbitrary [base fields](@ref base-fields), including number fields and fields of positive characteristic, as well as [numerical computations](@ref numerical-computations) intended for applications in mathematical physics such as anyon models and conformal field theory.
 
 Current highlights include:
 
@@ -22,7 +22,7 @@ Current highlights include:
 
 ## Showcase
 
-Here is a showcase example computing the center $\mathcal{Z}(\mathcal{C})$ of the Ising fusion category $\mathcal{C}$ over the field $\mathbb{Q}(\sqrt{2})$. The computation shows that $\mathcal{Z}(\mathcal{C})$ is *not* split over $\mathbb{Q}(\sqrt{2})$, i.e. some simple objects will decompose after scalar extension to $\mathbb{C}$. We then compute the multiplication table of the fusion ring and the S-matrix of this non-split modular category.
+Here is a showcase example computing the [center](@ref center) $\mathcal{Z}(\mathcal{C})$ of the Ising fusion category $\mathcal{C}$ over the field $\mathbb{Q}(\sqrt{2})$. The computation shows that $\mathcal{Z}(\mathcal{C})$ is [not split](@ref tensor-conventions) over $\mathbb{Q}(\sqrt{2})$, i.e. some simple objects will decompose after scalar extension to $\mathbb{C}$. We then compute the multiplication table of its [Grothendieck ring](@ref grothendieck-rings) and the S-matrix of this non-split modular category.
 
 ```julia-repl
 julia> using TensorCategories, Oscar

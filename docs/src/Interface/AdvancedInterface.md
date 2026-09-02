@@ -46,3 +46,5 @@ solver to the normalized rank-one case.
 
 A `SixJFunctor` encodes an additive map using images of simples.
 A tensor functor additionally requires coherent tensorators.
+
+Continue with [Implementing a matrix category](../Implementing/MatrixCategory.md).

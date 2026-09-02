@@ -282,3 +282,5 @@ rank(Rs)
 
 The field extension changes the simple basis and hence the Grothendieck ring;
 its multiplication coefficients are integers over both fields.
+
+Continue with [Functors and natural transformations](AdvancedInterface.md).

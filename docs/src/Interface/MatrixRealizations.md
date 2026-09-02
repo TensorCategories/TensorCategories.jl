@@ -1,5 +1,8 @@
 # [Matrix realizations and fiber functors](@id matrix-realizations)
 
+This page explains when the `matrix(f)` used in concrete examples is available
+and what that matrix represents.
+
 Often a faithful $k$-linear functor
 ```math
 U:\mathcal C\longrightarrow\mathrm{Vec}_k
@@ -8,6 +11,32 @@ is implicit in the representation. Each object has a vector space and a basis,
 and `matrix(f)` represents `U(f)`. This need not be an explicit Julia `Functor`
 object. Identities, composition, sums, and scalar multiplication must still be
 respected.
+
+## Row-vector convention
+
+TensorCategories.jl's matrix models use row coordinates: a morphism
+$f:X\to Y$ has one matrix row per source basis vector and one column per target
+basis vector. Consequently, for $f:X\to Y$ and $g:Y\to Z$,
+
+```math
+M_{g\circ f}=M_fM_g.
+```
+
+The following example uses ordinary finite-dimensional vector spaces only to
+display this convention:
+
+```@example matrix_coordinates
+using TensorCategories, Oscar
+V = vector_spaces(QQ)
+X = VectorSpaceObject(V, 2)
+Y = VectorSpaceObject(V, 3)
+Z = VectorSpaceObject(V, 1)
+f = morphism(X, Y, matrix(QQ, [1 0 2; 0 1 3]))
+g = morphism(Y, Z, matrix(QQ, 3, 1, [1, 2, 3]))
+@assert matrix(g ∘ f) == matrix(f)*matrix(g)
+matrix(compose(f, g))
+show(stdout, MIME"text/plain"(), matrix(compose(f, g))); println() # hide
+```
 
 Faithfulness does **not** make every matrix a categorical morphism. In
 representations it must be an intertwiner; in graded spaces it must preserve
@@ -68,3 +97,5 @@ coordinates. The current scalar-block `SixJCategory` implements the split case.
 Coordinate extraction needs faithful linear coordinates; endomorphism-algebra
 calculations also need compatibility with composition. Neither alone implies
 a monoidal realization.
+
+Continue with [Direct sums, kernels, and decompositions](AbelianCategories.md).

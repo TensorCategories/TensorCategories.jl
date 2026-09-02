@@ -58,3 +58,5 @@ left inverse.
 
 In a nonsemisimple category an object with division endomorphism algebra need
 not be simple: the converse of Schur's lemma fails in this generality.
+
+Continue with [Tensor products and duality](MonoidalCategories.md).

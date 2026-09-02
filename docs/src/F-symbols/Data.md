@@ -237,3 +237,5 @@ and block dimensions. Coherence and structural properties are separate
 mathematical checks; see [Numerical computations](@ref numerical-computations).
 All admissible entries, including zeros, are needed to reconstruct the fusion
 paths.
+
+Continue with [Numerical computations](@ref numerical-computations).

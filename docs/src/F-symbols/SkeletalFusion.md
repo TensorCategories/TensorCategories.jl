@@ -24,6 +24,11 @@ the implementation this vector is `X.components`, and `C[i]` denotes the
 chosen representative $S_i$. The zero object has all multiplicities zero, and
 direct sums add multiplicity vectors.
 
+A `SixJCategory` is mutable, and its objects retain that particular category as
+their parent. Two independently constructed categories can carry identical
+arrays without being the same parent; transport objects explicitly between
+them.
+
 If
 
 ```math

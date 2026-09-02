@@ -64,3 +64,5 @@ semisimple.
 A fusion category in positive characteristic can have a nonsemisimple center
 when its global dimension vanishes. Existence of the center alone does not
 imply modularity or applicability of every center algorithm.
+
+Continue with [Grothendieck rings](@ref grothendieck-rings).

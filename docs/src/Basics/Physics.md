@@ -218,6 +218,8 @@ that accepts a braid word and returns its matrix in a chosen multi-anyon
 fusion-tree basis. The ordinary `braiding(X,Y)` method is a categorical
 structural map, not such a braid-word interface.
 
-Continue with [precise F- and R-symbol conventions](@ref f-conventions),
+Continue with [Working with categories](@ref interface-philosophy). Readers
+interested primarily in fusion data can instead go directly to
+[precise F- and R-symbol conventions](@ref f-conventions),
 [numerical computations](@ref numerical-computations), or the
 [category catalogue](@ref category-catalogue).

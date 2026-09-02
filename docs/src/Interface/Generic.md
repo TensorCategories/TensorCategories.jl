@@ -48,3 +48,5 @@ detect errors that an Ising-only test cannot.
 finite models.
 
 For API signatures and source links, use the [API reference](../API.md).
+
+Continue with [Skeletal fusion categories](../F-symbols/SkeletalFusion.md).

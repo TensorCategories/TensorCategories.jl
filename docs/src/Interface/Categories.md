@@ -13,34 +13,17 @@ representation uses other fields. `parent(f)` is inferred from its domain.
 morphisms inherit the field from their category.
 
 The same printed name or component vector need not mean the same object.
-`SixJCategory` is mutable and parent identity matters: independently constructed
-categories are different parents. Transport objects explicitly between them.
+The parent is part of the represented object: independently constructed
+mutable category values can define different parents even when they print
+identically. Transport objects explicitly between them.
 
-## Composition and matrices
+## Composition
 
 For $f:X\to Y$ and $g:Y\to Z$, `compose(f,g)` returns $g\circ f$.
-The matrix models use **row vectors**: a morphism matrix has one row per source
-basis vector and one column per target basis vector. Thus
-
-```math
-M_{g\circ f}=M_f M_g.
-```
-
-```@example composition
-using TensorCategories, Oscar
-V = vector_spaces(QQ)
-X = VectorSpaceObject(V, 2)
-Y = VectorSpaceObject(V, 3)
-Z = VectorSpaceObject(V, 1)
-f = morphism(X, Y, matrix(QQ, [1 0 2; 0 1 3]))
-g = morphism(Y, Z, matrix(QQ, 3, 1, [1, 2, 3]))
-@assert matrix(g ∘ f) == matrix(f)*matrix(g)
-matrix(compose(f, g))
-show(stdout, MIME"text/plain"(), matrix(compose(f, g))); println() # hide
-```
-
-The [matrix realization](@ref matrix-realizations) need not preserve tensor
-products.
+The infix form `g ∘ f` has the usual mathematical order. Categories need not
+come with matrices. When a concrete model supplies `matrix(f)`, its coordinate
+and composition conventions are explained under
+[Matrix realizations and fiber functors](@ref matrix-realizations).
 
 ## Equality and isomorphism
 
@@ -48,7 +31,12 @@ products.
 models, `is_isomorphic(X,Y)` returns `(true,f)` with $f:X\to Y$ an isomorphism,
 or `(false,nothing)`. Destructure this result: a tuple is not a Boolean.
 
+For example, in the supplied category of finite-dimensional vector spaces:
+
 ```@example composition
+using TensorCategories, Oscar
+V = vector_spaces(QQ)
+X = VectorSpaceObject(V, 2)
 ok, h = is_isomorphic(X, X)
 @assert ok && inv(h) ∘ h == id(X)
 ok
@@ -57,3 +45,5 @@ ok
 `product(X,Y)` returns the product object and projections; `coproduct(X,Y)`
 returns the coproduct and injections. In additive categories use
 [direct sums](AbelianCategories.md) when both families of maps are needed.
+
+Continue with [Hom spaces and linear algebra](LinearCategories.md).

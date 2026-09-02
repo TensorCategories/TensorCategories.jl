@@ -1,8 +1,9 @@
 # [Numerical computations](@id numerical-computations)
 
 Numerical categories are a first-class use case. They are particularly useful
-for large center computations and for fusion data arising in mathematical
-physics, where F- and R-symbols are often manipulated numerically. The public
+for large [center computations](@ref center) and for fusion data arising in
+mathematical physics, where [F- and R-symbols](@ref f-conventions) are often
+manipulated numerically. The public
 category interface remains the same as for exact coefficients; comparisons and
 linear algebra use methods appropriate to the coefficient field. The unitary
 fusion-space construction used for centers is developed in
@@ -42,6 +43,11 @@ K = base_ring(C)
 @assert K isa AcbField
 precision(K)
 ```
+
+Here `anyonwiki(...)` supplies an exact skeletal category from the packaged
+database; its arguments and stored structures are described under
+[AnyonWiki](../F-symbols/AnyonWiki.md). Only the numerical conversion matters
+in this example.
 
 The argument of `numeric(E,p)` controls the target approximation precision.
 The conversion may use additional guard bits, so
@@ -134,7 +140,8 @@ properties such as nonvanishing.
 
 We use the mathematical definitions in [EGNO](@cite). For a category over a
 numerical field, `is_unitary(C)` tests the supplied structure in its stored
-fusion bases at the working precision. For a `SixJCategory`, this includes the
+fusion bases at the working precision. For `SixJCategory`, the package's
+[skeletal F-symbol model](@ref skeletal-fusion), this includes the
 chosen spherical structure, agreement of categorical and Frobenius--Perron
 dimensions, and unitarity of the associator matrices. It does not search for a
 different gauge in which a nonunitary set of matrices might become unitary.
@@ -233,3 +240,5 @@ block dimensions. After loading, use `pentagon_axiom`, `hexagon_axiom`,
 `is_unitary`, and `is_modular` as appropriate. Saving and loading must preserve
 the same F- and R-symbol convention; see
 [Structural data and data exchange](@ref symbol-data) for examples.
+
+Continue with the [category catalogue](@ref category-catalogue).

@@ -1,7 +1,7 @@
 # [A first computation](@id first-category)
 
-Start with an existing category. No F-symbol input or Julia type definitions
-are needed to use its objects and morphisms.
+Start with an existing category. No [F-symbol input](@ref skeletal-fusion) or
+Julia type definitions are needed to use its objects and morphisms.
 
 ```@example first
 using TensorCategories, Oscar
@@ -46,8 +46,12 @@ int_dim(Hom(Y, Y))
 
 ## An associator
 
-The associator maps $(X\otimes X)\otimes X$ to $X\otimes(X\otimes X)$. The two objects are equal
-in this skeletal model, but the associator is not the identity.
+The associator maps $(X\otimes X)\otimes X$ to $X\otimes(X\otimes X)$. The two
+objects are equal in this [skeletal model](@ref skeletal-fusion), but the
+associator is not the identity. This model records the associator by its matrix
+on a multiplicity space. [Matrix realizations](@ref matrix-realizations) explain
+what this matrix represents, and [F-symbol conventions](@ref f-conventions)
+specify its bases and direction.
 
 ```@example first
 a = associator(X, X, X)
@@ -57,11 +61,11 @@ matrix(a)
 show(stdout, MIME"text/plain"(), matrix(a)); println() # hide
 ```
 
-These coordinates are explained in [Matrix realizations](@ref matrix-realizations)
-and [F-symbol conventions](@ref f-conventions). An associator is part of the
-category; it cannot simply be omitted from a composite.
+An associator is part of the category; it cannot simply be omitted from a
+composite.
 
-Continue with [Working with categories](@ref interface-philosophy).
+Continue with the [anyon and CFT terminology bridge](@ref physics-bridge), then
+[Working with categories](@ref interface-philosophy).
 For a new concrete model, use the [implementation tutorial](@ref implementing-matrices).
 For supplied fusion data, use [Fusion categories from data](@ref skeletal-fusion).
 The [catalogue](@ref category-catalogue) lists the existing implementations.

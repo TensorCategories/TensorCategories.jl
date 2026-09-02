@@ -49,7 +49,6 @@ try
             "Getting started" => [
                 "Julia and OSCAR" => "Basics/Julia.md",
                 "Coefficient fields" => "Basics/BaseFields.md",
-                "Numerical computations" => "Basics/Numerical.md",
                 "First computations" => "Introduction/Introduction.md",
                 "Anyons and CFT" => "Basics/Physics.md",
             ],
@@ -75,6 +74,7 @@ try
                 "Working with fusion data" => "F-symbols/WorkedExamples.md",
                 "Data exchange" => "F-symbols/Data.md",
             ],
+            "Numerical computations" => "Basics/Numerical.md",
             "Catalogue" => [
                 "Inventory" => "F-symbols/Examples.md",
                 "AnyonWiki" => "F-symbols/AnyonWiki.md",
