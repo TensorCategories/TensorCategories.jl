@@ -1055,7 +1055,11 @@ For a mutable category type sort the simple objects by Frobenius-Perron dimensio
 function sort_simples_by_dimension!(C::Category)  
     !hasfield(typeof(C), :simples) && error("$(typeof(C)) does not support sorting simples.")
 
-    one_ind = findfirst(==(one(C)), C.simples)
+    one_ind = if base_ring(C) isa Union{ArbField,AcbField,ComplexField}
+        findfirst(s -> int_dim(Hom(one(C),s)) > 0,C.simples)
+    else
+        findfirst(==(one(C)),C.simples)
+    end
 
     C.simples[[1,one_ind]] = C.simples[[one_ind, 1]]
     fp_dims = [fpdim(s) for s ∈ simples(C)]
@@ -1578,6 +1582,8 @@ end
 function is_unitary(C::CenterCategory)
     is_unitary(category(C))
 end
+
+is_unitary_numeric(C::CenterCategory) = is_unitary_numeric(category(C))
 
 #=----------------------------------------------------------
     Drinfeld Morphism 

@@ -484,7 +484,8 @@ function minpoly(f::Morphism)
     elseif typeof(base_ring(f)) == AcbField
         R,x = base_ring(f)[:x]
 
-        f == zero_morphism(domain(f),codomain(f)) && return zero(R)
+        z = zero_morphism(domain(f),codomain(f))
+        overlaps(matrix(f),matrix(z)) && return zero(R)
         i = 0 
         found = false
         while !found 
@@ -493,7 +494,8 @@ function minpoly(f::Morphism)
             coeffs = express_in_basis(composition_power(f,j), basis)
             if !all(coeffs .== 0) 
                 p = x^j - sum([c*x^(k-1) for (k,c) in pairs(coeffs)])
-                p(f) == 0 && return p
+                r = p(f)
+                overlaps(matrix(r),matrix(zero_morphism(domain(r),codomain(r)))) && return p
             end
             i = j
             if j > sqrt(abs(dim(domain(f))*dim(codomain(f))))

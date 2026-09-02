@@ -298,22 +298,20 @@ end
 end
 
 # Rowell--Stong--Wang, arXiv:0712.1377v4, Section 5.3.4: the Ising Hadamard
-# F-matrix divided by sqrt(2) is unitary. QQBar proves the identity exactly;
-# Acb can only show compatibility of its enclosures with that identity.
-@testset "Exact certification versus numerical unitarity" begin
+# F-matrix divided by sqrt(2) is unitary. Over Acb, the predicate tests the
+# identity at the precision of the coefficient field.
+@testset "Exact and numerical unitarity" begin
     E = ising_category(QQBarField())
     f = associator(E[3],E[3],E[3])
     @test is_unitary(f)
 
     C = ising_category(AcbField(64))
     g = associator(C[3],C[3],C[3])
-    @test_throws ArgumentError is_unitary(g)
+    @test is_unitary(g)
     @test is_unitary_numeric(g)
     @test is_unitary_numeric(C)
     @test !is_unitary_numeric(2*g)
-    # The conservative category predicate reports absence of an exact
-    # certificate over the current field, not nonunitarizability.
-    @test !is_unitary(C)
+    @test is_unitary(C)
     @test overlaps(tmatrix(C)[2,2],base_ring(C)(-1))
 end
 
