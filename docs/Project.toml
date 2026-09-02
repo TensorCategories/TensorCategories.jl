@@ -8,4 +8,4 @@ TensorCategories = "258c694e-7338-4d4d-b524-4851272a75cf"
 [compat]
 Documenter = "1.15.0"
 DocumenterCitations = "1.4.1"
-Oscar = "1.5"
+Oscar = "1.8"

@@ -4,9 +4,18 @@
 ----------------------------------------------------------=#
 
 """
-    grothendieck_ring(C::Category)
+    split_grothendieck_ring(C::Category, S=nothing)
 
-Return the grothendieck ring of the multiring category ``C``.
+Return the ring of direct-sum classes of a supported multiring category ``C``,
+as a `ZPlusRing` over `ZZ`. The construction uses a finite ordered list of
+indecomposables and their tensor-product multiplicities; `S` can supply that
+list explicitly. For semisimple categories the basis consists of simple
+classes and this is also the ordinary Grothendieck ring.
+
+Here \"split\" refers to imposing direct-sum relations, not to a splitting
+field. Non-split semisimple multiplicities include division by the dimensions
+of the simple endomorphism algebras. For semisimple rigid input the duality
+permutation is stored as the ring involution.
 """
 function split_grothendieck_ring(C::Category, simpls = nothing)
     @assert is_multiring(C) "C is required to be multiring"

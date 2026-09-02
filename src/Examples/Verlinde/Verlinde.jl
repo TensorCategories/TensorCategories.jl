@@ -95,7 +95,11 @@ end
 
 	verlinde_category(K::Ring, m::Int)
 
-Return the Verlinde category specialized at a ``m``th rooth of unity.
+Return the rank-``m+1`` Verlinde model with labels ``X_0,\ldots,X_m``.
+The construction uses a ``(2m+4)``th root of unity in ``K``; braiding additionally
+requires its square root. Associator and braiding blocks are generated lazily.
+The optional parameters ``l,t`` select roots in the formulas, and their
+compatibility is not certified by construction.
 """
 function verlinde_category(K::Ring, m::Int, l::Int = 1, t::Int = 1)
 	#K=Oscar.QQBarField()
@@ -186,6 +190,7 @@ end
 
 	verlinde_category(m::Int)
 
-Return the Verlinde category specialized at a ``m``th rooth of unity.
+Return the rank-``m+1`` Verlinde model over the cyclotomic field of order
+``4m+8``. Optional arguments select the associator and braiding parameters.
 """
 verlinde_category(m::Int, l::Int = 1, k::Int = 1) = verlinde_category(cyclotomic_field(4*m+8)[1],m, l, k)

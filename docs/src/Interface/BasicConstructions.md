@@ -1,25 +1,27 @@
-# Basic Categorical Constructions
+# Products, opposites, and scalar extension
 
-Let ``\mathcal C``and ``\mathcal D`` be categories.
+The package supplies several constructions on category models. Their
+mathematical meanings differ, even when objects have similar printed forms.
 
-## Opposite Category
+| Construction | Meaning |
+|:--|:--|
+| `opposite_category(C)` | Reverse morphisms; use `opposite_object` and `opposite_morphism` |
+| `product_category(C,D)` | Objects and morphisms are pairs |
+| `C ⊠ D` | Deligne tensor product in supported finite linear settings |
+| `extension_of_scalars(C,L; embedding=...)` | Transport coefficients along a specified field map |
+| `six_j_category(C)` | Choose split semisimple coordinates and retain tensor structure |
+| `center(C)` | Adjoin half-braidings, not just new coordinates |
+| `semisimplify(C)` | Quotient by negligible morphisms in supported pivotal settings |
 
-The __opposite category__ ``\mathcal C^{op}`` of ``\mathcal C`` has the same objects and 
-morphisms ``f\colon  Y \to X \in \mathrm{Hom}_{\mathcal C^{op}}(X,Y)`` formally switching domain and codomain.
+The Deligne product and categorical product are different: for finite split
+semisimple categories, simples of the Deligne product are pairs of simples,
+while the additive categorical product has simples supported in one factor.
 
-```@docs 
-opposite_category
-opposite_object
-opposite_morphism
-```
+Scalar extension can change simple objects and endomorphism algebras.
+For split skeletal input it can transport coefficient arrays directly;
+a non-split model may also require idempotent splitting. Always specify a
+field embedding when several choices exist, and recheck semisimplicity and
+nonzero denominators when changing characteristic.
 
-## Product Categories
-
-Given a family of categories ``\mathcal C_1,...,\mathcal C_n`` we can form the product category ``\mathcal C = \mathcal C_1 \times \cdots \times \mathcal C_n``. Objects and morphism are just families of objects and morphisms. Structures all categories have and are preserved 
-by the product will be available.
-
-```@docs
-product_category
-product_object
-product_morphism
-```
+Each construction requires the corresponding operations on its input categories;
+see the [API reference](../API.md) for the available methods.

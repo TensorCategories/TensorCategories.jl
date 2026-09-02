@@ -1,49 +1,5 @@
-# [Fusion Categories from `F`-Symbols] (@id 6j_categories)
+# [Fusion categories from F-symbols](@id 6j_categories)
 
-In most literature concerning fusion categories they are characterized by 
-so called ``F``-symbols. Often only those and the fusion rules are provided or of interest. Thus we provide a datatype that allows to 
-get a workable fusion category from provided ``6j`-symbols.
-
-## ``F``-Symbols
-
-Skeletal object coordinates belong to one particular parent instance. For
-example, `[0, 1]` may denote an invertible object in one category and a
-Fibonacci object in another. Consequently equality, Hom spaces, tensor
-products, and direct sums require the same parent instance. Transport objects
-and morphisms explicitly when changing categories or scalars.
-
-Let ``\mathcal C`` be a locally finite semisimple multitensor category.  Then, if ``\{X_i\mid i \in \mathcal I\}`` is a collection of the non-isomorphic simple objects, there is an equivalence of abelian categories 
-
-```math
-F \colon \mathcal C \cong \bigoplus\limits_{i \in \mathcal I} \mathrm{Vec}_k
-```
-
-given by 
-
-```math
-X \mapsto \mathrm{Hom}(X_i,X).
-```
-
-We define ``H_{ij}^k := \mathrm{Hom}(X_k, X_i\otimes X_j)`` to be the multiplicity spaces. Now considering the image of a tensor product $X_i \otimes X_j$ of two simple objects we obtain 
-
-```math
-X_i \otimes X_j \mapsto \bigoplus\limits_{k \in \mathcal I} H_{ij}^k
-```
-
-After fixing a natural isomorphism 
-
-```math
-(X_i \otimes X_j) \otimes X_k \cong X_i \otimes (X_j \otimes X_k)
-```
-
-we obtain morphisms 
-
-```math
-\bigoplus\limits_{k ∈ I} H_{ij}^k \xrightarrow
-```
-
-
-```@autodocs
-Modules = [TensorCategories]
-Pages = ["FusionCategory.jl"]
-```
+This chapter has moved to [Skeletal fusion categories](../F-symbols/SkeletalFusion.md).
+See also the [precise conventions](../F-symbols/Conventions.md) and
+[data exchange](../F-symbols/Data.md).

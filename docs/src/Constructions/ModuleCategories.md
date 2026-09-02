@@ -1,75 +1,64 @@
-```@meta 
-DocTestSetup = quote 
-    using TensorCategories, Oscar
-end
+# Algebra objects and internal modules
+
+The conventions are those of [EGNO](@citet), Chapter 7. The explicit
+construction and the algorithms implemented here are developed in
+[maeurer2026thesis](@cite), Chapter 3.
+An algebra object has maps $m:A\otimes A\to A$ and $u:\mathbb 1\to A$, satisfying
+```math
+m\circ(m\otimes\mathrm{id}_A)
+=m\circ(\mathrm{id}_A\otimes m)\circ a_{A,A,A}.
 ```
-# Internal Module Categories
+The unit equations use normalized unit constraints.
+`AlgebraObject(C,A,m,u)` stores the data; `is_algebra` checks the equations.
 
-Let ``\mathcal C`` be a fusion category. Any finite module category over ``\mathcal C``can be realized as an internal module category ``\mathrm{Mod}_A(\mathcal C)`` for an algebra ``A`` in ``\mathcal C``. 
+A right action has direction $M\otimes A\to M$, and a left action has direction
+$A\otimes M\to M$.
+Bimodules have commuting left and right actions.
+The following example uses the unit algebra, so its modules recover the
+original category:
 
-## Finding Algebras
-
-There are four kinds of algebras of interest. Let ``(A,m,u)`` be an algebra.
-
-- Algebra objects
-- Separable algebra objects, i.e. ``m\colon A\otimes A \to A``splits as a bimodule morphisms
-
-And if ``\mathcal C`` admits a braiding ``c_{-,-}``
-
-- Commutative algebras, i.e. ``m ∘ c_{A,A} = m``
-- Etale algebras, i.e. separable, commutative algebras.
-
-We can find those structures by setting up a system of quadratic equations. Those systems are often of dimension greater then zero and hence we have to guess some solutions. 
-
-```@docs
-algebra_structures
-separable_algebra_structures
-commutative_algebra_structures
-etale_algebra_structures
-```
-
-## Internal Module Categories
-
-When obtained an algebra we can set up the left, right and bimodule categories. For compatible modules also the tensor product over ``A`` is available.
-
-```jldoctest
-C = anyonwiki(3,1,0,2,1,1,1)
-
-A, = separable_algebra_structures(C[1,2])
-
-M = category_of_bimodules(A)
-
-simples(M)
-
-# output
-6-element Vector{BiModuleObject}:
- Bimodule: 𝟙 ⊕ X2
- Bimodule: 𝟙 ⊕ X2
- Bimodule: X3
- Bimodule: X3
- Bimodule: X3
- Bimodule: X3
+```@example modules
+using TensorCategories, Oscar
+C = ising_category()
+U = one(C)
+A = AlgebraObject(C,U,id(U),id(U))
+@assert is_algebra(A)
+M = category_of_right_modules(A)
+F = free_right_module(C[3],A)
+@assert is_isomorphic(object(F),C[3])[1]
+object(F)
 ```
 
-```@docs
-category_of_left_modules
-category_of_right_modules
-category_of_bimodules
-```
+`category_of_left_modules(A)`, `category_of_right_modules(A)`, and
+`category_of_bimodules(A)` construct the corresponding parents.
+Free modules use tensoring with the algebra. The relative tensor product of
+a right and left module is a coequalizer; bimodules acquire their tensor
+product this way. A category of right modules is not automatically monoidal.
 
-Somtimes it might be handy to construct some free modules by hand:
+## Computing simple modules
 
-```@docs
-free_right_module
-free_left_module
-free_bimodule
-free_module
-```
+If $\mathcal C$ is fusion and $A$ is separable, the category of right
+$A$-modules is semisimple. Every simple module occurs in a free module
+$X_i\otimes A$ for some simple $X_i\in\mathcal C$. Accordingly, `simples(M)`
+constructs the free modules on the simple objects, decomposes them, and removes
+duplicate isomorphism classes. This is Algorithm 7 of
+[maeurer2026thesis](@cite), §3.4. The analogous construction applies to left
+modules and, with both algebras separable, to bimodules.
 
-And also conversions from algebras and bimodules:
+Separability is the hypothesis that makes this an exhaustive semisimple
+decomposition algorithm. Constructing `category_of_right_modules(A)` itself
+does not assert separability.
 
-```@docs
-right_module
-left_module
-bimodule
-``` 
+## Separability and searches
+
+An algebra is separable if multiplication splits as an **A-bimodule** map.
+Commutativity requires a supplied braiding and means $m\circ c_{A,A}=m$.
+An étale algebra is commutative and separable; connectedness is an additional
+condition, not part of the word “étale” here.
+
+`algebra_structures`, `separable_algebra_structures`,
+`commutative_algebra_structures`, and `etale_algebra_structures` search for
+structures on a fixed underlying object. The polynomial systems can have
+positive-dimensional solution spaces. These searches do not generally
+classify all algebras up to isomorphism, and an empty sampled result is not a
+proof of nonexistence.

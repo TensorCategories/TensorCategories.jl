@@ -551,7 +551,11 @@ end
 """
     simples(Rep::GroupRepresentationCategory)
 
-Return a list of the simples objects in Rep.
+Return representatives of simple objects. The current backend supports finite
+coefficient fields and the trivial group. Characteristic-zero enumeration for
+nontrivial groups requires a rational/Schur-index backend and throws an error;
+constructing specified representations and computing Hom spaces are separate
+supported operations.
 """
 function simples(Rep::GroupRepresentationCategory)
     

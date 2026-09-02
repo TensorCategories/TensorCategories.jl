@@ -1,85 +1,92 @@
+# Julia and OSCAR
 
-## Julia/OSCAR
+This manual assumes familiarity with categories, but no previous experience with
+Julia. We introduce the language features we need as we go. For more about the
+language itself, see the [Julia manual](https://docs.julialang.org/en/v1/manual/).
 
-[Julia](https://julialang.org) is a modern high-performance high-level programming language which, due its type system design and multiple dispatch paradigm, is nicely suited for working with categorical structures. It is open-source and runs on Windows, Linux, and macOS.
+Julia's type system and multiple dispatch let us use the same mathematical
+operation for quite different representations of categories.
 
-!!! note "Julia"
-    Julia uses just-in-time compilation (JIT). This is one of the reasons why Julia can be so fast, but it means that the first execution of a function always takes a bit of time (since its code will be compiled)—afterward it is faster. We usually keep a session running on a server.
+## Starting a session
 
-After starting Julia, you can consider it as a calculator:
+Install Julia, start it, and enter the following at the REPL prompt:
 
-```julia-repl
-julia> 1+1
+```julia
+import Pkg
+Pkg.add("TensorCategories")
+```
+
+This installs the package and its dependencies, including
+[OSCAR](https://www.oscar-system.org/). In each new session, load them with
+
+```julia
+using TensorCategories, Oscar
+```
+
+Installing a package and loading it are different operations; you need not
+install it again each session.
+
+!!! note "First computations"
+    Julia compiles code when it is first needed. Loading packages and running a
+    computation for the first time can therefore take longer than repeating it.
+    Keep the session open while working through the manual.
+
+## Integers, types, and parents
+
+Julia can be used as a calculator:
+
+```jldoctest
+julia> 1 + 1
 2
-```
 
-There is one important thing you need to know:
-
-```julia-repl
-julia> 2^64
-0
-```
-
-The explanation is that every object in Julia is of a certain *type*, and without further specification an integer is considered of type 64-bit integer:
-
-```julia-repl
-julia> typeof(2)
-Int64
-```
-
-We can convert integers to `BigInt` type which allows computing with arbitrarily large integers:
-
-
-```julia-repl
 julia> BigInt(2)^64
 18446744073709551616
 ```
 
-Except for this, however, there is not much algebra in Julia. This is where the [OSCAR](https://www.oscar-system.org/) computer algebra system comes into play. OSCAR can be installed as follows:
+Ordinary integer literals have type `Int`, usually a 64-bit machine integer.
+Arithmetic can overflow: on a 64-bit system, `2^64` is `0`.
+Use `BigInt` or OSCAR's integers `ZZ` for integers of unbounded size.
 
-```julia-repl
-julia> using Pkg
+Every Julia value has a *type*, which determines the applicable methods.
+An algebraic element also has a *parent*: for example, a polynomial belongs to
+a particular polynomial ring. Elements of distinct rings can have the same
+Julia type. The same distinction matters for categories.
 
-julia> Pkg.add("Oscar")
+## Computer algebra
+
+OSCAR supplies the rings, fields, matrices, groups, and algebra algorithms used
+by TensorCategories.jl:
+
+```@example julia
+using TensorCategories, Oscar
+R, x = polynomial_ring(ZZ, "x")
+f = x^2 + 2*x + 1
+f^2
+show(stdout, MIME"text/plain"(), f^2); println() # hide
 ```
 
-OSCAR can then be loaded with:
+Here `R, x = ...` assigns two returned values to two variables. The name `x`
+denotes an element of `R`, not an unspecified complex number. `ZZ` denotes the
+integers and `QQ` the rational field.
 
-```julia-repl
-julia> using Oscar
+## Reading Julia examples
 
+Indices start at **1**. A vector is written `[a, b, c]`; a matrix is written
+`[a b; c d]`. A semicolon separates rows. Use `matrix(K, ...)` to construct
+an OSCAR matrix over a specified field:
+
+```@example julia
+A = matrix(QQ, [1 2; 3 4])
+@assert A[1, 2] == 2
+size(A)
 ```
 
-You can then do serious computer algebra like:
+An exclamation mark, as in `set_associator!`, conventionally indicates mutation.
+A dot applies an operation elementwise: `dim.(simples(C))` applies `dim` to every
+simple object. A trailing semicolon suppresses the display of a result.
 
-```julia-repl
-julia> R,x = polynomial_ring(ZZ, "x")
-(Univariate polynomial ring in x over ZZ, x)
+Type `?` followed by a name in the REPL for help. Type `\otimes` followed by Tab
+to enter `⊗`; `tensor_product(X,Y)` is its spelled-out form. Similarly, `\oplus`
+and `\circ` produce `⊕` and `∘`.
 
-julia> f = x^2 + 2*x + 1
-x^2 + 2*x + 1
-
-julia> f^2
-x^4 + 4*x^3 + 6*x^2 + 4*x + 1
-```
-
-The object `ZZ` here is the ring $\mathbb{Z}$ of integers in OSCAR. Check out the [documentation](https://docs.oscar-system.org/stable/) of OSCAR for more information. OSCAR is where we take all our computer algebra from.
-
-Next, you can install and load TensorCategories.jl with:
-
-```julia-repl
-julia> using Pkg
-
-julia> Pkg.add("TensorCategories")
-
-julia> using TensorCategories
-```
-
-In all the example computations below we assume you have called
-
-```julia-repl
-julia> using TensorCategories, Oscar
-```
-
-!!! note "Base rings"
-    Like in formal mathematics, TensorCategories.jl and Oscar require a *base ring* for the computations. This is different to other systems like Mathematica which, by default, treat symbolic variables as representing "generic" complex numbers. While OSCAR also supports the [field of complex numbers](https://docs.oscar-system.org/stable/Nemo/complex/) and the [algebraic closure of the rationals](https://docs.oscar-system.org/stable/NumberTheory/abelian_closure/), we can also work over [number fields](https://docs.oscar-system.org/stable/Hecke/manual/number_fields/intro/).  This is not just more efficient but also mathematically interesting because some constructions, like the Drinfeld center, can look different when restricted to a number field instead of the whole complex numbers: simple objects may decompose after scalar extension to the complex numbers (there are simply more scalars one can use for a change of basis). While this "fine structure" is natural and important from a mathematical perspective, it may be unusual from a physics perspective. We do not want to go into the mathematical details at this point but when we say "split" it means things look exactly the same after extending to the complex numbers, and we have functionality to do this splitting. For applications in physics we also support conversion of our exact algebraic data into complex floating point numbers (for example for $F$-matrices).
+Continue with [Base fields](@ref base-fields), then [A first computation](@ref first-category).

@@ -5,6 +5,9 @@
 
 TensorCategories.jl is an open-source software package for computations with tensor categories, especially fusion categories. Built on the [Julia](https://julialang.org/) programming language and the [OSCAR](https://www.oscar-system.org/) computer algebra system, it is designed to closely follow the standard mathematical framework for tensor categories as presented, for example, in [Tensor Categories](https://math.mit.edu/~etingof/egnobookfinal.pdf) by Etingof, Gelaki, Nikshych, and Ostrik: objects, morphisms, tensor products, associators, and other categorical structures are represented as such, while concrete combinatorial descriptions, such as F-symbols, are also supported. The package supports exact symbolic computations over arbitrary base fields, including number fields and fields of positive characteristic, as well as numerical computations intended for applications in mathematical physics such as anyon models and conformal field theory.
 
+The mathematical algorithms and their implementation are developed systematically
+in [maeurer2026thesis](@cite).
+
 Current highlights include:
 
 * A general, extensible framework for implementing categories together with additional structures, such as additive, linear, abelian, monoidal, tensor, and fusion structures.
@@ -120,7 +123,8 @@ See [`COPYRIGHT`](COPYRIGHT) for copyright information.
 
 ## Acknowledgements
 
-TensorCategories.jl was initiated by [**Ulrich Thiel**](https://agag-thiel.math.rptu.de/math/) (RPTU University Kaiserslautern-Landau) within his project A20 "Towards unipotent character sheaves associated to Coxeter groups" (2020–2024) of the SFB-TRR 195 ["Symbolic Tools in Mathematics and their Application"](https://www.computeralgebra.de/sfb/), funded by the German Research Foundation (DFG). The package was created and developed by **Fabian Mäurer** as part of his Master's and PhD work under Thiel's supervision (2021–2026). Its development is currently supported by Thiel's project A20 "Categorical representation theory" (2024–2028) in the SFB-TRR 195. Additional support is provided by the Forschungsinitiative "SymbTools" of the state of Rheinland-Pfalz, in which Thiel is one of the project leaders.
+TensorCategories.jl was initiated by [**Ulrich Thiel**](https://agag-thiel.math.rptu.de/math/) (RPTU University Kaiserslautern-Landau) within his project A20 "Towards unipotent character sheaves associated to Coxeter groups" (2020–2024) of the SFB-TRR 195 ["Symbolic Tools in Mathematics and their Application"](https://www.computeralgebra.de/sfb/), funded by the German Research Foundation (DFG). The package was created and developed by **Fabian Mäurer** as part of his Master's and PhD work under Thiel's supervision (2021–2026); see [maeurer2026thesis](@cite). Its development is currently supported by Thiel's project A20 "Categorical representation theory" (2024–2028) in the SFB-TRR 195. Additional support is provided by the Forschungsinitiative "SymbTools" of the state of Rheinland-Pfalz, in which Thiel is one of the project leaders.
 
 [**Gert Vercleyen**](https://gert-vercleyen.github.io/) contributed to the  integration of the data from his [AnyonWiki](https://anyonwiki.github.io/).
 
+Since version 0.7, AI assistance has been used in the development of TensorCategories.jl.

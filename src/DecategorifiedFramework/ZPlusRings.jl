@@ -34,6 +34,23 @@ function ZPlusRing(names::Vector{String}, mult_table::Array{<:Number,3}, one::Ve
     return A
 end
 
+@doc raw"""
+    ZPlusRing(names::Vector{String}, N::Array{<:Number,3}, unit::Vector{<:Number})
+    ZPlusRing(N::Array{ZZRingElem,3}, unit::Vector{ZZRingElem})
+    ZPlusRing(N::Array{ZZRingElem,3})
+
+Construct a finite-rank ring over `ZZ` with a distinguished basis.
+The structure constant `N[i,j,l]` is the coefficient of basis element `l`
+in the product of basis elements `i` and `j`; `unit` gives the coefficients
+of the identity. The input specifies an associative multiplication with
+nonnegative integer structure constants and nonnegative unit coefficients.
+
+The aliases `ℤ₊Ring` and `ℕRing` denote the same type. Elements can have
+arbitrary integer coefficients, including negative coefficients. This
+constructor supplies ring data only, without associators or a stored
+duality involution.
+""" ZPlusRing
+
 @alias ℤ₊Ring ZPlusRing
 @alias ℕRing ZPlusRing
 

@@ -46,13 +46,13 @@ randomized_pentagon_axiom(Z3, 3)
 You can start the scripts with
 
 ```bash
-julia anyonwiki_center.jl --threads=N
+julia anyonwiki_centers.jl --threads=N
 ```
 
 and
 
 ```bash
-julia anyonwiki_center_numerically.jl --threads=N
+julia anyonwiki_centers_numerically.jl --threads=N
 ```
 
 where N is the number of threads. This uses internal threading of TensorCategories.

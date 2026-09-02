@@ -1,93 +1,42 @@
-# Tambara Yamagami Categories
+# [Catalogue of categories](@id category-catalogue)
 
-Tambara and Yamagami classified a class of near-group categories of multiplicity one over algebraically closed fields in [TAMBARA1998692](@cite). Let ``A`` be an abelian group. Choose a square root ``\tau \in k`` of ``\vert A\vert`` and a non-degenerate symmetric bilinear form ``\chi \colon A \times A \to k^\times``. Then the Tambara-Yamagimi category ``TY(A,\chi,\tau)`` has objects ``A \cup \{m\}`` with fusion rules 
+The catalogue lists concrete models, categories supplied by structural data,
+and partial implementations.
 
-```math
-\begin{align*}
-    a ⊗ b = a+b,~~a \otimes m = m \otimes a = m,~~ m \otimes m = \sum\limits_{a \in G} a
-\end{align*}
-```
-for ``a,b \in G``. The non-trivial associativity constraints are given by 
+| Family | Entry point | Representation and scope |
+|:---|:---|:---|
+| [AnyonWiki](AnyonWiki.md) | `anyonwiki(r,m,n,i,a,b,p)` | Artifact data with explicit identifiers |
+| [AnyonWiki split centers](AnyonWiki.md#Precomputed-centers) | `anyonwiki_center(r,m,n,i,a,b,p)` | Precomputed split skeletal fusion categories for available entries of rank at most 5 |
+| [Cocycle-twisted graded spaces](../ConcreteExamples/VectorSpaces.md#Cocycle-twists) | `graded_vector_spaces(K,G,ω)` | Same objects, modified associator |
+| [Convolution categories](../ConcreteExamples/CoherentSheaves.md#Convolution) | `convolution_category(K,X)` | Equivariant sheaves on $X\times X$ |
+| [Dihedral constructions](../ConcreteExamples/UqSl2.md#Dihedral-cell-categories) | `I2(m,K)`, `I2subcategory(m,K)` | Recoupling models |
+| [E₆ candidate data](OtherExamples.md#E) | `E6subfactor()` | Rank 3, fusion multiplicity 2; associators do not satisfy the pentagon |
+| [Equivariant coherent sheaves](../ConcreteExamples/CoherentSheaves.md) | `coherent_sheaves(K,X)` | Representations of orbit stabilizers |
+| [Extended Haagerup](Haagerup.md#Extended-Haagerup) | `TensorCategories.extended_haagerup(K)` | **Fusion rules only**; no supplied associators |
+| [Fibonacci fusion rules](Fibonacci.md) | `fibonacci_category(K,a)` | Two algebraic associator choices |
+| [Finite-dimensional vector spaces](../ConcreteExamples/VectorSpaces.md) | `vector_spaces(K)` | Basis vectors and matrices |
+| [Finite-group representations](@ref representations) | `representation_category(K,G)` | Action matrices and intertwiners |
+| [Finite sets](../ConcreteExamples/Sets.md) | `Sets()` | Legacy finite-sets-and-maps model |
+| [Generic quantum sl₂ representations](../ConcreteExamples/UqSl2.md#Generic-sl-representation-rules) | `sl2_representations(K,q)` | Sparse simple-multiplicity model; not a root-of-unity module category |
+| [Graded vector spaces](../ConcreteExamples/VectorSpaces.md#Finite-group-gradings) | `graded_vector_spaces(K,G)` | Degrees and degree-preserving matrices |
+| [Haagerup H₁, H₂, H₃](Haagerup.md) | `haagerup_H1()`, `haagerup_H2()`, `haagerup_H3()` | Stored exact data |
+| [Haagerup H₃ center](Haagerup.md) | `haagerup_H3_center()` | Stored skeletal center |
+| [Ising](TambaraYamagami.md#Ising) | `ising_category(K,s,q)` | TY for $A=C_2$; optional braiding |
+| [SU(3)₃ subcategory](@ref su3-subcategory) | `TensorCategories.su_3_3_subcategory(K)` | Rank 4, multiplicity 2; not exported |
+| [Tambara–Yamagami](TambaraYamagami.md) | `tambara_yamagami(K,A,s,χ)` | Explicit bicharacter formulas |
+| [Vercleyen–Slingerland examples](OtherExamples.md#Vercleyen–Slingerland-imports) | `cat_fr_8122(n)`, `cat_fr_9143()` | Rank-eight and rank-nine datasets |
+| [Verlinde](../ConcreteExamples/UqSl2.md#Verlinde-categories) | `verlinde_category(K,m,l,t)` | Lazy recoupling data; parameters require care |
 
-```math
-\begin{align*}
-    a_{a,m,b} = \chi(a,b)\mathrm{id}_m & a_{m,a,m} = \bigoplus\limits_{b\in A}\chi(a,b)\mathrm{id}_b & a_{m,m,m} = \bigoplus\limits_{a,b \in A} \frac{1}{\tau\chi(a,b)}\mathrm{id}_m.
-\end{align*}
-```
+Categories obtained by general constructions—centers, opposites, products,
+semisimplifications, module categories, equivariantizations, and tensor powers—
+are described in [Further constructions](../Interface/BasicConstructions.md).
+Their availability is governed by the input model's operations.
 
-Those categories can be constructed with a generic symmetric bilinear form or with a custom bilinear form and over arbitrary fields.
+## Choosing a model
 
-```@docs
-tambara_yamagami
-```
+Use concrete vector spaces or representations when the underlying linear
+algebra is the natural input. Use `SixJCategory` when fusion and associator
+data are supplied, or after extracting them from a supported concrete model.
 
-Tambara-Yamagami categories are implemented as an instance of `SixJCategory` and hence all functionality follows from there.
-
-## Ising Category
-
-The Ising fusion category is a special example of a Tambara-Yamagami category with ``A = \mathbb Z_2``.  
-
-```@docs
-ising_category()
-ising_category(::Ring)
-```
-
-# The Haagerup Subfactor
-
-The fusion categories stemming from the Haagerup subfactor are a well known and important example of a fusion category. Details can be found in 
-[wolf2021microscopic](@cite).
-
-In the Morita equivalence class of the Haagerup subfactor lie three categories. We call them ``\mathcal H_1,\mathcal H_2`` and ``\mathcal H_3``. The third has multiplicity 1 and is also known as the Haagerup-Izumi category for ``\mathbb Z_3``. It has six simple objects and teh same fusion rules as ``\mathcal H_2``:
-
-```math
-\begin{array}{c||c|c|c|c|c|c}
-        & \mathbb 1 & \alpha & \alpha^\ast & \rho & {}_{\alpha}\rho & {}_{\alpha^\ast}\rho \\ \hline \hline
-        \mathbb 1 & \mathbb 1 & \alpha & \alpha^\ast & \rho & {}_{\alpha}\rho & {}_{\alpha^\ast}\rho \\ \hline
-        \alpha & \alpha & \alpha^\ast & \mathbb 1 & {}_\alpha\rho & {}_{\alpha^\ast}\rho & \rho \\ \hline
-        \alpha^\ast & \alpha^\ast & \mathbb 1 & \alpha & {}_{\alpha^\ast}\rho & \rho & {}{\alpha}\rho \\ \hline
-        \rho & \rho & {}_{\alpha^\ast}\rho & {}_\alpha\rho & \mathbb 1 \oplus \rho \oplus {}_\alpha\rho \oplus {}_{\alpha^\ast}\rho & \alpha \oplus \rho \oplus {}_\alpha\rho \oplus {}_{\alpha^\ast}\rho & \alpha^\ast \oplus \rho \oplus {}_\alpha\rho \oplus {}_{\alpha^\ast}\rho \\ \hline 
-        {}_\alpha\rho & {}_\alpha\rho & {}_{\alpha^\ast}\rho & \rho & \alpha \oplus \rho \oplus {}_\alpha\rho \oplus {}_{\alpha^\ast}\rho & \mathbb 1 \oplus \rho \oplus {}_\alpha\rho \oplus {}_{\alpha^\ast}\rho & \alpha^\ast  \oplus \rho \oplus {}_\alpha\rho \oplus {}_{\alpha^\ast}\rho \\ \hline
-        {}_{\alpha^\ast}\rho & {}_{\alpha^\ast}\rho & \rho & {}_\alpha\rho & \alpha^\ast \oplus \rho \oplus {}_\alpha\rho \oplus {}_{\alpha^\ast}\rho & \alpha \oplus \rho \oplus {}_\alpha\rho \oplus {}_{\alpha^\ast}\rho & \mathbb 1 \oplus  \rho \oplus {}_\alpha\rho \oplus {}_{\alpha^\ast}\rho 
-    \end{array}
-```
-
-All three can be accessed via
-
-```@docs
-haagerup_H1
-haagerup_H2
-haagerup_H3
-```
-
-# Fusion Categories From Truncated Hecke Categories
-
-TODO: Explanation
-
-```@docs
-I2
-I2subcategory
-```
-
-# Various Other Categories Given by ``6J``-Symbols
-
-Here are some more examples to play around. 
-
-## Categorifications by Vercleyen and Singerland
-
-In [vercleyen2023low](@cite) they found a huge number of fusion rings and some explicit categorifications that are neither Tambara-Yamagami nor Haagerup-Izumi categories. 
-
-### FR``{}_2^{82}``
-
-They provide 97 different (but maybe equivalent) associators one can access.
-
-```@docs
-cat_fr_8122
-```
-
-### FR``{}_3^{94}``
-
-We have a singel associator for this ring.
-
-```@docs
-cat_fr_9143
-```
+The individual entries describe coefficient fields, labels, parameters, and
+available operations.

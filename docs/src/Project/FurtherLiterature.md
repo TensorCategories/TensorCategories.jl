@@ -2,10 +2,12 @@
 
 ## Mathematical Physics
 
-1. Wen, R., & Schafer-Nameki, S. (2026). Categorical Time-Reversal Symmetries. [arXiv:2603.28720](https://arxiv.org/abs/2603.28720) \[cond-mat.str-el\]
+1. *Categorical Time-Reversal Symmetries* [wen2026categorical](@cite)
 
 ## Arithmetic
 
-1. Sanford, S. (2025). Fusion categories over non-algebraically closed fields. Journal of Algebra, 663, 316–351. <https://doi.org/10.1016/j.jalgebra.2024.09.010>
+1. *Fusion Categories over Non-Algebraically Closed Fields*
+   [sanford2025fusion](@cite)
 
-1. Plavnik, J., Sanford, S., & Sconce, D. (2025). Tambara–Yamagami categories over the reals: The nonsplit case. Journal of the London Mathematical Society, 112(6). <https://doi.org/10.1112/jlms.70355>
+1. *Tambara–Yamagami Categories over the Reals: The Nonsplit Case*
+   [plavnik2025tambara](@cite)

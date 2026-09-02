@@ -1,135 +1,76 @@
-```@meta 
-DocTestSetup = quote 
-    using TensorCategories, Oscar
-end
+# [Vector spaces and graded vector spaces](@id graded-spaces)
+
+For `vector_spaces(K)`, objects carry bases and morphisms are row-coordinate
+matrices. `VectorSpaceObject(C,n)` constructs an `n`-dimensional object.
+
+```@example vectors
+using TensorCategories, Oscar
+V = vector_spaces(QQ)
+X = VectorSpaceObject(V,2)
+@assert int_dim(X ⊗ X) == 4
+@assert int_dim(Hom(X,X)) == 4
+@assert int_dim(Hom(zero(V),X)) == 0
+int_dim(X)
 ```
 
+`int_dim` is an integer dimension; `dim` is a scalar in the base field. These
+differ in positive characteristic, where an integer dimension can reduce to zero.
 
-# Vector Space Categories
+## Finite group gradings
 
-Vector spaces in TensorCategories are of the abstract type
+`graded_vector_spaces(K,G)` is the category of finite-dimensional $G$-graded
+vector spaces. Its simple objects are one-dimensional spaces in degrees
+$g\in G$. Tensor products multiply degrees in the order $gh$.
 
-```julia
-abstract type VectorSpaceObject <: Object end
+```@example vectors
+G = cyclic_group(3)
+g = first(gens(G))
+C = graded_vector_spaces(QQ,G)
+X = C[one(G),g]
+@assert C[g] ⊗ C[g] == C[g*g]
+@assert int_dim(X) == 2
+@assert int_dim(Hom(C[g],C[one(G)])) == 0
+decompose(X)
 ```
 
-All objects with vector space structure like hom-spaces are and should be implemented as a
-subtype of this type. They always need the following fields:
+For this category, `C[g,h]` specifies the degrees of two basis vectors.
+It is not a vector of simple multiplicities.
 
-```julia
-basis::Vector
-parent::Category
+## Cocycle twists
+
+`graded_vector_spaces(K,G,omega)` accepts a `Cocycle`. The associator on homogeneous
+degrees $g,h,l$ is multiplied by $\omega(g,h,l)$, with the usual map from left to
+right bracketing. The cocycle must be normalized and take invertible values.
+The untwisted constructor supplies the trivial cocycle.
+
+For a cyclic group of order $n$, `cyclic_group_3cocycle(G,K,xi)` uses the group
+element returned by `G[1]` and the formula
+```math
+\omega(g^i,g^j,g^l)=\xi^{i\lfloor(j+l)/n\rfloor}
+```
+for exponents between $0$ and $n-1$. Supply an $n$th root of unity $\xi$ in
+$K$, and ensure that `G[1]` generates the cyclic group. This fixes both the generator and cocycle
+direction; the constructor does not check the cocycle hypotheses.
+
+```@example twist
+using TensorCategories, Oscar
+G = cyclic_group(2)
+g = G[1]
+omega = cyclic_group_3cocycle(G,QQ,QQ(-1))
+C = graded_vector_spaces(QQ,G,omega)
+@assert omega(g,g,g) == -1
+@assert matrix(associator(C[g],C[g],C[g])) == matrix(QQ,1,1,[-1])
+@assert pentagon_axiom(C)
+matrix(associator(C[g],C[g],C[g]))
+show(stdout, MIME"text/plain"(), matrix(associator(C[g],C[g],C[g]))); println() # hide
 ```
 
-## Finite Dimensional VectorSpaces
+Braiding is additional data. A group grading alone does not give a braiding for
+a nonabelian group. For an abelian group the untwisted category admits the
+ordinary symmetric flip; a nontrivial associator can require different data.
+Braiding for a stored nontrivial cocycle is not implemented. In this case,
+constructing the monoidal category does not by itself provide braided data.
 
-The simplest example to provide are the finite dimensional vector spaces over a field.
-This category has type
-
-```julia
-VectorSpaces <: TensorCategory
-```
-
-and can be constructed like so:
-
-```jldoctest
-F = GF(5,2)
-Vec = VectorSpaces(F)
-
-# output
-Category of finite dimensional VectorSpaces over Finite field of degree 2 and characteristic 5
-```
-
-Objects of this category are of the type
-
-```julia
-VSObject <: VectorSpaceObject
-```
-
-Every vector space object is defined by a basis and a base field provided by the
-parent category.
-
-```@docs
-VectorSpaceObject
-VectorSpaceObject(::VectorSpaces,::Int)
-```
-
-Morphisms in this Category are defined only by matrices of matching dimensions.
-They are typed as
-
-```julia
-VSMorphism <: Morphism
-```
-
-and constructed giving a domain, codomain and matrix element.
-
-```@docs; canonical = false
-morphism(::VectorSpaceObject, ::VectorSpaceObject, ::MatElem)
-```
-
-## Graded Vector Spaces
-
-Very similar we have the category of finite dimensional (twisted) ``G``-graded vector spaces for a finite group ``G``.
-We have the type
-
-```
-GradedVectorSpaces <: VectorSpaces
-```
-and they are constructed in straightforward manner
-
-```jldoctest; output = false
-G = symmetric_group(6)
-VecG = graded_vector_spaces(G)
-
-# output
-Category of G-graded vector spaces over Rational field where G is Symmetric group of degree 6
-```
-
-To add a non-trivial associator (twist) there is another constructor. 
-
-```@docs
-twisted_graded_vector_spaces
-```
-
-Graded vector spaces decompose into direct sums of vector spaces for each element in
-``G``.
-
-```julia
-GVSObject <: VectorSpaceObject
-```
-
-```jldoctest; output = false
-G = symmetric_group(5)
-g,s = gens(G)
-V1 = VectorSpaceObject(QQ,5)
-V2 = VectorSpaceObject(QQ, [:v, :w])
-W = VectorSpaceObject(g => V1, s => V2, g*s => V1⊗V2)
-
-# output
-Graded vector space of dimension 17 with grading
-PermGroupElem[(1,2,3,4,5), (1,2,3,4,5), (1,2,3,4,5), (1,2,3,4,5), (1,2,3,4,5), (1,2), (1,2), (2,3,4,5), (2,3,4,5), (2,3,4,5), (2,3,4,5), (2,3,4,5), (2,3,4,5), (2,3,4,5), (2,3,4,5), (2,3,4,5), (2,3,4,5)]
-```
-
-Morphisms are implemented analogously by pairs of group elements and vector space objects.
-
-```julia
-GVSMorphism <: Morphism
-```
-
-The constructor is given by 
-
-```@docs
-morphism(::GVSObject, ::GVSObject,::MatElem)
-```
-
-
-## Functionality
-
-(Graded) vector spaces form a fusion category. Thus the methods for
-direct sums, tensor products, dual, one and zero object are all implemented.
-
-```@autodocs
-Modules = [TensorCategories]
-Pages = ["VectorSpaces.jl"]
-Order = [:function]
-```
+The mathematical construction is described in [EGNO](@cite), §2.3.
+The [implementation discussion](@ref concrete-models) explains the stored basis,
+degree order, and restrictions on morphism matrices.

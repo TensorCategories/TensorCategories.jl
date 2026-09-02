@@ -1,51 +1,60 @@
-# Interface for Abelian Categories
+# Direct sums, kernels, and decompositions
 
-Abelian categories are all over the place and very important.
-Thus we provide an Interface for (pre)additive and abelian categories. First recall the definitions:
+[EGNO](@citet), Chapter 1, is the mathematical reference. Here we specify
+the returned objects and maps.
 
-A __preadditive category__ is a category $\mathcal C$ such that all Hom-spaces are abelian groups and composition is bilinear. As a consequence all finite products are biproducts, also called direct sums. 
-
-Then $\mathcal C$ is called __additive__ if it is preadditive and all finite products exist.
-
-## Additivity
-
-To implement the preadditive structure you need the following methods
-
-- `direct sum(X::YourObject...)::Tuple{YourObject, Vector{YourMorphism}, Yector{YourMorphism}` returning the direct sum object, the inclusions and projections. You might only implement the binary operation while the package will compile a vector version. This might come with performance issues.
-- `+(f::YourMorphism, g::YourMorphism)::YourMorphism` providing the addition on morphisms.
-- `zero_morphism(X::YourObject, Y::YourObject)::YourMorphism`
-
-To complete additivity there has to be a zero object.
-
-- `zero(C::YourCategory)::YourObject`
-  
-
-## Abelian Categories
-
-A category is called __abelian__ if 
-
-- it is  additive,
-- every morphism has a kernel and cokernel,
-- every monomorphism and epimorphism is normal.
-  
-We need the following additional methods:
-
-- `kernel(f::YourMorphism)::Tuple{YourObject, YourMorphism}` providing the kernel tuple $(k,\phi)$ for $f \colon X \to Y$ where $\phi \colon k \hookrightarrow X$ is the embedding.
-- `cokernel(f::YourMorphism)::Tuple{YourObject, YourMorphism}` providing the cokernel tuple $(c,\psi)$ for $f \colon X \to Y$ where $\psi \colon Y \twoheadrightarrow c$ is the projection.
-
-## Semisimple Categories
-
-An abelian category is called __semisimple__ if every object decomposes uniquely into a direct sum of simple objects. It might be useful to have the method
-
-- `simples(C::YourCategory)::Vector{YourObject}`
-
-
-## Categories with fibre functor
-
-Whenever a category ``\mathcal C`` has a fibre functor, i.e. an exact faithful functor ``\mathcal C \to \mathrm{Vec}_k``, we can use matrix calculus to compute technical things we often need to implement certain constructions. Implement an existing fibre functor by providing the a method
+## Direct sums
 
 ```julia
-matrix(f::MyMorphism)::MatElem
+D, i, p = direct_sum(X, Y)
 ```
 
+The entries of $i$ are inclusions into $D$; those of $p$ are projections.
+They satisfy $p_r\circ i_s=\delta_{r,s}$ and
+$\sum_r i_r\circ p_r=\operatorname{id}_D$.
+`X ⊕ Y` returns only the object. `zero(C)` is the zero object; `one(C)` is the
+tensor unit.
 
+Generic methods extend binary direct sums to larger families; specialized
+methods can avoid repeated construction and composition of structure maps.
+An empty family needs a specified category.
+
+## Kernels and cokernels
+
+For $f:X\to Y$:
+
+| Call | Result | Equation |
+|:---|:---|:---|
+| `kernel(f)` | $(K,i)$ with $i:K\to X$ | $f\circ i=0$ |
+| `cokernel(f)` | $(Q,p)$ with $p:Y\to Q$ | $p\circ f=0$ |
+| `image(f)` | $(I,j)$ with $j:I\to Y$ | Image inclusion |
+
+The generic image is the kernel of the cokernel. Universal properties, not just
+the zero-composite equations, belong to the contract. A matrix nullspace also
+needs the category's additional structure.
+
+```@example kernels
+using TensorCategories, Oscar
+V = vector_spaces(QQ)
+X = VectorSpaceObject(V, 2)
+f = morphism(X, X, matrix(QQ, [1 0; 0 0]))
+K, i = kernel(f)
+Q, p = cokernel(f)
+@assert int_dim(K) == int_dim(Q) == 1
+@assert is_zero(f ∘ i) && is_zero(p ∘ f)
+(int_dim(K), int_dim(Q))
+```
+
+## Decomposition
+
+For semisimple objects, `decompose(X)` returns pairs `(S,m)` of simple summands
+and multiplicities. `simples(C)` enumerates simples when supported by the
+backend over the current field.
+
+Outside this setting, distinguish direct-sum decompositions into indecomposables
+from `composition_factors(X)`. Composition factors do not assert that the
+corresponding short exact sequences split; an injective map need not have a
+left inverse.
+
+In a nonsemisimple category an object with division endomorphism algebra need
+not be simple: the converse of Schur's lemma fails in this generality.

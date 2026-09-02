@@ -1,10 +1,17 @@
 # Citations
 
+## TensorCategories.jl
+
+The software framework, its center and module-category algorithms, and the
+principal computed examples are developed in *Algorithmic Aspects of Tensor
+Categories* [maeurer2026thesis](@cite).
+
 ## Papers
 
-1. Blakeney, M., Corcoran, L., & de Leeuw, M. (2026). Constrained integrability and anyonic chains. [arXiv:2605.28946](https://arxiv.org/abs/2605.28946) \[hep-th\]
+1. *Constrained Integrability and Anyonic Chains*
+   [blakeney2026constrained](@cite)
 
-1. Araújo, M., Guu, J.-C., & Hudson, S. (2025). Skein Construction of Balanced Tensor Products. arXiv. [arXiv:2501.05747](https://arxiv.org/abs/2501.05747) \[math-ph\]
+1. *Skein Construction of Balanced Tensor Products* [araujo2025skein](@cite)
 
 ## Further mentioning
 

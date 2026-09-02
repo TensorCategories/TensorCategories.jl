@@ -1,85 +1,55 @@
+# Tensor products and duality
 
-# Monoidal Categories
-
-A monoidal category is a quintuplet ``(\mathcal C, \otimes, \mathbb 1, a, \iota)`` where 
-
-- ``\mathcal C`` is a category
-- ``\otimes\colon \mathcal C \times \mathcal C \to \mathcal C``is a
-  bifunctor
-- ``a_{X,Y,Z} \colon (X \otimes Y) \otimes Z \to X \otimes (Y \otimes Z)`` is a natural transformation
-- ``\iota \colon \mathbb 1 \otimes \mathbb 1 \to \mathbb 1`` is an isomorphism
-
-such that 
-
-```@raw html
-<img src="https://i.upmath.me/svg/%5Cbegin%7Btikzcd%7D%0A%09%26%20%7B((W%20%5Cotimes%20X)%20%5Cotimes%20Y)%5Cotimes%20Z%7D%20%5C%5C%0A%09%7B(W%20%5Cotimes%20(X%20%5Cotimes%20Y))%20%5Cotimes%20Z%7D%20%26%26%20%7B(W%20%5Cotimes%20X)%20%5Cotimes%20(Y%5Cotimes%20Z)%7D%20%5C%5C%0A%09%7BW%20%5Cotimes%20((X%5Cotimes%20Y)%20%5Cotimes%20Z)%7D%20%26%26%20%7BW%20%5Cotimes%20(X%20%5Cotimes%20(Y%5Cotimes%20Z))%7D%0A%09%5Carrow%5B%22%7Ba_%7BW%2CX%2CY%7D%20%5Cotimes%20%5Cmathrm%7Bid%7D_Z%7D%22'%7Bpos%3D1%7D%2C%20shorten%20%3C%3D4pt%2C%20from%3D1-2%2C%20to%3D2-1%5D%0A%09%5Carrow%5B%22%7Ba_%7BW%2CX%5Cotimes%20Y%2CZ%7D%7D%22'%2C%20shift%20right%3D5%2C%20draw%3Dnone%2C%20from%3D2-1%2C%20to%3D3-1%5D%0A%09%5Carrow%5Bfrom%3D2-1%2C%20to%3D3-1%5D%0A%09%5Carrow%5B%22%7B%5Cmathrm%7Bid%7D%5Cotimes%20a_%7BX%2CY%2CZ%7D%7D%22'%2C%20from%3D3-1%2C%20to%3D3-3%5D%0A%09%5Carrow%5B%22%7Ba_%7BW%5Cotimes%20X%2C%20Y%2CZ%7D%7D%22%7Bpos%3D0.8%7D%2C%20from%3D1-2%2C%20to%3D2-3%5D%0A%09%5Carrow%5B%22%7Ba_%7BW%2CX%2CY%5Cotimes%20Z%7D%7D%22%2C%20shift%20left%3D5%2C%20draw%3Dnone%2C%20from%3D2-3%2C%20to%3D3-3%5D%0A%09%5Carrow%5Bfrom%3D2-3%2C%20to%3D3-3%5D%0A%5Cend%7Btikzcd%7D" alt="\begin{tikzcd}
-	&amp; {((W \otimes X) \otimes Y)\otimes Z} \\
-	{(W \otimes (X \otimes Y)) \otimes Z} &amp;&amp; {(W \otimes X) \otimes (Y\otimes Z)} \\
-	{W \otimes ((X\otimes Y) \otimes Z)} &amp;&amp; {W \otimes (X \otimes (Y\otimes Z))}
-	\arrow[&quot;{a_{W,X,Y} \otimes \mathrm{id}_Z}&quot;'{pos=1}, shorten &lt;=4pt, from=1-2, to=2-1]
-	\arrow[&quot;{a_{W,X\otimes Y,Z}}&quot;', shift right=5, draw=none, from=2-1, to=3-1]
-	\arrow[from=2-1, to=3-1]
-	\arrow[&quot;{\mathrm{id}\otimes a_{X,Y,Z}}&quot;', from=3-1, to=3-3]
-	\arrow[&quot;{a_{W\otimes X, Y,Z}}&quot;{pos=0.8}, from=1-2, to=2-3]
-	\arrow[&quot;{a_{W,X,Y\otimes Z}}&quot;, shift left=5, draw=none, from=2-3, to=3-3]
-	\arrow[from=2-3, to=3-3]
-\end{tikzcd}" />
-```
-
-
-commutes for all objects ``W,X,Y,Z`` in ``\mathcal C`` and
+We use the directions in [EGNO](@citet), Chapters 2 and 4.
+Tensor products act on objects and morphisms; `one(C)` is the unit.
 
 ```math
-\begin{align*}
-	L_{\mathbb 1} \colon & X \to \mathbb 1 \otimes X \\
-	R_{\mathbb 1} \colon & X \to X \otimes \mathbb 1
-\end{align*}
+a_{X,Y,Z}:(X\otimes Y)\otimes Z\longrightarrow X\otimes(Y\otimes Z).
 ```
 
-are autoequivalences.
+`associator(X,Y,Z)` returns this map; `inv_associator` returns its inverse.
+Write parentheses explicitly. A skeletal category need not have identity
+associators even when these endpoint objects are equal.
 
-## Conventions and Restrictions
+## Units and coherence
 
-At the current state all monoidal categories are assumed to satisfy ``X \otimes \mathbb 1 \cong X \cong \mathbb 1 \otimes X`` and ``\iota = \mathrm{id}_{\mathbb 1}``.
+The supplied tensor-category algorithms use normalized units: tensoring with
+the unit is identified with the original object, with identity unit constraints.
+`SixJCategory` also normalizes associators with a unit input to identities.
+`set_associator!(...; check=true)` checks supplied unit blocks, not the full
+pentagon.
 
-But building non-strict monoidal categories is explicitly encouraged, as this support is a strength of our Package. 
+Use `pentagon_axiom(C)` for associator coherence in supported finite models,
+and `hexagon_axiom(C)` for a supplied braiding. Randomized checks sample
+instances; they are not exhaustive checks.
 
-## Monoidal Categories
+## Duality
 
-Following the definition we need the following methods.
-
-- `tensor_product(X::YourObject...)::YourObject` returning the monoidal product. You can access your method by invoking the infix operate `⊗`.
-- `tensor_product(f::YourMorphism...)::YourMorphism` returning the the monoidal product of morphisms. You can access your method by invoking the infix operate `⊗`.
-- `one(C::YourCategory)::YourObject` returning the monoidal unit.
-- `associator(X::YourObject, Y::YourObject, Z::YourObject)`.
-
-## Rigidity
-
-Whenever there are objects which admit duals it is feasible to acces them.
-
-- `left_dual(X::YourObject)::YourObject` return the left dual ``X^\ast``.
-- `right_dual(X::YourObject)::YourObject` return the right dual ``{}^\ast X``.
-- `ev(X::YourObject)::YourMorphism` return the evaluation morphism ``\mathrm{ev}_X\colon X^\ast \otimes X \to \mathbb 1``.
-- `coev(X::YourObject)::YourMorphism` return the coevaluation morphism ``\mathrm{coev}_X\colon \mathbb 1 \to X\otimes X^\ast``. 
-
-This allows to generically compute 
-
-```@docs 
-left_dual(::Morphism)
+`dual(X)` denotes the left dual $X^*$, with
+```math
+\operatorname{ev}_X:X^*\otimes X\longrightarrow\mathbb1,\qquad
+\operatorname{coev}_X:\mathbb1\longrightarrow X\otimes X^*.
+```
+One triangle equation in code is
+```julia
+(id(X) ⊗ ev(X)) ∘ associator(X, dual(X), X) ∘
+    (coev(X) ⊗ id(X)) == id(X)
 ```
 
-Note that `dual` will always call `left_dual`.
+The dual object alone does not determine these maps. Generic semisimple
+fallbacks have splitting assumptions; concrete representations supply dualities
+directly.
 
-## Checks
+## Pivotal and braided structures
 
-To verify for oneself the pentagon and hexagon axioms can be checked.
+`pivotal(X)` represents a map $X\to X^{**}$. These maps and the dualities determine
+pivotal traces. Equality of left and right dimensions alone does not check
+pivotal monoidality. In supported models, `is_pivotal(C; check=true)` and
+`is_spherical(C; check=true)` check the specified structures.
 
-```@docs
-pentagon_axiom
-hexagon_axiom
-```
-
-
-
-
+`braiding(X,Y)` represents a map $X\otimes Y\to Y\otimes X$. The twist convention is
+$\theta_X=u_X^{-1}j_X$, where $j$ is pivotal and $u$ is the Drinfeld morphism
+[EGNO](@cite), §8.10. `smatrix(C)` is the **unnormalized** trace of double braiding.
+`normalized_smatrix(C)` is separate and involves a square-root choice.
+The stored coefficients are described under [Structural data](@ref symbol-data).
 

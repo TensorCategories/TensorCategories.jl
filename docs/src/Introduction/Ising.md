@@ -1,129 +1,105 @@
+# [The Ising center over two fields](@id ising-center)
 
-## Example: Implementing the Ising fusion category
+We continue the [Ising example](Introduction.md), now paying attention to the
+field of definition. The expected simple objects and splitting phenomenon are
+described in [maurer2024computing](@cite), §6.1, and
+[maeurer2026thesis](@cite), Theorem 2.5.6 and Appendix B.1.
 
-Users are completely free in how exactly they want to model a category in TensorCategories.jl. The basic idea is that one needs to define functions for all relevant data like direct sums and tensor products of objects and morphisms, etc. Here the multiple dispatch paradigm of Julia is the key. The general framework is described in detail in the chapter [Interface](@ref interface-philosophy). For encoding a fusion category via $F$-symbols (the associators in a choice of basis) we provide an own convenient structure called `SixJCategory`. Of course, the relevant data needs to be known explicitly (in some form), we cannot do magic.
+## Over $\mathbb Q(\sqrt2)$
 
-Let us demonstrate this in an explicit example. Let $\mathcal{C}'$ be the famous Ising fusion category. This is a fusion category over the complex numbers with three simple objects denoted by $\mathbb 1$, $\chi$, and $X$. The multiplication is given by $\chi \otimes \chi = 1$, $\chi \otimes X = X \otimes \chi = X$ and $X \otimes X = \mathbb 1 \oplus \chi$, The Ising category is a special case of Tambara–Yamagami fusion categories [TAMBARA1998692](@cite). The non-trivial associators of $\mathcal{C}'$ are given by
-
-```math
-\begin{aligned}
-    a_{\chi, X, \chi} &= (-1)\mathrm{id}_{X} \\
-    a_{X,\mathbb 1,X} &= \mathrm{id}_{\mathbb 1} \oplus (-1)\mathrm{id}_\chi \\
-    a_{X,\chi,X} &= (-1)\mathrm{id}_{\mathbb 1}\oplus \mathrm{id}_\chi \\
-    a_{X,X,X} &= \frac{1}{\sqrt{2}}\begin{pmatrix}1 & 1 \\ 1 & -1\end{pmatrix}\mathrm{id}_{2X} \;,
-\end{aligned}
+```@example isingcenter
+using TensorCategories, Oscar
+K, r2 = quadratic_field(2)
+C = ising_category(K,r2)
+Z = center(C)
+S = simples(Z)
+@assert length(S) == 5
+@assert sort(int_dim.(End.(S))) == [1,1,1,2,4]
+[(object(X), int_dim(End(X))) for X in S]
 ```
 
-see [TAMBARA1998692](@cite). It follows that $\mathcal{C}'$ can be defined over the number field $\mathbb{Q}(\sqrt{2})$, i.e., it has a $\mathbb{Q}(\sqrt{2})$-*rational form* $\mathcal{C}$. This is a fusion category over $\mathbb{Q}(\sqrt{2})$. More generally, this can be done over any field $K$ containing an element $a \in J$ with $a^2 = 2$. The following code shows how to implement the Ising fusion category in TensorCategories.jl in this generality.
+The five underlying objects are $\mathbb 1$, $\mathbb 1$,
+$\mathbb 1\oplus\chi$, $2\chi$, and $4X$. Their endomorphism algebras have
+dimensions $1,1,1,2,4$ over $K$.
+Thus two of the simple central objects are not absolutely simple.
 
-```julia
-function ising_category(K::Ring, a::RingElem)
-    C = six_j_category(K,["𝟙", "χ", "X"])
-    
-    # Multiplication table of the Grothendieck ring
-    M = zeros(Int,3,3,3)
-    M[1,1,:] = [1,0,0]
-    M[1,2,:] = [0,1,0]
-    M[1,3,:] = [0,0,1]
-    M[2,1,:] = [0,1,0]
-    M[2,2,:] = [1,0,0]
-    M[2,3,:] = [0,0,1]
-    M[3,1,:] = [0,0,1]
-    M[3,2,:] = [0,0,1]
-    M[3,3,:] = [1,1,0]
+Enumeration uses randomized algebra algorithms. Ordering, matrix bases, and
+individual coefficients can vary. Select an object by its mathematical
+property instead of relying on a fixed position:
 
-    set_tensor_product!(C,M)
-
-    # The associators
-    set_associator!(C,2,3,2, matrices(-id(C[3])))
-    set_associator!(C,3,2,3, matrices((id(C[1])) ⊕ (-id(C[2]))))
-    z = zero(matrix_space(K,0,0))
-    set_associator!(C,3,3,3, [z, z, inv(a)*matrix(K,[1 1; 1 -1])])
-
-    # Furher information
-    set_one!(C,[1,0,0])
-    set_spherical!(C, [K(1) for s in simples(C)])
-    set_name!(C, "Ising fusion category")
-    return C
-end
+```@example isingcenter
+T = only([T for T in S if int_dim(End(T)) == 2])
+@assert is_isomorphic(object(T), C[2] ⊕ C[2])[1]
+@assert is_central(T)
+@assert all(is_invertible, half_braiding(T))
+matrix(half_braiding(T,C[3]))
+show(stdout, MIME"text/plain"(), matrix(half_braiding(T,C[3]))); println() # hide
 ```
 
-Here, the function `matrices` gives a matrix representation of a morphism in a category according to the decomposition of the domain and codomain into simple objects. The function `id` gives the identity morphism on an object. This functionality is already internal to the special type `six_j_category`. We note that the Ising category (in this generality) and many other examples are already implemented in TensorCategories.jl.
+In this case the component on $X$ squares to minus the identity. Its eigenvalues
+require a square root of $-1$:
 
-You can now play around with this category. We can choose as $K$, for example, the algebraic closure of $\mathbb{Q}$, which is also available in OSCAR via `algebraic_closure(QQ)`. But we can also work over the number field $K = \mathbb{Q}(\sqrt{2})$, which is what we will do.
-
-```julia-repl
-julia> K,r2 = quadratic_field(2)
-(Real quadratic field defined by x^2 - 2, sqrt(2))
-
-julia> C = ising_category(K,r2)
-Ising fusion category
-
-julia> simples(C)
-3-element Vector{SixJObject}:
- 𝟙
- χ
- X
-
-# You can access the i-th simple object also by C[i]
-# Let's compute the Frobenius-Perron dimension of X
-julia> f = fpdim(C[3])
-{a2: 1.41421}
-
-julia> typeof(f)
-QQBarFieldElem
+```@example isingcenter
+h = half_braiding(T,C[3])
+@assert h ∘ h == -id(domain(h))
+@assert half_braiding(T,one(C)) == id(object(T))
+int_dim(End(T))
 ```
 
-## Example: Computing the center of the Ising fusion category
+The component is a matrix over $K$ even though its eigenvalues are not in $K$.
+A nonzero noninvertible endomorphism cannot already exist in the division
+algebra $\operatorname{End}(T)$. After scalar extension that algebra can acquire idempotents;
+their images split the extended object.
 
-Let $\mathcal{C}$ be the Ising fusion category over $\mathbb{Q}(\sqrt{2})$. It is known from general theory that the center $\mathcal{Z}(\mathcal{C})$ is a semisimple tensor category—more precisely, it is what we call a *weak* pre-modular category, see [maurer2024computing](@cite). The *weak* means that it may not split, and this is exactly what will happen here. Let's compute this.
+## Over $\mathbb Q(\zeta_{16})$
 
-```julia-repl
-julia> Z = center(C)
-Drinfeld center of Fusion Category with 3 simple objects
+Use a specified embedding of $K$ into the cyclotomic field, so the meaning of
+$\sqrt2$ is unambiguous:
 
-julia> S = simples(Z)
-5-element Vector{CenterObject}:
-Central object: 1
-Central object: 1
-Central object: 1 ⊕ 𝜒
-Central object: 2·𝜒
-Central object: 4·X
+```@example isingcenter
+L, z = cyclotomic_field(16)
+embedding = hom(K,L,z^2 + z^-2)
+CL = extension_of_scalars(C,L; embedding=embedding)
+ZL = center(CL)
+SL = simples(ZL)
+@assert length(SL) == 9
+@assert all(T -> int_dim(End(T)) == 1, SL)
+@assert is_split_semisimple(ZL)
+squared_dimensions = sort([QQ(dim(T)^2) for T in SL])
+@assert squared_dimensions == [1,1,1,1,2,2,2,2,4]
+@assert sum(squared_dimensions) == 16
+squared_dimensions
 ```
 
-We note that the `center` function at first only creates an empty structure for the center—the first real computational effort is in the `simples` function which computes the simple objects of the center. We have described the algorithm in our paper [maurer2024computing](@cite).
+The squared dimensions are four $1$s, four $2$s, and one $4$.
+Their sum is $16=\dim(\mathcal C)^2$. This is the familiar rank-nine center of a split
+Ising category. Over a field supporting a nondegenerate Ising braiding, the
+general equivalence
+$\mathcal Z(\mathcal C)\simeq\mathcal C\boxtimes\mathcal C^{\mathrm{rev}}$
+explains the nine simples [EGNO](@cite), §8.20.
+This argument concerns a braided realization after extension; it does not
+supply a braiding over the original field $K$.
 
-!!! note "Randomized computations"
-    We remark that the computation of the center involves randomized parts (the MeatAxe specifically), so e.g., the ordering of the simples, the form of the precise half-braidings, and thus the basis of endomorphism spaces we compute below may differ from the exact output given here.
+`split(Z)` offers automatic field search for supported cases, including this
+example. For number fields its current search uses minimal polynomials in
+simple endomorphism algebras; it does not handle arbitrary noncommutative
+division algebras. Here the explicit field $\mathbb Q(\zeta_{16})$ and
+embedding suffice.
 
-We can see that $\mathcal{Z}(\mathcal{C})$ has five non-isomorphic simple objects. Objects in the center are of the form $(Z,\gamma)$, where $Z \in \mathcal{C}$ is an object and $\gamma$ is a half-braiding for $Z$. We only display the underlying object $Z$ here and say that $(Z,\gamma)$ is a central object *over* $Z$. So, for example there is simple central object over $2 \chi = \chi \oplus \chi$. We can look at the explicit half-braiding:
+## From half-braidings to F- and R-symbols
 
-```julia-repl
-julia> half_braiding(Z[4])
-3-element Vector{TensorCategories.SixJMorphism}:
-
- Morphism with
-Domain: 2⋅χ
-Codomain: 2⋅χ
-Matrices: 0 by 0 empty matrix, [1 0; 0 1], 0 by 0 empty matrix
- Morphism with
-Domain: 2⋅𝟙
-Codomain: 2⋅𝟙
-Matrices: [-1 0; 0 -1], 0 by 0 empty matrix, 0 by 0 empty matrix
- Morphism with
-Domain: 2⋅X
-Codomain: 2⋅X
-Matrices: 0 by 0 empty matrix, 0 by 0 empty matrix, [0 -1//2; 2 0]
+```@example isingcenter
+D = six_j_category(ZL)
+@assert length(simples(D)) == 9
+@assert is_braided(D)
+F, R = F_symbols(D), R_symbols(D)
+(length(F), length(R))
 ```
 
-Now we address the non-split phenomenon: We show that two of the simple objects of $\mathcal{Z}(\mathcal{C})$ are not split over $\mathbb{Q}(\sqrt{2})$, and examine over which fields they will split. To do so we examine the endomorphism spaces. The central object lying over $2\cdot \chi$ will split if there is an endomorphism that is a zero-divisor, i.e. if there is a morphism with a non-trivial eigenvalue: this will yield a projector to a direct summand. Thus, we take a non-trivial endomorphism and consider the splitting field for its minimal polynomial.
+The F- and R-symbols use the decomposition bases chosen during
+skeletonization, with the [matrix conventions](@ref f-conventions) and
+[dictionary layout](@ref symbol-data) described earlier.
 
-```julia-repl
-julia> H = End(S[4]) 
-Vector space of dimension 2 over Real quadratic field defined by x^2 - 2.
-
-julia> minpoly.(basis(H)) # minimal polynomials of basis morphisms
-2-element Vector{AbstractAlgebra.Generic.Poly{nf_elem}}:
- x - 1
- x^2 + 1//4
-```
+Ordinary `SixJCategory` coordinates require split simples. Trying to extract
+such coordinates from the five-simple category over $K$ would discard its
+nontrivial division algebras; scalar extension must come first.
