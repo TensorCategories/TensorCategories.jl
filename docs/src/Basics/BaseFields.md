@@ -13,9 +13,9 @@ the `base_ring`, even when the mathematics requires a field. A method accepting
 
 The usual characteristic-zero theory of fusion categories works over an
 algebraically closed field $k$. In particular, the endomorphism algebra of every
-simple object is then $k$, so semisimple categories are split. EGNO adopts this
-setting for most of its treatment and discusses arbitrary fields separately in
-§4.16 [EGNO](@cite).
+simple object is then $k$, so semisimple categories are split.
+[EGNO](@citet) use this setting for most of their treatment and discuss
+arbitrary fields separately in §4.16.
 
 OSCAR can work exactly over the algebraic closure
 $\overline{\mathbb Q}$:
@@ -119,8 +119,8 @@ dimensions and twists when present, and unitarity properties can change.
 Different embeddings become restrictions of automorphisms after passing to a
 normal closure; the field $K$ itself need not be Galois. Thus Galois conjugation
 is more general than ordinary complex conjugation. Galois-conjugate data need
-not define equivalent complex fusion categories. EGNO uses this coefficientwise
-action in the proof of Proposition 9.6.5 [EGNO](@cite).
+not define equivalent complex fusion categories. [EGNO](@citet) use this
+coefficientwise action in the proof of Proposition 9.6.5.
 
 The standard rank-two example is the pair of Fibonacci and Yang–Lee
 realizations: they have the same fusion rule
