@@ -1,16 +1,58 @@
-# Linear Categories
+# Hom spaces and linear algebra
 
-Let ``k`` be any field. A category is called __``k``-linear__ whenever it is enriched over the category of ``k``-vector spaces, i.e. all Hom-spaces are ``k``-vector spaces and composition is ``k``-linear. We need the following method:
+TensorCategories.jl records linear enrichment and additive structure
+separately. Thus `is_linear(C)` says that the Hom spaces are $k$-modules and
+composition is $k$-bilinear, while `is_additive(C)` records finite biproducts
+and a zero object. When $k$ is a field, the Hom spaces are $k$-vector spaces.
+This differs slightly from the terminology of
+[EGNO; Definition 1.2.2](@citet), where a $k$-linear category is additive by
+definition. The package uses the same `base_ring(C)` interface over fields and
+more general coefficient rings, but algorithms that divide by scalars or use
+vector-space dimension require a field and finite-dimensional Hom spaces. This
+chapter describes that field-linear setting.
 
-- `*(λ, f::YourMorphism)::YourMorphism` returning the multiplication if a scalar λ.
+| Operation | Result |
+|:---|:---|
+| `Hom(X,Y)` | An `AbstractHomSpace` for maps $X\to Y$ |
+| `End(X)` | `Hom(X,X)` |
+| `basis(H)` | A vector of basis morphisms |
+| `int_dim(H)` | Dimension as a Julia integer |
+| `zero_morphism(X,Y)` | The zero map |
+| `a*f + b*g` | A linear combination of parallel maps |
+| `express_in_basis(f,H)` | Coordinates in `basis(H)` |
+| `endomorphism_ring(X)` | An associative algebra representing `End(X)` |
 
-## Rational Forms
+The last operation includes multiplication. Dimension alone does not determine
+the algebra structure.
 
-In the literature most categories are defined over an algebraically closed field of characteristic 0 or even over ``\mathbb C``. This is technically possible to implement utilizing the implementation of algebraic numbers in [Nemo.jl](http://nemocas.github.io/Nemo.jl/dev/algebraic/).
+```@example homs
+using TensorCategories, Oscar
+V = vector_spaces(QQ)
+X, Y = VectorSpaceObject(V, 2), VectorSpaceObject(V, 3)
+H = Hom(X, Y)
+@assert int_dim(H) == 6
+B = basis(H)
+f = 2*B[1] - B[end]
+c = express_in_basis(f, H)
+@assert sum(c[i]*B[i] for i in eachindex(B)) == f
+c
+```
 
-In general it is very interesting to work with categories not defined over algebraically closed fields. Especially it might be of interest to implement a category that is usually defined over ``\mathbb C`` over a finite extension of ``\mathbb Q``. 
+A Hom basis is a choice, not an invariant. Coordinates of structural morphisms
+must therefore be compared in compatible bases. In the later
+[skeletal fusion model](@ref skeletal-fusion), this dependence becomes the
+gauge dependence of $F$- and $R$-symbols; their bases and matrix directions are
+fixed only after the model is introduced.
 
-Let ``\mathcal C`` be a ``K``-linear category and ``k \subset K`` a field extension. Then a category ``\overline{\mathcal C}`` is called a __rational form__ for ``\mathcal C`` if the karoubian envelope of ``\overline{\mathcal C} \otimes K`` is equivalent to ``\mathcal C``. We call the rational form __complete__ if already ``\overline{\mathcal C} \otimes K`` is equivalent to ``\mathcal C``.
+Over a non-splitting field, a simple object $S$ can have a division algebra
+$D=\operatorname{End}(S)$ larger than $k$. In a semisimple category,
+$\operatorname{Hom}(S,X)$ is a right $D$-module by precomposition, and the
+multiplicity of $S$ in $X$ is its dimension over $D$, not generally its
+dimension over $k$. See [Fusion categories and splitting](@ref
+tensor-conventions).
 
-Unfortunately the notion of a complete rational form violates the [principle of equivalence](https://ncatlab.org/nlab/show/principle+of+equivalence). For example the center construction does not preserve the completeness of the rational form. 
+Coordinates in each Hom space do not by themselves specify a functor on
+objects to vector spaces. The next page explains when morphisms also have a
+compatible global matrix realization.
 
+Continue with [Matrix coordinates](@ref matrix-realizations).

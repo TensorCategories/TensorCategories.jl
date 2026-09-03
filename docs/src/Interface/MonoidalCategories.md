@@ -1,85 +1,189 @@
+# Tensor products, associators, and duality
 
-# Monoidal Categories
+The monoidal interface uses the conventions of
+[EGNO; Chapters 2 and 4](@citet).
 
-A monoidal category is a quintuplet ``(\mathcal C, \otimes, \mathbb 1, a, \iota)`` where 
+## Tensor products and the unit
 
-- ``\mathcal C`` is a category
-- ``\otimes\colon \mathcal C \times \mathcal C \to \mathcal C``is a
-  bifunctor
-- ``a_{X,Y,Z} \colon (X \otimes Y) \otimes Z \to X \otimes (Y \otimes Z)`` is a natural transformation
-- ``\iota \colon \mathbb 1 \otimes \mathbb 1 \to \mathbb 1`` is an isomorphism
-
-such that 
-
-```@raw html
-<img src="https://i.upmath.me/svg/%5Cbegin%7Btikzcd%7D%0A%09%26%20%7B((W%20%5Cotimes%20X)%20%5Cotimes%20Y)%5Cotimes%20Z%7D%20%5C%5C%0A%09%7B(W%20%5Cotimes%20(X%20%5Cotimes%20Y))%20%5Cotimes%20Z%7D%20%26%26%20%7B(W%20%5Cotimes%20X)%20%5Cotimes%20(Y%5Cotimes%20Z)%7D%20%5C%5C%0A%09%7BW%20%5Cotimes%20((X%5Cotimes%20Y)%20%5Cotimes%20Z)%7D%20%26%26%20%7BW%20%5Cotimes%20(X%20%5Cotimes%20(Y%5Cotimes%20Z))%7D%0A%09%5Carrow%5B%22%7Ba_%7BW%2CX%2CY%7D%20%5Cotimes%20%5Cmathrm%7Bid%7D_Z%7D%22'%7Bpos%3D1%7D%2C%20shorten%20%3C%3D4pt%2C%20from%3D1-2%2C%20to%3D2-1%5D%0A%09%5Carrow%5B%22%7Ba_%7BW%2CX%5Cotimes%20Y%2CZ%7D%7D%22'%2C%20shift%20right%3D5%2C%20draw%3Dnone%2C%20from%3D2-1%2C%20to%3D3-1%5D%0A%09%5Carrow%5Bfrom%3D2-1%2C%20to%3D3-1%5D%0A%09%5Carrow%5B%22%7B%5Cmathrm%7Bid%7D%5Cotimes%20a_%7BX%2CY%2CZ%7D%7D%22'%2C%20from%3D3-1%2C%20to%3D3-3%5D%0A%09%5Carrow%5B%22%7Ba_%7BW%5Cotimes%20X%2C%20Y%2CZ%7D%7D%22%7Bpos%3D0.8%7D%2C%20from%3D1-2%2C%20to%3D2-3%5D%0A%09%5Carrow%5B%22%7Ba_%7BW%2CX%2CY%5Cotimes%20Z%7D%7D%22%2C%20shift%20left%3D5%2C%20draw%3Dnone%2C%20from%3D2-3%2C%20to%3D3-3%5D%0A%09%5Carrow%5Bfrom%3D2-3%2C%20to%3D3-3%5D%0A%5Cend%7Btikzcd%7D" alt="\begin{tikzcd}
-	&amp; {((W \otimes X) \otimes Y)\otimes Z} \\
-	{(W \otimes (X \otimes Y)) \otimes Z} &amp;&amp; {(W \otimes X) \otimes (Y\otimes Z)} \\
-	{W \otimes ((X\otimes Y) \otimes Z)} &amp;&amp; {W \otimes (X \otimes (Y\otimes Z))}
-	\arrow[&quot;{a_{W,X,Y} \otimes \mathrm{id}_Z}&quot;'{pos=1}, shorten &lt;=4pt, from=1-2, to=2-1]
-	\arrow[&quot;{a_{W,X\otimes Y,Z}}&quot;', shift right=5, draw=none, from=2-1, to=3-1]
-	\arrow[from=2-1, to=3-1]
-	\arrow[&quot;{\mathrm{id}\otimes a_{X,Y,Z}}&quot;', from=3-1, to=3-3]
-	\arrow[&quot;{a_{W\otimes X, Y,Z}}&quot;{pos=0.8}, from=1-2, to=2-3]
-	\arrow[&quot;{a_{W,X,Y\otimes Z}}&quot;, shift left=5, draw=none, from=2-3, to=3-3]
-	\arrow[from=2-3, to=3-3]
-\end{tikzcd}" />
-```
-
-
-commutes for all objects ``W,X,Y,Z`` in ``\mathcal C`` and
+The calls `tensor_product(X,Y)` and `X ⊗ Y` return $X\otimes Y$. Tensor product
+also acts on morphisms: for $f:X\to X'$ and $g:Y\to Y'$,
 
 ```math
-\begin{align*}
-	L_{\mathbb 1} \colon & X \to \mathbb 1 \otimes X \\
-	R_{\mathbb 1} \colon & X \to X \otimes \mathbb 1
-\end{align*}
+\label{eq:tensor-product-morphism}
+f\otimes g:X\otimes Y\longrightarrow X'\otimes Y'.
 ```
 
-are autoequivalences.
+It must satisfy the interchange law
 
-## Conventions and Restrictions
-
-At the current state all monoidal categories are assumed to satisfy ``X \otimes \mathbb 1 \cong X \cong \mathbb 1 \otimes X`` and ``\iota = \mathrm{id}_{\mathbb 1}``.
-
-But building non-strict monoidal categories is explicitly encouraged, as this support is a strength of our Package. 
-
-## Monoidal Categories
-
-Following the definition we need the following methods.
-
-- `tensor_product(X::YourObject...)::YourObject` returning the monoidal product. You can access your method by invoking the infix operate `⊗`.
-- `tensor_product(f::YourMorphism...)::YourMorphism` returning the the monoidal product of morphisms. You can access your method by invoking the infix operate `⊗`.
-- `one(C::YourCategory)::YourObject` returning the monoidal unit.
-- `associator(X::YourObject, Y::YourObject, Z::YourObject)`.
-
-## Rigidity
-
-Whenever there are objects which admit duals it is feasible to acces them.
-
-- `left_dual(X::YourObject)::YourObject` return the left dual ``X^\ast``.
-- `right_dual(X::YourObject)::YourObject` return the right dual ``{}^\ast X``.
-- `ev(X::YourObject)::YourMorphism` return the evaluation morphism ``\mathrm{ev}_X\colon X^\ast \otimes X \to \mathbb 1``.
-- `coev(X::YourObject)::YourMorphism` return the coevaluation morphism ``\mathrm{coev}_X\colon \mathbb 1 \to X\otimes X^\ast``. 
-
-This allows to generically compute 
-
-```@docs 
-left_dual(::Morphism)
+```math
+\label{eq:tensor-bifunctoriality}
+(f'\circ f)\otimes(g'\circ g)
+=(f'\otimes g')\circ(f\otimes g).
 ```
 
-Note that `dual` will always call `left_dual`.
+The call `one(C)` returns the tensor unit $\mathbb 1$. In a general monoidal
+category, natural isomorphisms
+$l_X:\mathbb 1\otimes X\to X$ and $r_X:X\otimes\mathbb 1\to X$ satisfy the
+triangle axiom together with the associator
+[EGNO; Definition 2.2.8, p. 25](@cite). TensorCategories.jl uses a unit-strict
+presentation: tensoring with $\mathbb 1$ returns the corresponding represented
+object, and the unit identifications are identities rather than separate maps
+in the public interface. The associator itself is not assumed to be trivial.
+This is the convention used by [maurer2024computing; §2, pp. 4--5](@citet).
 
-## Checks
+## Associators and coherence
 
-To verify for oneself the pentagon and hexagon axioms can be checked.
+The associator has direction
 
-```@docs
-pentagon_axiom
-hexagon_axiom
+```math
+\label{eq:monoidal-associator}
+a_{X,Y,Z}:(X\otimes Y)\otimes Z\longrightarrow X\otimes(Y\otimes Z).
 ```
 
+`associator(X,Y,Z)` returns this map, and `inv_associator(X,Y,Z)` returns its
+inverse. Write parentheses explicitly: even when the two bracketings are equal
+as represented objects, their associator need not be the identity.
 
+Skeletal $F$-symbol models impose the corresponding unit normalization on their
+associator blocks; see [Unit normalization](@ref unit-normalization).
 
+For a category argument, `pentagon_axiom(C)` enumerates `simples(C)` and checks
+every quadruple of simple objects. Over an exact coefficient field, this proves
+coherence on all objects in the supported finite semisimple additive models,
+where the structural maps extend from direct sums of simples. Over a numerical
+ball field the enumeration is still exhaustive, but a successful comparison
+has the [working-precision meaning](@ref numerical-fusion-categories) explained
+later. During a long computation,
+`randomized_pentagon_axiom(C,n)` instead samples $n$ simple-object quadruples;
+it is not an exhaustive substitute for the complete check.
 
+## Duality
 
+`dual(X)` and `left_dual(X)` denote the chosen left dual $X^*$, with evaluation
+and coevaluation
+
+```math
+\label{eq:right-duality}
+\operatorname{ev}_X:X^*\otimes X\longrightarrow\mathbb 1,
+\qquad
+\operatorname{coev}_X:\mathbb 1\longrightarrow X\otimes X^*.
+```
+
+One triangle identity is written in the package's composition convention as
+
+```julia
+(id(X) ⊗ ev(X)) ∘ associator(X, dual(X), X) ∘
+    (coev(X) ⊗ id(X)) == id(X)
+```
+
+The dual object alone does not determine these maps. A rigid category also has
+chosen right duality data
+
+```math
+\label{eq:left-duality}
+\widetilde{\operatorname{ev}}_X:
+X\otimes{}^*X\longrightarrow\mathbb 1,
+\qquad
+\widetilde{\operatorname{coev}}_X:
+\mathbb 1\longrightarrow{}^*X\otimes X.
+```
+
+The methods `right_dual(X)`, `right_ev(X)`, and `right_coev(X)` expose this
+data. In the generic implementation they transport the left duality through a
+supplied pivotal isomorphism; a category without such a pivotal structure must
+provide category-specific methods. The generic `ev` and `coev` reconstruction
+is available only for a [multifusion category](@ref tensor-conventions), hence
+in the split finite semisimple setting. Concrete representations can supply
+duality maps directly without using that fallback.
+
+## [Pivotal and spherical structures](@id pivotal-braided)
+
+A pivotal structure is a monoidal natural isomorphism
+$j_X:X\to X^{**}$. The method `pivotal(X)` returns its component. Together with
+the chosen duality, it determines left and right pivotal traces. Following
+[EGNO; Definition 4.7.14 and Theorem 4.7.15, p. 75](@citet), the pivotal
+structure is spherical when $\dim(X)=\dim(X^*)$ for every object $X$; this
+condition implies equality of the left and right pivotal traces of every
+endomorphism. In supported models,
+`is_pivotal(C; check=true)` and `is_spherical(C; check=true)` check the supplied
+structure; equality of dimensions alone does not establish pivotal coherence.
+The generic pivotal check verifies invertibility and tensor compatibility on
+the chosen simple representatives. It assumes that the supplied components are
+natural; in particular, it does not test naturality against non-scalar
+endomorphisms of a non-split simple.
+The generic checked spherical predicate is implemented for split semisimple
+categories: it first verifies pivotal coherence and then compares left and right
+dimensions on the chosen simple representatives. A non-split model needs a
+category-specific method; the generic predicate otherwise returns `false` even
+when a spherical structure exists mathematically.
+
+For the later [skeletal fusion model](@ref skeletal-fusion), implemented by
+`SixJCategory`, `pivotal_structures(C)` solves for pivotal components when $C$
+is multifusion. The current solver supports only zero-dimensional solution
+schemes over coefficient fields handled by its polynomial solver; it raises an
+error when the solution scheme is positive-dimensional. This routine searches
+for structures, whereas `is_pivotal` checks one already stored or supplied.
+
+## Traces and dimensions
+
+For an endomorphism $f:X\to X$, `left_trace(f)` and `right_trace(f)` use the
+chosen duality and pivotal structure. The abbreviation `tr(f)` means the left
+trace. These traces are endomorphisms of the tensor unit. The scalar returned
+by `dim(X)` therefore requires the trace to be a multiple of
+$\operatorname{id}_{\mathbb 1}$ over the coefficient field. This is automatic
+when the unit is scalar, as it is in a fusion category; a weak fusion model
+with non-scalar unit needs a category-specific scalar convention.
+
+With that hypothesis, the package conventions are
+
+```math
+\label{eq:squared-norm}
+\dim(X)=\dim_L(X),
+\qquad
+|X|^2=\dim(X)\dim(X^*).
+```
+
+The corresponding calls are `dim(X)` and
+`TensorCategories.squared_norm(X)`. The package makes the latter expression
+available for any object for which the two dimensions can be computed. In the
+standard terminology, the squared norm is defined for a simple object and is
+independent of the chosen isomorphism to its double dual; for a simple $X$ in a
+pivotal category it agrees with the product displayed above
+[EGNO; Definition 7.21.2, p. 179](@cite). In a spherical category
+$|X|^2=\dim(X)^2$.
+
+For a [multifusion category](@ref tensor-conventions) with simple
+representatives $S_i$, the generic category dimension is
+
+```math
+\label{eq:fusion-category-dimension}
+\dim(\mathcal C)=\sum_i |S_i|^2,
+```
+
+which is returned by `dim(C)` when the requisite pivotal dimensions are
+available. This agrees with the pivotal-independent categorical dimension of
+[EGNO; Definition 7.21.3, p. 179](@cite). It is the quantity used later to
+normalize the $S$-matrix and is distinct from the Frobenius--Perron dimension,
+which depends only on the [Grothendieck ring](@ref grothendieck-rings).
+
+## Braiding
+
+`braiding(X,Y)` returns
+
+```math
+\label{eq:braiding}
+c_{X,Y}:X\otimes Y\longrightarrow Y\otimes X.
+```
+
+A braiding must satisfy both hexagon equations with the chosen associator. For a
+category argument, `hexagon_axiom(C)` checks all triples in `simples(C)`; as for
+the pentagon, this is an all-object check in the supported finite semisimple
+additive models. Given a pivotal structure, the package's twist convention is
+$\theta_X=u_X^{-1}j_X$, where $j_X:X\to X^{**}$ is the pivotal isomorphism
+and $u_X:X\to X^{**}$ is the Drinfeld isomorphism
+[EGNO; §8.10](@cite). Braiding and pivotal structure alone do not yet supply
+the finiteness and semisimplicity hypotheses needed for a finite $S$-matrix.
+Premodular and modular fusion categories, including the package's $S$-matrix
+normalization, are defined on the next page.
+
+Continue with [Fusion categories and splitting](@ref tensor-conventions).

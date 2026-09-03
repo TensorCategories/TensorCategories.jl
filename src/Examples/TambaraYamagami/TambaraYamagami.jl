@@ -8,7 +8,9 @@
 
     tambara_yamagami(A::Group)
 
-Construct ``TY(A,τ,χ)`` over ℚ̅ where ``τ = √|A|`` and ``χ`` is a generic non-degenerate bilinear form.  
+Construct Tambara–Yamagami data over a number field containing the roots of
+unity required by ``A`` and a square root of its order. A bicharacter and a
+square root are chosen; this does not enumerate all such categories.
 """
 function tambara_yamagami(A::Group) 
     m = Int(exponent(A))
@@ -28,9 +30,11 @@ end
 
 """ 
 
-    tambara_yamagami(K::ring, A::Group)
+    tambara_yamagami(K::Ring, A::Group)
 
-Construct ``TY(A,τ,χ)`` over ``K`` where ``τ = √|A|`` and ``χ`` is a generic non-degenerate bilinear form.  
+Construct Tambara–Yamagami data over ``K``, choosing a nondegenerate symmetric
+bicharacter and a square root ``s`` of the group order. The parameter called
+``τ`` in the standard literature is ``1/s``.
 """
 function tambara_yamagami(K::Ring, A::Group) 
     # n = Int(order(A))     
@@ -44,7 +48,9 @@ end
 
     tambara_yamagami(K::Ring, A::Group, τ::RingElem)
 
-Construct ``TY(A,τ,χ)`` over ``K`` where ``χ`` is a generic non-degenerate bilinear form.  
+Construct Tambara–Yamagami data with the supplied square root of the group
+order and a chosen bicharacter. The scalar argument is the inverse of the
+standard literature parameter ``τ``.
 """
 function tambara_yamagami(K::Ring, A::Group, sqrt_n::RingElem) 
     χ = nondegenerate_bilinear_form(A, K)
@@ -53,9 +59,10 @@ end
 
 """ 
 
-    tambara_yamagami(K::Ring, A::Group, τ::RingElem)
+    tambara_yamagami(K::Ring, A::Group, χ::BilinearForm)
 
-Construct ``TY(A,τ,χ)`` over ``K`` where ``τ = √|A|``.  
+Construct Tambara–Yamagami data with the supplied nondegenerate symmetric
+bicharacter, choosing a square root of the group order in ``K``.
 """
 function tambara_yamagami(K::Ring, A::Group, χ::BilinearForm)
     # n = Int(order(A))     
@@ -68,7 +75,10 @@ end
 
     tambara_yamagami(K::Ring, A::Group, τ::RingElem, χ::BilinearForm)
 
-Construct the Category ``TY(A,τ,χ)``. 
+Construct Tambara–Yamagami data. Despite the argument name, the scalar must
+satisfy ``τ^2=|A|``; the conventional literature parameter is its inverse.
+The group must be finite abelian, the bicharacter symmetric and nondegenerate,
+and the scalar nonzero. These mathematical hypotheses are not all checked.
 """
 function tambara_yamagami(K::Ring, A::Group, τ::RingElem, χ::BilinearForm)
     n = Int(order(A))

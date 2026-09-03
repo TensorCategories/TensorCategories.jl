@@ -1,104 +1,88 @@
-```@meta 
-DocTestSetup = quote 
-    using TensorCategories, Oscar
-end
-```
+# Group actions and equivariantization
 
-# Group Actions on fusion categories
-
-!!! warning This section is highly experimental and may yield unexpected results. Use with caution.
-
-Let ``\mathcal C`` be a fusion category and ``G`` finite group. A `group action` of ``G`` on ``\mathcal C`` is given by a monoidal functor 
-
+An action of a finite group consists of tensor autoequivalences $T_g$ and
+coherent monoidal natural isomorphisms
 ```math
-T \colon \mathrm{Cat}(G) \to \mathrm{Aut}_{\otimes}(\mathcal C),~~~g \mapsto T_g \colon \mathcal C \to \mathcal C,
+\label{eq:action-compositor}
+\sigma_{g,h}:T_g\circ T_h\longrightarrow T_{gh}.
 ```
-
-i.e. each group element is mapped to an autoequivalence of ``\mathcal C`` and for each pair of group elements ``g,h`` we have a monoiodal natural transformation 
-
+They obey
 ```math
-\sigma_{g,h} \colon T_g\circ T_h \to T_{g,h}.
+\label{eq:action-compositor-coherence}
+\sigma_{gh,k}\circ(\sigma_{g,h}\ast\mathrm{id}_{T_k})
+=\sigma_{g,hk}\circ(\mathrm{id}_{T_g}\ast\sigma_{h,k}),
 ```
+where $\ast$ denotes whiskering, that is, horizontal composition with the
+indicated identity natural transformation, together with the normalized
+identity data.
+A categorical action therefore contains more data than an action on simple
+labels; see
+[EGNO; Definitions 2.7.1 and 4.15.1](@cite).
 
-We follow the construction of a group action with the example of the Ising category.
+!!! note "Search scope"
+    Searches for autoequivalences and coherence data range over their
+    implemented ansatz and do not claim a classification of all tensor actions.
 
-```jldoctest ising 
-I = ising_category()
-G = cyclic_group(2)
-aut = autoequivalences(I)
+`gtensor_action(C,elems,images,monoidal_structure)` stores an ordered list of
+group elements, their functors, and a dictionary of structure transformations
+indexed by pairs of positions. The same ordering must be used throughout.
+The stored format has no separate unit isomorphism, so normalized action data
+use $T_e=\mathrm{Id}_{\mathcal C}$ and
+$\sigma_{e,g}=\sigma_{g,e}=\mathrm{id}_{T_g}$.
+`is_tensor_action` checks the displayed associativity equation for the stored
+transformations. Supply `elems` as the complete group-element list, one tensor
+autoequivalence in `images` for each entry, and a natural monoidal isomorphism
+for every pair, with compatible endpoints and normalized identity data. These
+properties are input requirements; `is_tensor_action` evaluates the action
+associativity equation.
+`action_by_inner_autoequivalences` constructs candidates from invertible objects;
+it does not enumerate all tensor actions.
+
+## Equivariant objects
+
+With this direction of $\sigma$, an equivariant object has isomorphisms
+$u_g:T_g(X)\to X$ with $u_e=\mathrm{id}_X$ and
+```math
+\label{eq:equivariant-object-coherence}
+u_g\circ T_g(u_h)=u_{gh}\circ(\sigma_{g,h})_X.
 ```
+This is the direction of the structure maps in
+[EGNO; Definition 2.7.2](@citet).
+The constructor is `equivariantization(C,T)` (or `equivariantization(C,G,T)`).
+The action is an argument; `equivariantization(C)` alone is not the documented
+constructor. `equivariant_induction` uses the underlying direct sum
+$\bigoplus_{g\in G}T_g(X)$ with its coherent equivariant structure.
+An equivariant object stores one structure map for each entry of `T.elements`.
+The low-level constructor expects isomorphisms with $u_e=\mathrm{id}_X$;
+`is_equivariant` checks their displayed pairwise compatibility equation.
+Both `is_tensor_action` and `is_equivariant` use represented equality and are
+currently intended for exact coefficient fields.
 
-As a first step we computed the autoequivalences. Note that this method at the moment is supported only for some categories not all. A general way to compute autoequivalences are the `inner autoequivalences` given by ``V \mapsto X \otimes V \otimes X^\ast`` for some invertible ``X``.
+In characteristic dividing $|G|$, equivariantization need not be semisimple.
+Fusion-category algorithms and $F$-symbol extraction therefore require a
+separate semisimplicity determination in this case.
 
-```@docs 
-inner_autoequivelance
-inner_autoequivalences
-action_by_inner_autoequivalences
+## Crossed products
+
+For a `SixJCategory` with a supplied action `T`, call
+`gcrossed_product(C,T)` or `C ⋊ T`. The resulting skeletal category uses
+```math
+\label{eq:crossed-product-tensor}
+(X,g)\otimes(Y,h)=(X\otimes T_g(Y),gh).
 ```
+This is [EGNO; Definition 4.15.5 and Eq. (4.22)](@citet).
+Its associator depends on both $\sigma$ and the tensorators of $T_g$.
+The constructor supplies this crossed product; it does not add the further
+data of a braided $G$-crossed extension.
+It assumes that `T` is a coherent action on `C` and does not call
+`is_tensor_action` or a pentagon check. The result supplies no braiding and no
+verified pivotal structure; check the action before construction and run
+`pentagon_axiom` on the result when coherence matters.
 
-Next we figure out which autoequivalence is non-trivial and define the tensor action.
+The [API reference](../API.md) lists the principal public names for the
+framework and these constructions. Use Julia help mode or `methods(name)` for
+the exact signatures in the installed version.
 
-```jldoctest ising 
-a,b = aut    
-
-if length(monoidal_natural_transformations(a,identity_as_monoidal_functor(I))) == 0
-    a,b = b,a
-end
-
-# the monoidal structure is given by a Dict 
-monoidal_str = Dict(
-    (1,1) => id(a),
-    (1,2) => id(b),
-    (2,1) => id(b),
-    (2,2) => monoidal_natural_transformations(b∘b, a)[1] # the nontrivial monoidal structure on the identity functor
-)
-
-T = gtensor_action(I, elements(G), [a,b], monoidal_str)
-```
-
-## Equivariantization 
-
-Let ``\mathcal C`` be a monoidal category with an action ``T`` by a group ``G``. An equivariant object is a tuple ``(X,u)`` such that ``X``is an object and a family of isomorphisms ``u_g \colon T_g(X) \to X`` compatible with the action. The equivariant objects form a category ``\mathcal C^G`` called **equivariantization** of ``\mathcal C``.  
-
-### Induction 
-
-There is a canonical forgetful functor ``F \colon \mathcal C^G \to \mathcal C``. This forgetful functor admits a left adjoint ``I_G`` given by 
-
-```math 
-I_g(X) = \bigoplus\limits_{g \in G} T_g(X)
-```
-and structure maps 
-
-```math 
-u_g \colon \sum\limits_{h} \iota_h \circ (\sigma_{g,h})_X \circ T_g(p_h)\;. 
-```
-
-The induction is implemented for fusion categories by the method `equivariant_induction`.
-
-```@docs 
-equivariant_induction
-```
-
-### Computation
-
-We can compute the equivariantization of a fusion category with a given ``G``-action explicitly. We follow the example of the Ising category with its non-trivial ``\mathbb Z_2``-action from earlier. The resulting category of type `Equivariantization` allows for all the operations available for fusion categories, including computation of ``F``-symbols.
-
-```jldoctest ising 
-E = equivariantization(I)
-simples(E)
-```
-
-## ``G``-Crossed Extensions
-
-Given a fusion category ``\mathcal C`` and ``G``-action ``T``we can define the **``G``-crossed product** ``\mathcal C \ltimes G`` of ``\mathcal C`` and ``G``, see [EGNO; 4.15.5](@cite). This category has the same objects as ``\mathcal C \boxtimes \mathrm{Vec}_G`` but with alternative tensor product 
-
-```math 
-(X\boxtimes g) \otimes (Y \boxtimes h) := (X \otimes T_g(Y)) \boxtimes gh
-```
-
-and the associativity is given by 
-
-```math 
-(X \otimes T_g(Y)) \otimes T_{gh}(Z) \xrightarrow{a_{X,T_(Y),T_{gh}(Z)}} X \otimes (T_g(Y) \otimes T_{gh(Z)}) \xrightarrow{\mathrm{id}_X \otimes \left(\mathrm{id}_{T_g(Y)} \otimes \left(\sigma_{g,h}\right)_{Z}\right)} \cdots \\
-\cdots \to X \otimes (T_g(Y) \otimes T_g(T_h(Z))) \xrightarrow{\mathrm{id}_X \otimes \mu_{Y,T_h(Z)}} X \otimes (T_g(Y \otimes T_h(Z)))
-``` 
+The [category catalogue](@ref category-catalogue) is the reference guide to
+the concrete models, skeletal categories, and datasets distributed with the
+package.

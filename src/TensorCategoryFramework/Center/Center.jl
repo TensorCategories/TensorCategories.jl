@@ -171,7 +171,11 @@ end
 """
     center(C::Category)
 
-Return the Drinfeld center of ```C```.
+Construct the Drinfeld-center parent of ``C``. Simple objects are computed
+lazily by `simples`. A central object has half-braidings from ``X ⊗ Y`` to
+``Y ⊗ X``. The generic enumeration uses split fusion input with the
+required pivotal/duality operations and nonzero global dimension; its output
+need not be split over the input field.
 """
 function center(C::Category; equivalence = false)
     #@assert is_semisimple(C) "Semisimplicity required"

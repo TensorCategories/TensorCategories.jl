@@ -1,13 +1,23 @@
 # Citations
 
-## Papers
+## TensorCategories.jl
 
-1. Blakeney, M., Corcoran, L., & de Leeuw, M. (2026). Constrained integrability and anyonic chains. [arXiv:2605.28946](https://arxiv.org/abs/2605.28946) \[hep-th\]
+TensorCategories.jl and its algorithm for computing Drinfeld centers are
+introduced in *Computing the center of a fusion category*
+[maurer2024computing](@cite). Please cite this paper when the software
+contributes to your research.
 
-1. Araújo, M., Guu, J.-C., & Hudson, S. (2025). Skein Construction of Balanced Tensor Products. arXiv. [arXiv:2501.05747](https://arxiv.org/abs/2501.05747) \[math-ph\]
+The mathematical algorithms and their implementation are developed
+systematically in *Algorithmic Aspects of Tensor Categories*
+[maeurer2026thesis](@cite).
 
-## Further mentioning
+## Research using or citing the package
 
-1. [JuliaCon 2026 talk by T.J. Osborne](https://pretalx.com/juliacon-2026/talk/RN8YTY/)
+1. *Constrained Integrability and Anyonic Chains*
+   [blakeney2026constrained](@cite)
 
-2. [AnyonWiki](https://anyonwiki.github.io/pages/Lists/losmffc.html)
+1. *Skein Construction of Balanced Tensor Products* [araujo2025skein](@cite)
+
+## Software and data resources
+
+1. AnyonWiki [anyonwiki2023](@cite)

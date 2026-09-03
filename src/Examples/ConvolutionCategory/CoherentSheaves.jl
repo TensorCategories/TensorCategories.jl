@@ -27,9 +27,10 @@ is_multifusion(C::CohSheaves) = mod(order(C.group),characteristic(base_ring(C)))
 #   Constructors
 #-----------------------------------------------------------------
 """
-    coherent_sheaves(X::GSet,F::Field)
+    coherent_sheaves(F::Field, X::GSet)
 
-The category of ``G``-equivariant coherent sheafes on ``X``.
+The category of ``G``-equivariant coherent sheaves on ``X``, with pointwise
+tensor product. Objects store representations of orbit stabilizers.
 """
 function coherent_sheaves(F::Field, X::GSet)
     G = X.group
@@ -40,9 +41,9 @@ function coherent_sheaves(F::Field, X::GSet)
 end
 
 """
-    coherent_sheaves(X, F::Field)
+    coherent_sheaves(F::Field, X)
 
-The category of coherent sheafes on ``X``.
+The category of coherent sheaves on the finite set ``X`` with trivial action.
 """
 function coherent_sheaves(F::Field, X)
     G = symmetric_group(1)

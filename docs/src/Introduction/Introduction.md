@@ -1,94 +1,81 @@
-# Introduction
+# [A first computation](@id first-category)
 
-This is an introduction to TensorCategories.jl for new users.
+Start with an existing category. No [$F$-symbol input](@ref skeletal-fusion) or
+Julia type definitions are needed to use its objects and morphisms.
 
-## Julia
-
-[Julia](https://julialang.org) is a modern high-performance high-level programming language which, due its [type](https://docs.julialang.org/en/v1/manual/types/) system design and [multiple dispatch](https://docs.julialang.org/en/v1/manual/methods/) paradigm, is nicely suited for working with categorical structures. It is open-source and runs on Windows, Linux, and macOS.
-
-After starting Julia, you can consider it as a calculator:
-
-```julia-repl
-julia> 1+1
-2
+```@example first
+using TensorCategories, Oscar
+K, s = quadratic_field(2)
+C = ising_category(K, s)
+u, chi, X = simples(C)
+@assert u == one(C)
+@assert X ⊗ X == u ⊕ chi
+X ⊗ X
 ```
 
-There is one important thing you need to know:
+`simples(C)` returns representatives of simple isomorphism classes. The names
+`u`, `chi`, and `X` are Julia variables. The category supplies their tensor
+product; the same operation is used for representations and graded spaces.
+Here `one(C)` is the tensor unit, `⊗` is tensor product, and `⊕` is direct sum.
 
-```julia-repl
-julia> 2^64
-0
+## Objects and morphisms
+
+An object has a parent category; a morphism has a domain and codomain.
+
+```@example first
+f = id(X)
+@assert parent(X) === C
+@assert domain(f) == X && codomain(f) == X
+@assert compose(f, f) == f
+int_dim(End(X))
 ```
 
-The explanation is that every object in Julia is of a certain *type*, and without further specification an integer is considered of type 64-bit integer:
+`compose(f,g)` means first $f$, then $g$: it returns $g\circ f$.
+The infix `∘` has its usual mathematical order.
 
-```julia-repl
-julia> typeof(2)
-Int64
+`direct_sum(X1,X2)` returns the direct-sum object $Y=X_1\oplus X_2$ together
+with arrays `i` and `p` containing the inclusions $i_j:X_j\to Y$ and
+projections $p_j:Y\to X_j$, respectively:
+
+```@example first
+Y, i, p = direct_sum(u, chi)
+@assert p[1] ∘ i[1] == id(u)
+@assert i[1] ∘ p[1] + i[2] ∘ p[2] == id(Y)
+int_dim(Hom(Y, Y))
 ```
 
-We can convert integers to `BigInt` type which allows computing with arbitrarily large integers:
+`u ⊕ chi` returns only the object. `Hom(Y,Y)` is a vector space of morphisms;
+`basis(Hom(Y,Y))` returns actual morphisms, and `int_dim` returns its dimension
+as a Julia integer.
 
+## An associator
 
-```julia-repl
-julia> BigInt(2)^64
-18446744073709551616
+The associator maps $(X\otimes X)\otimes X$ to $X\otimes(X\otimes X)$. The two
+objects are equal in this [skeletal model](@ref skeletal-fusion), but the
+associator is not the identity. This model records the associator by its matrix
+on a multiplicity space. [Matrix coordinates](@ref matrix-realizations) explain
+what this matrix represents, and the [$F$-symbol conventions](@ref f-conventions)
+specify its bases and direction.
+
+```@example first
+a = associator(X, X, X)
+@assert a != id((X ⊗ X) ⊗ X)
+@assert matrix(a) == inv(s)*matrix(K, [1 1; 1 -1])
+matrix(a)
+show(stdout, MIME"text/plain"(), matrix(a)); println() # hide
 ```
 
-Except for this, however, there is not much algebra in Julia. This is where the [OSCAR](https://www.oscar-system.org/) computer algebra system comes into play. OSCAR can be installed as follows:
+Equality of the two represented endpoint objects does not make the associator
+an identity morphism. A composite that changes parenthesization must use the
+stored structural map.
 
-```julia-repl
-julia> using Pkg
+The next page is an optional [anyon and CFT terminology bridge](@ref physics-bridge).
+Readers who do not need that translation can continue directly with
+[Models and the category interface](@ref interface-philosophy). Later routes
+through the manual are:
 
-julia> Pkg.add("Oscar")
-```
-
-OSCAR can then be loaded with:
-
-```julia-repl
-julia> using Oscar
-
-```
-
-You can then do serious computer algebra like:
-
-```julia-repl
-julia> R,x = polynomial_ring(ZZ, "x")
-(Univariate polynomial ring in x over ZZ, x)
-
-julia> f = x^2 + 2*x + 1
-x^2 + 2*x + 1
-
-julia> f^2
-x^4 + 4*x^3 + 6*x^2 + 4*x + 1
-```
-
-The object `ZZ` here is the ring $\mathbb{Z}$ of integers in OSCAR. Check out the [documentation](https://docs.oscar-system.org/stable/) of OSCAR for more information. OSCAR is where we take all our computer algebra from.
-
-Next, you can install and load TensorCategories.jl with:
-
-```julia-repl
-julia> using Pkg
-
-julia> Pkg.add("TensorCategories")
-
-julia> using TensorCategories
-```
-
-In all the example computations below we assume you have called
-
-```julia-repl
-julia> using TensorCategories, Oscar
-```
-
-
-!!! note "Julia"
-    Julia uses just-in-time compilation (JIT). This is one of the reasons why Julia can be so fast, but it means that the first execution of a function always takes a bit of time (since its code will be compiled)—afterward it is faster. We usually keep a session running on a server.
-
-    
-!!! note "Base rings"
-    Like in formal mathematics, TensorCategories.jl and Oscar require a *base ring* for the computations. This is different to other systems like Mathematica which, by default, treat symbolic variables as representing "generic" complex numbers. While OSCAR also supports the [field of complex numbers](https://docs.oscar-system.org/stable/Nemo/complex/) and the [algebraic closure of the rationals](https://docs.oscar-system.org/stable/NumberTheory/abelian_closure/), we can also work over [number fields](https://docs.oscar-system.org/stable/Hecke/manual/number_fields/intro/).  This is not just more efficient but also mathematically interesting because some constructions, like the Drinfeld center, can look different when restricted to a number field instead of the whole complex numbers: simple objects may decompose after scalar extension to the complex numbers (there are simply more scalars one can use for a change of basis). While this "fine structure" is natural and important from a mathematical perspective, it may be unusual from a physics perspective. We do not want to go into the mathematical details at this point but when we say "split" it means things look exactly the same after extending to the complex numbers, and we have functionality to do this splitting. For applications in physics we also support conversion of our exact algebraic data into complex floating point numbers (for example for $F$-matrices).
-
-!!! note "Mathematical foundations"
-    We generally follow the standard mathematical framework for tensor categories as presented, for example, in Tensor Categories by Etingof, Gelaki, Nikshych, and Ostrik [EGNO](@cite). For specialties on the non-split setting we refer to Section 2 of our paper [maurer2024computing](@cite) and the references therein.
-
+- the [implementation tutorial](@ref implementing-matrices) for a new concrete
+  category model;
+- [skeletal fusion categories](@ref skeletal-fusion) for a category specified
+  by fusion data; and
+- the [catalogue](@ref category-catalogue) for existing implementations.
