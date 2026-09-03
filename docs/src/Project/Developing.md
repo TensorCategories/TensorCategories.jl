@@ -44,6 +44,9 @@ decides whether its deployment conditions are satisfied.
 Documentation examples are executable. Named `@example` blocks share state
 within a page.
 
-The build treats warnings as failures, including broken internal references,
-failed examples, and undocumented exported docstrings. The API reference is
-generated from the implementation; explanatory material belongs in the manual.
+The build treats warnings as failures, including broken internal references and
+failed examples. Publication enforcement for every implementation docstring is
+disabled: the API appendix is a curated map to the principal public operations,
+while mathematical hypotheses and conventions belong in the manual. This does
+not relax other Documenter warnings. Use Julia help mode, for example `?center`,
+and `methods(center)` to inspect exact signatures in the installed version.

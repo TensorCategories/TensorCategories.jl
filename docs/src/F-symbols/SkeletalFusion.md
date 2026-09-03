@@ -4,12 +4,15 @@ Let $\mathcal C$ be a split fusion category over a field $k$, and choose
 representatives $S_1,\ldots,S_r$ of its simple objects. Decompositions into
 these simples give a skeletal linear model: objects become multiplicity
 vectors, morphisms become blocks of matrices over $k$, and the tensor structure
-is described by fusion rules and F-symbols. TensorCategories.jl implements this
+is described by fusion rules and $F$-symbols. TensorCategories.jl implements this
 model as `SixJCategory`. We use the definitions of semisimple and fusion
-categories from Chapters 1, 2, and 4 of [EGNO](@cite). The reconstruction in
+categories in [EGNO; Chapters 1, 2, and 4](@citet). The reconstruction in
 terms of multiplicity vectors, matrix blocks, and fusion rules is described in
-[maeurer2026thesis](@cite), §1.7. The next page gives the required translation
-between its projection-tree F-matrices and the package's structural matrices.
+[maeurer2026thesis; §1.7](@citet).
+
+The type name `SixJCategory` is historical. The model allows arbitrary fusion
+multiplicities, and its associator entries need not be literal Wigner
+$6j$-symbols.
 
 ## Objects and morphisms
 
@@ -23,6 +26,11 @@ is represented by the vector $(m_1,\ldots,m_r)$ of nonnegative integers. In
 the implementation this vector is `X.components`, and `C[i]` denotes the
 chosen representative $S_i$. The zero object has all multiplicities zero, and
 direct sums add multiplicity vectors.
+
+To keep formulas and code legible, the manual also uses a simple label such as
+$a$ for its position in `simples(C)` when it occurs inside an array access.
+Thus `C.ass[a,b,c,d]` means the block indexed by the positions of the four
+simples $a,b,c,d$; Julia code must of course supply the corresponding integers.
 
 A `SixJCategory` is mutable, and its objects retain that particular category as
 their parent. Two independently constructed categories can carry identical
@@ -57,7 +65,7 @@ non-split setting.
 The matrix blocks describe maps between multiplicity spaces. Their existence
 does not require a monoidal fiber functor
 $\mathcal C\to\operatorname{Vec}_k$; see
-[Matrices and fiber functors](@ref matrix-realizations).
+[Fiber functors and semisimple coordinates](@ref fiber-functors).
 
 ## Fusion rules
 
@@ -111,14 +119,39 @@ multiplicity vector. Their identification by the associator
 
 is nevertheless part of the monoidal data. Its block on the copies of $d$ is
 the invertible matrix `C.ass[a,b,c,d]`, using the index convention introduced
-above. Its entries are the F-symbols. These matrices must satisfy the pentagon
-equation and the chosen unit normalization; skeletality does not make them
-identity matrices.
+above. Its entries are the $F$-symbols. These matrices must satisfy the pentagon
+equation and the chosen [unit normalization](@ref unit-normalization);
+skeletality does not make them identity matrices.
 
 A braiding supplies matrices stored as `C.braiding[a,b,d]`. Their entries are
-the R-symbols. They represent the maps $a\otimes b\to b\otimes a$ and satisfy
+the $R$-symbols. They represent the maps $a\otimes b\to b\otimes a$ and satisfy
 the two hexagon equations with the associator. A pivotal or spherical structure
-is further data and cannot be recovered from F- and R-symbols alone.
+is further data and cannot be recovered from $F$- and $R$-symbols alone.
+
+Conversely, arrays of plausible dimensions do not yet define a fusion
+category. The fusion multiplicities must give an associative unital fusion
+ring with duals. Every associator block must be an invertible matrix of the
+prescribed size, the unit blocks must have the normalization fixed on the next
+page, and all pentagon equations must hold. Braiding requires invertible blocks
+of the prescribed sizes satisfying both hexagon equations. Pivotal and
+spherical structures require their own coherence conditions.
+
+The call `six_j_category(K,N,names)` creates a mutable container with fusion
+array $N$, identity associator blocks of the required sizes, and all-one
+pivotal components. The names argument may be omitted, in which case the
+labels are `X1`, `X2`, and so on. The shorter call
+`six_j_category(K,names)` sets only the coefficient ring, rank, labels, and
+all-one pivotal components; a subsequent
+`set_tensor_product!` call installs the fusion array and initializes the
+identity associator blocks. Neither form sets the tensor unit or certifies any
+coherence axiom. After entering data, use `pentagon_axiom(C)`,
+`hexagon_axiom(C)`, and the relevant checked structural predicates.
+
+These initializer methods accept a Julia `Ring`, but the split fusion-category
+interpretation on this page and algorithms that use dimensions of Hom spaces
+require $K$ to be a field. The initializer does not check that $N$ is a
+nonnegative, associative, unital fusion table or that the number of supplied
+names matches its rank.
 
 The next page fixes the [basis order and matrix conventions](@ref f-conventions)
 before any examples are constructed. The

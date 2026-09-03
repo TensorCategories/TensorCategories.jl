@@ -1,7 +1,15 @@
 # Hom spaces and linear algebra
 
-Composition in a $k$-linear category is bilinear. Algorithms need effective
-representations of the Hom spaces they use, usually finite-dimensional ones.
+TensorCategories.jl records linear enrichment and additive structure
+separately. Thus `is_linear(C)` says that the Hom spaces are $k$-modules and
+composition is $k$-bilinear, while `is_additive(C)` records finite biproducts
+and a zero object. When $k$ is a field, the Hom spaces are $k$-vector spaces.
+This differs slightly from the terminology of
+[EGNO; Definition 1.2.2](@citet), where a $k$-linear category is additive by
+definition. The package uses the same `base_ring(C)` interface over fields and
+more general coefficient rings, but algorithms that divide by scalars or use
+vector-space dimension require a field and finite-dimensional Hom spaces. This
+chapter describes that field-linear setting.
 
 | Operation | Result |
 |:---|:---|
@@ -30,24 +38,21 @@ c = express_in_basis(f, H)
 c
 ```
 
-A Hom basis is a choice, not an invariant. Changing fusion-space bases changes
-[F- and R-symbols](@ref f-conventions). Keep a common set of bases for related
-structural maps.
+A Hom basis is a choice, not an invariant. Coordinates of structural morphisms
+must therefore be compared in compatible bases. In the later
+[skeletal fusion model](@ref skeletal-fusion), this dependence becomes the
+gauge dependence of $F$- and $R$-symbols; their bases and matrix directions are
+fixed only after the model is introduced.
 
-## Implementing the linear structure
+Over a non-splitting field, a simple object $S$ can have a division algebra
+$D=\operatorname{End}(S)$ larger than $k$. In a semisimple category,
+$\operatorname{Hom}(S,X)$ is a right $D$-module by precomposition, and the
+multiplicity of $S$ in $X$ is its dimension over $D$, not generally its
+dimension over $k$. See [Fusion categories and splitting](@ref
+tensor-conventions).
 
-Implement addition, scalar multiplication, zero maps, `Hom`, and its basis.
-`HomSpace(X,Y,B)` is an existing wrapper for a supplied basis `B`. Custom Hom
-spaces can subtype `AbstractHomSpace` and implement `domain`, `codomain`,
-`basis`, and `base_ring`.
+Coordinates in each Hom space do not by themselves specify a functor on
+objects to vector spaces. The next page explains when morphisms also have a
+compatible global matrix realization.
 
-Generic `express_in_basis` uses `matrix(f)` and linear algebra. A model without
-matrix access needs its own coordinate method. Coordinates in each Hom space
-do not by themselves specify a functor on objects to vector spaces.
-
-For a non-split simple $S$, its multiplicity in $X$ is the dimension of
-$\operatorname{Hom}(S,X)$ over $\operatorname{End}(S)$, not generally its
-dimension over $k$.
-See [Splitting](@ref tensor-conventions).
-
-Continue with [Matrix realizations and fiber functors](@ref matrix-realizations).
+Continue with [Matrix coordinates](@ref matrix-realizations).

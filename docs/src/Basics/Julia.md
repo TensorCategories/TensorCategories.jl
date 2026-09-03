@@ -9,15 +9,9 @@ operation for quite different representations of categories.
 
 ## Starting a session
 
-Install Julia, start it, and enter the following at the REPL prompt:
-
-```julia
-import Pkg
-Pkg.add("TensorCategories")
-```
-
-This installs the package and its dependencies, including
-[OSCAR](https://www.oscar-system.org/). In each new session, load them with
+After following the [installation instructions](../index.md#Installation),
+start Julia. At the interactive Julia prompt (the REPL), load
+TensorCategories.jl and OSCAR with
 
 ```julia
 using TensorCategories, Oscar
@@ -46,6 +40,9 @@ julia> BigInt(2)^64
 Ordinary integer literals have type `Int`, usually a 64-bit machine integer.
 Arithmetic can overflow: on a 64-bit system, `2^64` is `0`.
 Use `BigInt` or OSCAR's integers `ZZ` for integers of unbounded size.
+The Julia expression `1//2` constructs the exact rational number one half.
+OSCAR also has its own rational field `QQ`; the next page uses `QQ(1)/3` when
+the parent field matters.
 
 Every Julia value has a *type*, which determines the applicable methods.
 An algebraic element also has a *parent*: for example, a polynomial belongs to
@@ -81,12 +78,19 @@ A = matrix(QQ, [1 2; 3 4])
 size(A)
 ```
 
-An exclamation mark, as in `set_associator!`, conventionally indicates mutation.
-A dot applies an operation elementwise: `dim.(simples(C))` applies `dim` to every
-simple object. A trailing semicolon suppresses the display of a result.
+`@assert condition` checks that `condition` is true and raises an error if it
+is not. A successful assertion produces no output. The manual uses assertions
+to record the mathematical result expected from an example.
 
-Type `?` followed by a name in the REPL for help. Type `\otimes` followed by Tab
-to enter `⊗`; `tensor_product(X,Y)` is its spelled-out form. Similarly, `\oplus`
-and `\circ` produce `⊕` and `∘`.
+An exclamation mark, as in `sort!`, conventionally indicates mutation. A dot
+applies an operation elementwise: `sqrt.([1,4,9])` applies `sqrt` to every
+entry. A trailing semicolon suppresses the display of a result. In a function
+call, arguments following a semicolon are keyword arguments; for example,
+`sort([3,1,2]; rev=true)` requests descending order.
 
-Continue with [Base fields](@ref base-fields), then [A first computation](@ref first-category).
+Enter `?` at the REPL to switch to help mode, then type a name to see its
+documentation. Type `\otimes` followed by Tab to enter `⊗`;
+`tensor_product(X,Y)` is its spelled-out form. Similarly, `\oplus` and `\circ`
+produce `⊕` and `∘`.
+
+Continue with [Base fields](@ref base-fields).

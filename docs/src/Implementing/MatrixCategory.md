@@ -11,21 +11,44 @@ collide with the built-in vector spaces. Save it and use `include` to load it.
 
 ## Reading the implementation
 
-`struct MatCategory <: Category` introduces a subtype. Its field `base_ring`
-specifies a particular coefficient field. The object and morphism fields match
-the default `parent`, `domain`, and `codomain` methods.
+The `module MatrixCategoryTutorial ... end` block creates a namespace for the
+tutorial types. Its `export` line lists the names made available by
+`using .MatrixCategoryTutorial`; it does not make them part of
+TensorCategories.jl.
+
+`struct MatCategory <: Category` declares a concrete subtype of the package's
+abstract `Category` type. Its field `base_ring` specifies a particular
+coefficient field. The object and morphism fields match the default `parent`,
+`domain`, and `codomain` methods. The constructor written inside `MatObject`
+is an *inner constructor*: it checks that the dimension is nonnegative and then
+uses `new(C,n)` to create the value. `MatElem` is OSCAR's abstract type for a
+matrix element; it allows the same morphism type to store matrices over
+different coefficient fields.
+
+The example makes its representation-level equality explicit. Two
+`MatCategory` values are equal only when they contain the identical coefficient
+field object, tested with `===`; no field isomorphism or coercion is inferred.
+Objects are equal when their parents and dimensions agree, and morphisms are
+equal when their endpoints and matrices agree. The `morphism` constructor
+always checks the parent, coefficient field, and the
+$\dim(X)\times\dim(Y)$ matrix size. Composition checks its middle endpoint and,
+in the row-coordinate convention, stores $M_fM_g$ for `compose(f,g)`.
 
 Writing `TensorCategories.compose(...) = ...` adds a method to the existing
 generic function. It does not replace other categories' implementations. We
 qualify extended names explicitly; alternatively use `import` before defining
 an unqualified method. `using` alone is not permission to extend an imported
-function without qualification.
+function without qualification. Operations owned by Julia itself are extended
+in the same way: for example, `Base.:(==)` extends equality, `Base.:+` and
+`Base.:*` extend the infix arithmetic operations, and `Base.zero` extends
+`zero(C)`.
 
 The Hom basis consists of elementary matrices. The direct sum uses coordinate
 inclusions and projections. Kernels and cokernels reuse existing vector-space
 linear algebra and then reconstruct objects in our category. Finally, the
 Kronecker product supplies the tensor product in a compatible lexicographic
-basis, so the associator matrix is the identity.
+basis, with the coordinate from the right tensor factor varying fastest, so the
+associator matrix is the identity.
 
 ```@eval
 using Markdown
@@ -70,15 +93,18 @@ c = express_in_basis(h, Hom(X,Y))
 nothing # hide
 ```
 
-## What is still separate
+## Structures not implemented in this example
 
-The category is mathematically rigid and symmetric, but this small implementation
-has not supplied duality or braiding methods and does not declare those
-structures. Add the needed maps before using algorithms that require them.
-A categorical property and an effective implementation of it are distinct.
+The example declares the ring-category structure implemented above: the tensor
+product is biexact and its unit is scalar. Finite-dimensional vector spaces are
+also split semisimple, rigid, and symmetric, but this small implementation does
+not enumerate its simple objects or implement decomposition, duality, or
+braiding. It therefore does not declare those additional structures. A
+categorical property and an effective implementation of it are distinct.
 
-The [interface checklist](../Interface/Generic.md) records further primitives.
-The next page explains how the same design models graded spaces and group
-representations, without F-symbol input.
+The preceding [interface checklist](@ref interface-checklist) records the
+operations required at each structural level. The next page explains how the
+same design models graded spaces and group representations without $F$-symbol
+input.
 
 Continue with [Concrete models: graded spaces and representations](ConcreteModels.md).

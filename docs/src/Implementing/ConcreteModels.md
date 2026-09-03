@@ -3,14 +3,33 @@
 The matrix tutorial can be extended by adding structure to each vector space
 and restricting the allowed matrices. This is how the package implements
 graded vector spaces and group representations. It need not first decompose
-every tensor product into simples or compute any F-symbols.
+every tensor product into simples or compute any $F$-symbols.
+
+In both models, forgetting the additional structure gives a faithful linear
+realization
+
+```math
+U:\mathcal C\longrightarrow\operatorname{Vec}_k,
+```
+
+and the stored matrix of a morphism represents its image under $U$. For
+$\operatorname{Rep}_k(G)$ and untwisted graded vector spaces this is the usual
+fiber functor. For a cocycle-twisted graded category it remains a faithful
+linear realization, but a nontrivial cohomology class can obstruct compatible
+tensorators. Thus concrete matrix coordinates do not by themselves require a
+fiber functor; see [Fiber functors and semisimple coordinates](@ref fiber-functors).
 
 ## Graded vector spaces
 
-For a finite group $G$, store a vector space together with the degree of each
-basis vector. A morphism matrix may have a nonzero entry only between basis
-vectors of the same degree. Give a tensor basis vector $v\otimes w$ degree
-$\deg(v)\deg(w)$, in this order even for nonabelian $G$.
+For a finite group $G$, the category of finite-dimensional $G$-graded vector
+spaces, with associator twisted by a normalized $3$-cocycle $\omega$, is
+usually denoted $\operatorname{Vec}_G^\omega$. Store a vector space together
+with the degree of each basis vector. A morphism matrix may have a nonzero entry
+only between basis vectors of the same degree. Give a tensor basis vector
+$v\otimes w$ degree $\deg(v)\deg(w)$, in this order even for nonabelian $G$.
+Order the tensor basis so that the coordinate of $w$, the right factor, varies
+fastest; then tensor products of morphisms are the corresponding Kronecker
+products.
 
 The existing representation uses `GVSObject` with fields `V` and `grading`,
 and `GVSMorphism` with a matrix. Here is a computation with those types:
@@ -32,15 +51,25 @@ show(stdout, MIME"text/plain"(), matrix(f)); println() # hide
 ```
 
 For the untwisted category, the associator is the canonical rebracketing map in
-the chosen tensor bases. For a normalized $3$-cocycle $\omega$, modify the associator
-on homogeneous tensors by $\omega(g,h,l)$. This is additional data, and its cocycle
-equation is precisely the relevant coherence condition [EGNO](@cite), §2.3.
-See the [catalogue entry](../ConcreteExamples/VectorSpaces.md) for constructors.
+the chosen tensor bases. For a normalized $3$-cocycle $\omega$, modify the
+associator on homogeneous tensors by $\omega(g,h,l)$. This is additional data,
+and its cocycle equation is precisely the relevant coherence condition
+[EGNO; §2.3](@cite).
+A dual basis vector to one of degree $g$ has degree $g^{-1}$; in the twisted
+case the evaluation normalization also depends on $\omega$. A braiding requires
+compatible extra data and, in particular, is not supplied by an arbitrary group
+grading or $3$-cocycle. The current `braiding` method is available only for an
+untwisted category with a stored bilinear form: the ordinary constructor stores
+the trivial form when $G$ is abelian, and the bilinear-form constructor permits
+other choices. See the
+[graded-vector-space catalogue entry](../ConcreteExamples/VectorSpaces.md) for
+the exact implemented constructors and limitations.
 
 ## Representations
 
-For a representation, store the action of generators of $G$. A matrix $M$
-from $X$ to $Y$ is a morphism when
+The same pattern implements $\operatorname{Rep}_k(G)$. Store the action of
+generators of $G$ on each representation. A matrix $M$ from $X$ to $Y$ is a
+morphism when
 
 ```math
 \rho_X(g)M=M\rho_Y(g)
@@ -48,8 +77,13 @@ from $X$ to $Y$ is a morphism when
 
 for all generators. This is the row-vector convention. Solving these linear
 equations gives a Hom basis. Direct sums use block actions and tensor products
-use Kronecker products. Kernels of intertwiners are invariant subspaces; to
-return a kernel object, restrict the group action to a basis of that subspace.
+use Kronecker products, again with the right-factor coordinate varying fastest.
+Kernels of intertwiners are invariant subspaces; to return a kernel object,
+restrict the group action to a basis of that subspace.
+The dual has the contragredient action
+$\rho^*(g)=\rho(g^{-1})^{\mathsf T}$ in these row coordinates, and the ordinary
+flip gives the symmetric braiding. These structures are implemented; see the
+[representation catalogue entry](../ConcreteExamples/Representations.md).
 
 ```@example concrete
 R = representation_category(QQ, G)
@@ -61,20 +95,20 @@ V = Representation(R, gens(G), [A]; check=true)
 int_dim(V ⊗ V)
 ```
 
-This is a simple rational representation with endomorphism field
-$\mathbb Q(\zeta_3)$. No F-symbol data were used. Enumeration of all rational irreducibles
-is a separate backend capability, not a prerequisite for constructing this
-object or computing its Hom spaces.
+This is a simple rational representation whose endomorphism algebra is
+isomorphic to $\mathbb Q(\zeta_3)$. No $F$-symbol data were used. Enumeration
+of all rational irreducibles is a separate backend capability, not a
+prerequisite for constructing this object or computing its Hom spaces.
 
-## From a concrete model to symbols
+These remain concrete category models: their objects and morphisms retain the
+underlying graded spaces or representations. They do not need to be converted
+to $F$-symbol data. If a split fusion category supports the necessary
+decomposition algorithms, the later section on
+[extracting a skeleton](@ref extracting-skeleton) explains how to choose
+fusion bases and pass to such coordinates. Non-split and nonsemisimple concrete
+models remain usable even when that scalar $F$-symbol construction does not
+apply.
 
-If the category is split and the necessary algorithms are available,
-`six_j_category(C)` chooses decomposition bases and extracts associators in
-those coordinates. A canonical vector-space rebracketing can become a
-nonidentity F-matrix in those bases. See [F-symbol conventions](@ref f-conventions).
-
-For non-split or nonsemisimple categories, the concrete model still supports
-categorical operations even though the scalar F-symbol model does not apply.
-[EGNO](@citet), §§2.3 and 5.1, describes the underlying forgetful functors.
-
-Continue with the [implementation checklist](../Interface/Generic.md).
+Continue with [Skeletal fusion categories](@ref skeletal-fusion), where a split
+fusion category is represented by simple multiplicities and structural
+matrices rather than by underlying vectors or group actions.

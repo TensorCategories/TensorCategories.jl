@@ -1,15 +1,15 @@
-# [Conventions for F- and R-symbols](@id f-conventions)
+# [Conventions for $F$-, $R$-, and $P$-symbols](@id f-conventions)
 
-This page fixes the mathematical meaning of every row, column, and dictionary
-index used for F- and R-symbols. The conventions apply to a split skeletal
-fusion category; the preceding page explains why the splitting hypothesis is
-needed.
+Scalar structural data arise only after bases have been chosen in the binary
+fusion spaces. This page first fixes those bases and the induced bases for
+triple tensor products. It then defines the matrices representing the
+associator, braiding, and pivotal structure. Only after each matrix has been
+defined do we attach the corresponding symbol notation.
 
-For the pentagon and hexagon equations in Bonderson's convention, use
-`F_symbols(C; convention=:bonderson)` and
-`R_symbols(C; convention=:bonderson)`. The default keyword retains the
-historical TensorCategories dictionary packing for compatibility with existing
-data files.
+These mathematical choices are separate from the dictionary layout used by
+the data-exchange functions. The discussion applies to a split skeletal fusion
+category; the preceding page explains the model and why the splitting
+hypothesis is needed.
 
 ## Binary fusion bases
 
@@ -34,6 +34,22 @@ and choose an ordered projection basis
 ```math
 p^{ab}_{e,\mu}:a\otimes b\longrightarrow e,
 \qquad 1\leq \mu\leq N_{ab}^{e}.
+```
+
+Let
+
+```math
+s_{ab}^{e,\mu}:e\longrightarrow a\otimes b
+```
+
+be the composition-dual splitting basis. Thus
+
+```math
+p^{ab}_{e,\mu}\circ s_{ab}^{e,\nu}
+=\delta_{\mu,\nu}\operatorname{id}_e,
+\qquad
+\sum_{e,\mu}s_{ab}^{e,\mu}\circ p^{ab}_{e,\mu}
+=\operatorname{id}_{a\otimes b}.
 ```
 
 These binary bases determine bases for the two projection spaces of a triple
@@ -72,13 +88,13 @@ Let
 be the associator. Its block with output $d$ is the matrix $A=A^{abc}_d$
 defined by
 
-```math
+\begin{equation}
+\label{eq:associator-projection-bases}
 R_{f,\rho,\sigma}\circ\alpha_{a,b,c}
 =\sum_{e,\mu,\nu}
  A^{abc}_d[(e,\mu,\nu),(f,\rho,\sigma)]
  L_{e,\mu,\nu}.
-\tag{1}
-```
+\end{equation}
 
 Thus rows are left paths and columns are right paths. In the documentation's
 index notation, the stored block is `C.ass[a,b,c,d]`. Its size is
@@ -91,30 +107,36 @@ index notation, the stored block is `C.ass[a,b,c,d]`. Its size is
 
 Associativity of the fusion rules makes the two numbers equal.
 
-Choose splitting bases composition-dual to the projection bases, and let
-$L^{e,\mu,\nu}$ and $R^{f,\rho,\sigma}$ be the induced triple-product
-splittings. Equation (1) is equivalent to
+Let $L^{e,\mu,\nu}$ and $R^{f,\rho,\sigma}$ be the triple-product splittings
+induced by the composition-dual binary bases. Equation
+$\eqref{eq:associator-projection-bases}$ is equivalent to
 
-```math
+\begin{equation}
+\label{eq:associator-splitting-bases}
 \alpha_{a,b,c}\circ L^{e,\mu,\nu}
 =\sum_{f,\rho,\sigma}
  A^{abc}_d[(e,\mu,\nu),(f,\rho,\sigma)]
  R^{f,\rho,\sigma}.
-\tag{2}
-```
+\end{equation}
 
-Equation (2) is the input-first F-move convention of
-[bonderson2007thesis](@citet), Eq. (2.6), and
-[bonderson2008interferometry](@citet), Eq. (2.14). In particular, the
-dictionary returned by
-`F_symbols(C; convention=:bonderson)` has keys
+The entries of $A^{abc}_d$ are the **$F$-symbols** in this manual. Explicitly,
 
-```julia
-[a,b,c,d,e,f]                  # multiplicity-free
-[a,b,c,d,e,mu,nu,f,rho,sigma] # general case
-```
+\begin{equation}
+\label{eq:F-symbol-definition}
+\left[F^{abc}_d\right]_{(e,\mu,\nu),(f,\rho,\sigma)}
+:=A^{abc}_d[(e,\mu,\nu),(f,\rho,\sigma)].
+\end{equation}
 
-and its value is the corresponding entry of $A$ in (1) and (2).
+Equation $\eqref{eq:associator-splitting-bases}$ replaces a left-associated
+splitting tree by a linear
+combination of right-associated splitting trees; this change of basis is the
+**$F$-move**. The first multi-index in $\eqref{eq:F-symbol-definition}$ labels
+the input tree and the second labels the output tree. This is the convention used in
+[bonderson2008interferometry; Eq. (2.14)](@citet) and
+[barkeshli2019symmetry; Eq. (10)](@citet). Both references work with unitary
+anyon models and orthonormal splitting bases. The same coefficient convention
+makes sense for the composition-dual bases used here over an arbitrary
+splitting field.
 
 The package stores matrices for row coordinates: whenever the represented
 composition is defined,
@@ -132,60 +154,119 @@ composition-dual bases need not be Hermitian-adjoint bases.
 
 For simple objects $a,b,d$, let $B=B^{ab}_d$ be defined by
 
-```math
+\begin{equation}
+\label{eq:braiding-projection-bases}
 p^{ba}_{d,\nu}\circ c_{a,b}
 =\sum_{\mu}
  B^{ab}_d[\mu,\nu]p^{ab}_{d,\mu}.
-\tag{3}
-```
+\end{equation}
 
 In composition-dual splitting bases this is
 
-```math
+\begin{equation}
+\label{eq:braiding-splitting-bases}
 c_{a,b}\circ s_{ab}^{d,\mu}
 =\sum_{\nu}B^{ab}_d[\mu,\nu]s_{ba}^{d,\nu}.
-\tag{4}
-```
+\end{equation}
 
-This is Eq. (2.54) of [bonderson2007thesis](@citet). The row index $\mu$
-labels the input basis of $\operatorname{Hom}(a\otimes b,d)$, and the column
-index $\nu$ labels the output basis of
-$\operatorname{Hom}(b\otimes a,d)$. With the same index notation, the
-structural matrix is `C.braiding[a,b,d]`, and
-`R_symbols(C; convention=:bonderson)` uses keys
+The entries of $B^{ab}_d$ are the **$R$-symbols**:
 
-```julia
-[a,b,d]       # multiplicity-free
-[a,b,d,mu,nu] # general case
-```
+\begin{equation}
+\label{eq:R-symbol-definition}
+\left[R^{ab}_d\right]_{\mu,\nu}:=B^{ab}_d[\mu,\nu].
+\end{equation}
 
-with value $B^{ab}_d[\mu,\nu]$.
+Equation $\eqref{eq:braiding-splitting-bases}$ is the **$R$-move** induced by
+the braiding. The row index $\mu$ labels the input basis of
+$\operatorname{Hom}(a\otimes b,d)$, and the column index $\nu$ labels the output basis of
+$\operatorname{Hom}(b\otimes a,d)$. This is the convention used in
+[bonderson2008interferometry; Eqs. (2.31)--(2.32)](@citet); see also
+[barkeshli2019symmetry; Eqs. (27)--(28)](@citet). With the same index notation,
+the structural matrix is `C.braiding[a,b,d]`.
 
 The order of $a$ and $b$ matters. The inverse of $B^{ab}_d$ represents the
 inverse map from $b\otimes a$ to $a\otimes b$; it is not generally
 $B^{ba}_d$.
 
+## Pivotal coefficients and `P_symbols`
+
+A pivotal structure is a monoidal natural isomorphism
+
+```math
+j:\operatorname{id}_{\mathcal C}\Longrightarrow(-)^{**}
+```
+
+[EGNO; Definition 4.7.7](@cite). In the skeletal model the chosen duality has
+$S_i^{**}=S_i$. Since $S_i$ is split simple, the component of $j$ is a scalar:
+
+\begin{equation}
+\label{eq:P-symbol-definition}
+j_{S_i}=P_i\operatorname{id}_{S_i},\qquad P_i\in k^\times.
+\end{equation}
+
+TensorCategories.jl calls the scalars $P_i$ **$P$-symbols**. They are stored as
+`C.pivotal[i]`, and `P_symbols(C)` returns the dictionary
+`Dict([i] => P_i)`. This function name refers specifically to the components
+in $\eqref{eq:P-symbol-definition}$; the term “pivotal symbols” is also used elsewhere for different data
+attached to trivalent fusion spaces.
+
+The coefficients $P_i$ are additional structure: they are not determined by
+the $F$- or $R$-symbols. They must make $j$ monoidal. If
+
+```math
+\phi_{X,Y}:(X\otimes Y)^{**}\longrightarrow X^{**}\otimes Y^{**}
+```
+
+is the package's monoidal structure of the double-dual functor, the required
+identity is
+
+\begin{equation}
+\label{eq:pivotal-monoidality}
+j_X\otimes j_Y=\phi_{X,Y}\circ j_{X\otimes Y}.
+\end{equation}
+
+The initializer `six_j_category` installs provisional all-one components, and
+`set_pivotal!` stores supplied components without checking
+$\eqref{eq:pivotal-monoidality}$. Use
+`is_pivotal(C; check=true)` to verify pivotal coherence. Sphericality is the
+additional equality of the left and right pivotal traces and can be checked
+with `is_spherical(C; check=true)`. Since a $P$-symbol dictionary has one
+scalar per simple object rather than matrix entries indexed by fusion paths,
+`P_symbols` has no `convention` keyword.
+
+## [Unit normalization](@id unit-normalization)
+
+`SixJCategory` uses strict unit constraints in its skeletal coordinates. The
+normalized convention requires every associator block with a unit input to be
+an identity matrix, and the public `associator` function treats such inputs as
+strict. Since the setters trust supplied arrays by default, an unchecked array
+can nevertheless contain a conflicting stored block. With `check=true`,
+`set_one!` and `set_associator!` check this normalization. They do not check the
+full pentagon; use `pentagon_axiom(C)` for that.
+
 ## Pentagon and hexagon equations
 
 In a multiplicity-free category, write
-$\mathcal F^{abc}_d[e,f]$ for the coefficient in (2), and write
-$\mathcal R^{ab}_d$ for the coefficient in (4). With inadmissible fusion paths
+$\mathcal F^{abc}_d[e,f]$ for the coefficient in
+$\eqref{eq:associator-splitting-bases}$, and write $\mathcal R^{ab}_d$ for the
+coefficient in $\eqref{eq:braiding-splitting-bases}$. With inadmissible fusion paths
 interpreted as zero, the pentagon equation is
 
-```math
+\begin{equation}
+\label{eq:pentagon-multiplicity-free}
 \mathcal F^{fcd}_e[g,l]\,\mathcal F^{abl}_e[f,k]
 =\sum_h
   \mathcal F^{abc}_g[f,h]\,
   \mathcal F^{ahd}_e[g,k]\,
   \mathcal F^{bcd}_k[h,l].
-\tag{5}
-```
+\end{equation}
 
-This is the multiplicity-free form of Eqs. (2.9) and (2.77) in
-[bonderson2007thesis](@citet). The two hexagon equations, in the same
-convention, are
+This is the multiplicity-free specialization of the standard indexed pentagon
+equation in [barkeshli2019symmetry; Eq. (12)](@citet). The two hexagon
+equations, in the same convention, are
 
-```math
+\begin{equation}
+\label{eq:hexagon-positive-multiplicity-free}
 \mathcal R^{ca}_e\,
 \mathcal F^{acb}_d[e,g]\,
 \mathcal R^{cb}_g
@@ -193,12 +274,12 @@ convention, are
 \mathcal F^{cab}_d[e,f]\,
 \mathcal R^{cf}_d\,
 \mathcal F^{abc}_d[f,g]
-\tag{6}
-```
+\end{equation}
 
 and
 
-```math
+\begin{equation}
+\label{eq:hexagon-negative-multiplicity-free}
 (\mathcal R^{ac}_e)^{-1}\,
 \mathcal F^{acb}_d[e,g]\,
 (\mathcal R^{bc}_g)^{-1}
@@ -206,21 +287,25 @@ and
 \mathcal F^{cab}_d[e,f]\,
 (\mathcal R^{fc}_d)^{-1}\,
 \mathcal F^{abc}_d[f,g].
-\tag{7}
-```
+\end{equation}
 
-They are Eqs. (2.57) and (2.58) in
-[bonderson2007thesis](@citet). These formulas are useful independent checks
-that labels, matrix directions, and the order of the R-symbol superscripts have
-been translated correctly.
+These agree with [bonderson2007thesis; Eqs. (2.57)--(2.58)](@citet), with the label
+order and $R$-symbol superscripts used here.
 
-## Unit normalization
+Equations $\eqref{eq:hexagon-positive-multiplicity-free}$ and
+$\eqref{eq:hexagon-negative-multiplicity-free}$ result by suppressing the
+multiplicity indices in those full equations. The compact formulas printed as
+[bonderson2007thesis; Eqs. (2.78)--(2.79)](@citet) reverse the ordered
+superscripts of the $R$-symbols relative to the defining $R$-move in Eq. (2.54) and
+the full hexagon equations. The convention here follows Eq. (2.54),
+Eqs. (2.57)--(2.58), and the categorical hexagon.
 
-`SixJCategory` uses strict unit constraints in its skeletal coordinates. Every
-associator block with a unit input is an identity matrix. The keywords
-`set_one!(...; check=true)` and `set_associator!(...; check=true)` check this
-normalization. They do not check the full pentagon; use `pentagon_axiom(C)` for
-that.
+Equations $\eqref{eq:pentagon-multiplicity-free}$--$\eqref{eq:hexagon-negative-multiplicity-free}$
+display the multiplicity-free scalar form. With fusion
+multiplicities, the coherence conditions are the same pentagon and hexagon
+identities between structural morphisms, using the full matrices and all four
+binary-basis indices. The methods `pentagon_axiom(C)` and `hexagon_axiom(C)`
+evaluate those morphism equations without a multiplicity-free assumption.
 
 ## Changes of fusion bases
 
@@ -228,70 +313,79 @@ A gauge transformation changes the basis of every binary fusion space
 $V_{ab}^{e}$. It consequently changes both triple-product bases. If
 
 ```math
-L'_u=\sum_s L_sP_{s,u},
+L'_u=\sum_s L_sU_{s,u},
 \qquad
-R'_v=\sum_t R_tQ_{t,v},
+R'_v=\sum_t R_tV_{t,v},
 ```
 
 then the associator block in the new bases is
 
 ```math
-A'=P^{-1}AQ.
+A'=U^{-1}AV.
 ```
 
-The matrices $P$ and $Q$ are assembled from the binary basis changes, block by
+The matrices $U$ and $V$ are assembled from the binary basis changes, block by
 block over the intermediate channels. The same binary basis choices determine
-the transformation of $B$. Consequently, raw F- and R-symbol entries are not
-gauge invariants.
+the transformation of $B$. Consequently, raw $F$- and $R$-symbol entries are not
+gauge invariants. The corresponding entrywise formulas for changes of binary
+splitting bases are
+[bonderson2007thesis; Eqs. (2.75)--(2.76)](@citet).
 
 ## Relation to other published conventions
 
-The convention in (2) agrees with the splitting diagrams in
-[bonderson2007thesis](@cite) and [bonderson2008interferometry](@cite), after
-matching simple labels and binary bases. The latter reference assumes
-unitarity; equations (1) and (2) also make sense over a general splitting field
-without a Hermitian structure.
+The definitions in $\eqref{eq:F-symbol-definition}$ and
+$\eqref{eq:R-symbol-definition}$ are the published anyon conventions cited above.
+Other sources may instead use projection trees, reverse the associator,
+or place the output coordinate first. Those choices change the displayed
+matrix without changing the underlying structural morphism.
 
-The fusion spaces in [osborne2019h3](@cite) are
+The fusion spaces in [osborne2019h3; §2, p. 2, and §4, pp. 3--4](@citet) are
 $\operatorname{Hom}(d,a\otimes b)$. Its associator map is written in column
 coordinates with the output channel as the first matrix index. With
 composition-dual bases and matching labels, that matrix is $A^{\mathsf T}$.
 This explains the transpose between the package's structural matrices and the
 convention used for the $H_3$ formulas in that reference.
 
-In [maeurer2026thesis](@citet), Eqs. (1.58)--(1.59) and Algorithm 6, the
-F-matrix is defined on projection trees by
+In [maeurer2026thesis; Eqs. (1.58)--(1.59), (1.65), and Algorithm 6](@citet),
+the $F$- and $R$-matrices are defined on projection trees by
 
 ```math
 L_u\circ\alpha^{-1}=\sum_vM^{F}_{u,v}R_v.
 ```
-
-Equation (1.65) of the same reference defines the R-matrix by
 
 ```math
 p^{ab}_{d,\mu}\circ c_{a,b}^{-1}
 =\sum_\nu M^{R}_{\mu,\nu}p^{ba}_{d,\nu}.
 ```
 
-Relative to the structural matrices in (1) and (3), these projection-inverse
-matrices are
+There is also an index-order translation in the multiplicity case. The thesis
+prints the left projection tree with multi-index $(m,\beta,\alpha)$, whereas
+the corresponding path in this manual is ordered as
+$(e,\mu,\nu)=(m,\alpha,\beta)$. The thesis's right multi-index
+$(n,\gamma,\delta)$ has the same order as
+$(f,\rho,\sigma)$. After applying this relabeling, so that both matrices are
+indexed by the same ordered projection trees, the projection-inverse matrices
+are related to the structural matrices in
+$\eqref{eq:associator-projection-bases}$ and
+$\eqref{eq:braiding-projection-bases}$ by
 
-```math
+\begin{equation}
+\label{eq:projection-inverse-conversion}
 M^{F}=(A^{-1})^{\mathsf T},
 \qquad
 M^{R}=(B^{-1})^{\mathsf T}.
-\tag{8}
-```
+\end{equation}
 
 Thus, in the package's row-coordinate realization, the associator block
 corresponding to the thesis matrix $M^F$ is
 $A=(M^F)^{-\mathsf T}$, and similarly $B=(M^R)^{-\mathsf T}$ for the
 braiding.
 
-The F-symbol convention in Eq. (2) of [ardonne2010clebsch](@citet) has the
+The $F$-symbol convention in [ardonne2010clebsch; Eq. (2)](@citet) has the
 same projection direction as $M^F$. The two `convention` keywords below
 change the association of dictionary keys with entries of $A$ and $B$; they
-do not apply the inverse-transpose operation in (8).
+do not apply the inverse-transpose operation in
+$\eqref{eq:projection-inverse-conversion}$.
 
 These comparisons concern mathematical matrix conventions. The historical
 dictionary packing used by the database is a separate software format,
@@ -299,10 +393,35 @@ described on the [data exchange page](@ref symbol-data).
 
 ## The two convention keywords
 
+The structural matrices $A$ and $B$ have the mathematical meanings fixed
+above. The `convention` keyword controls only how their entries are assigned to
+dictionary keys.
+
 | Keyword | Meaning |
 |:---|:---|
-| `:bonderson` | Direct mathematical path indices as in (1)–(4) |
+| `:bonderson` | Direct mathematical path indices as in $\eqref{eq:F-symbol-definition}$ and $\eqref{eq:R-symbol-definition}$ |
 | `:column_major_packing` | Historical dictionary packing used by existing TensorCategories data files |
+
+With `convention=:bonderson`, the keys of `F_symbols(C; convention=:bonderson)`
+are
+
+```julia
+[a,b,c,d,e,f]                  # multiplicity-free
+[a,b,c,d,e,mu,nu,f,rho,sigma] # general case
+```
+
+and the value is
+$A^{abc}_d[(e,\mu,\nu),(f,\rho,\sigma)]$. The keys of
+`R_symbols(C; convention=:bonderson)` are
+
+```julia
+[a,b,d]       # multiplicity-free
+[a,b,d,mu,nu] # general case
+```
+
+and the value is $B^{ab}_d[\mu,\nu]$. Thus this keyword exposes the path
+indices used in $\eqref{eq:F-symbol-definition}$ and
+$\eqref{eq:R-symbol-definition}$ directly.
 
 The default is `:column_major_packing` for compatibility with existing data.
 Neither keyword changes the structural matrices, the binary bases, or the

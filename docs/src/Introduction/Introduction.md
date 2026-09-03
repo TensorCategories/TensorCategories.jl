@@ -1,6 +1,6 @@
 # [A first computation](@id first-category)
 
-Start with an existing category. No [F-symbol input](@ref skeletal-fusion) or
+Start with an existing category. No [$F$-symbol input](@ref skeletal-fusion) or
 Julia type definitions are needed to use its objects and morphisms.
 
 ```@example first
@@ -16,6 +16,7 @@ X ⊗ X
 `simples(C)` returns representatives of simple isomorphism classes. The names
 `u`, `chi`, and `X` are Julia variables. The category supplies their tensor
 product; the same operation is used for representations and graded spaces.
+Here `one(C)` is the tensor unit, `⊗` is tensor product, and `⊕` is direct sum.
 
 ## Objects and morphisms
 
@@ -32,7 +33,9 @@ int_dim(End(X))
 `compose(f,g)` means first $f$, then $g$: it returns $g\circ f$.
 The infix `∘` has its usual mathematical order.
 
-Direct sums can return both the object and its structure maps:
+`direct_sum(X1,X2)` returns the direct-sum object $Y=X_1\oplus X_2$ together
+with arrays `i` and `p` containing the inclusions $i_j:X_j\to Y$ and
+projections $p_j:Y\to X_j$, respectively:
 
 ```@example first
 Y, i, p = direct_sum(u, chi)
@@ -42,15 +45,16 @@ int_dim(Hom(Y, Y))
 ```
 
 `u ⊕ chi` returns only the object. `Hom(Y,Y)` is a vector space of morphisms;
-`basis(Hom(Y,Y))` returns actual morphisms.
+`basis(Hom(Y,Y))` returns actual morphisms, and `int_dim` returns its dimension
+as a Julia integer.
 
 ## An associator
 
 The associator maps $(X\otimes X)\otimes X$ to $X\otimes(X\otimes X)$. The two
 objects are equal in this [skeletal model](@ref skeletal-fusion), but the
 associator is not the identity. This model records the associator by its matrix
-on a multiplicity space. [Matrix realizations](@ref matrix-realizations) explain
-what this matrix represents, and [F-symbol conventions](@ref f-conventions)
+on a multiplicity space. [Matrix coordinates](@ref matrix-realizations) explain
+what this matrix represents, and the [$F$-symbol conventions](@ref f-conventions)
 specify its bases and direction.
 
 ```@example first
@@ -61,11 +65,17 @@ matrix(a)
 show(stdout, MIME"text/plain"(), matrix(a)); println() # hide
 ```
 
-An associator is part of the category; it cannot simply be omitted from a
-composite.
+Equality of the two represented endpoint objects does not make the associator
+an identity morphism. A composite that changes parenthesization must use the
+stored structural map.
 
-Continue with the [anyon and CFT terminology bridge](@ref physics-bridge), then
-[Working with categories](@ref interface-philosophy).
-For a new concrete model, use the [implementation tutorial](@ref implementing-matrices).
-For supplied fusion data, use [Fusion categories from data](@ref skeletal-fusion).
-The [catalogue](@ref category-catalogue) lists the existing implementations.
+The next page is an optional [anyon and CFT terminology bridge](@ref physics-bridge).
+Readers who do not need that translation can continue directly with
+[Models and the category interface](@ref interface-philosophy). Later routes
+through the manual are:
+
+- the [implementation tutorial](@ref implementing-matrices) for a new concrete
+  category model;
+- [skeletal fusion categories](@ref skeletal-fusion) for a category specified
+  by fusion data; and
+- the [catalogue](@ref category-catalogue) for existing implementations.

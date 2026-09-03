@@ -1,7 +1,10 @@
 # Direct sums, kernels, and decompositions
 
-[EGNO](@citet), Chapter 1, is the mathematical reference. Here we specify
-the returned objects and maps.
+For the mathematical background, see [EGNO; Chapter 1](@citet). Direct sums
+belong to the additive interface, kernels and cokernels to the abelian
+interface, and decomposition into simples to a semisimple setting. A category
+need not support all three levels. Here we specify the objects and structural
+maps returned by the corresponding functions.
 
 ## Direct sums
 
@@ -9,15 +12,24 @@ the returned objects and maps.
 D, i, p = direct_sum(X, Y)
 ```
 
-The entries of $i$ are inclusions into $D$; those of $p$ are projections.
-They satisfy $p_r\circ i_s=\delta_{r,s}$ and
-$\sum_r i_r\circ p_r=\operatorname{id}_D$.
-`X ⊕ Y` returns only the object. `zero(C)` is the zero object; `one(C)` is the
-tensor unit.
+If the summands are $X_1,\ldots,X_n$, the entries of $i$ are inclusions
+$i_s:X_s\to D$, and those of $p$ are projections $p_r:D\to X_r$. They satisfy
 
-Generic methods extend binary direct sums to larger families; specialized
-methods can avoid repeated construction and composition of structure maps.
-An empty family needs a specified category.
+```math
+p_r\circ i_s=
+\begin{cases}
+\operatorname{id}_{X_s},&r=s,\\
+0_{X_s,X_r},&r\ne s,
+\end{cases}
+\qquad
+\sum_r i_r\circ p_r=\operatorname{id}_D,
+```
+
+`X ⊕ Y` returns only the object, and `zero(C)` is the zero object.
+
+`direct_sum` also accepts larger nonempty families. Use `zero(C)` for the empty
+direct sum; an empty collection of objects cannot determine its parent
+category.
 
 ## Kernels and cokernels
 
@@ -29,9 +41,9 @@ For $f:X\to Y$:
 | `cokernel(f)` | $(Q,p)$ with $p:Y\to Q$ | $p\circ f=0$ |
 | `image(f)` | $(I,j)$ with $j:I\to Y$ | Image inclusion |
 
-The generic image is the kernel of the cokernel. Universal properties, not just
-the zero-composite equations, belong to the contract. A matrix nullspace also
-needs the category's additional structure.
+The generic image is the kernel of the cokernel. Implementations must satisfy
+the universal properties, not only the displayed zero-composite equations. A
+matrix nullspace also needs the category's additional structure.
 
 ```@example kernels
 using TensorCategories, Oscar
@@ -56,7 +68,10 @@ from `composition_factors(X)`. Composition factors do not assert that the
 corresponding short exact sequences split; an injective map need not have a
 left inverse.
 
-In a nonsemisimple category an object with division endomorphism algebra need
-not be simple: the converse of Schur's lemma fails in this generality.
+Schur's lemma says that a simple object has a division endomorphism algebra
+[EGNO; Lemma 1.5.2, p. 5](@cite). In a nonsemisimple category the converse
+fails: an object with division endomorphism algebra need not be simple.
+Consequently, an implementation must not use that condition alone as a
+simplicity test outside a semisimple setting.
 
 Continue with [Tensor products and duality](MonoidalCategories.md).

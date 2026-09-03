@@ -1,12 +1,16 @@
 # [Anyons, CFT, and tensor-category language](@id physics-bridge)
 
-This page translates between terminology common in anyon physics, rational
-conformal field theory, and tensor-category theory. It also gives a short route
-from a familiar anyon model to the package interface. The categorical language
-used here follows [EGNO](@cite); the anyon conventions and fusion-tree language
-follow [bonderson2007thesis](@cite), Chapter 2.
+!!! note "Optional terminology bridge"
+    This page is for readers coming from anyons or rational conformal field
+    theory (RCFT). It translates familiar terminology and indicates where the
+    corresponding structures occur in the package. It is not needed for the
+    linear development of the manual; other readers may continue directly with
+    [Models and the category interface](@ref interface-philosophy).
 
-## A dictionary in both directions
+The categorical language follows [EGNO](@citet). The anyon conventions and
+fusion-tree language follow [bonderson2007thesis; Chapter 2](@citet).
+
+## Translation of terminology
 
 In a unitary anyon model one usually works with a unitary braided fusion
 category equipped with compatible duality and spherical or ribbon data. The
@@ -22,73 +26,54 @@ structures.
 | fusion multiplicity | $N_{ab}^{c}=\dim_k\operatorname{Hom}(a\otimes b,c)$ in the split case |
 | fusion channel $c$ | simple summand $c$ of $a\otimes b$ |
 | fusion space | $V_{ab}^{c}=\operatorname{Hom}(a\otimes b,c)$ in the package's projection convention |
-| splitting space | $\operatorname{Hom}(c,a\otimes b)$; composition-dual to a chosen projection basis |
+| splitting space | $\operatorname{Hom}(c,a\otimes b)$, composition-dual to a chosen projection basis |
 | fusion tree | basis obtained by iterating binary fusion spaces |
 | $F$-move | associator written in two fusion-tree bases |
-| exchange or elementary braid | braiding; its binary fusion-space matrix gives the R-symbols |
+| exchange or elementary braid | braiding; its binary fusion-space matrix gives the $R$-symbols |
 | topological spin | twist eigenvalue $\theta_a$ |
-| quantum dimension | categorical dimension `dim(a)` for the chosen pivotal/spherical structure |
-| fusion-rule dimension | Frobenius--Perron dimension `fpdim(a)` |
+| quantum dimension | categorical dimension, returned by `dim(a)` for the chosen pivotal structure |
+| fusion-rule dimension | Frobenius--Perron dimension, returned by `fpdim(a)` |
 | total quantum dimension $\mathcal D$ | $\sqrt{\dim(\mathcal C)}$ for a unitary spherical fusion category |
-| modular $S$ and $T$ data | `normalized_smatrix(C)` and the twist matrix `tmatrix(C)`, with the normalization below |
+| modular $S$ and $T$ data | `normalized_smatrix(C)` and `tmatrix(C)`, with the normalization below |
 
-To keep mathematical labels and code aligned, throughout this manual the same
-letters also denote the corresponding integer positions when they occur inside
-an array subscript or dictionary key. Thus, if $a,b,c$ are simple objects, the
-`a`, `b`, and `c` in `multiplication_table(C)[a,b,c]` are their positions in
-`simples(C)`, rather than the object values themselves.
-
-For a split fusion category the integers $N_{ab}^{c}$ are stored in this
-multiplication table. In a non-split category the endomorphism division
-algebras enter the multiplicity formula; see
-[Grothendieck rings](@ref grothendieck-rings). The distinction between
-categorical and Frobenius--Perron dimensions also matters outside the unitary
-or pseudounitary setting.
+For a split fusion category, the integers $N_{ab}^{c}$ are the structure
+constants of its [Grothendieck ring](@ref grothendieck-rings). Over a
+non-splitting field, simple endomorphism division algebras enter the
+multiplicity formula. The distinction between categorical and
+Frobenius--Perron dimensions also matters when the chosen spherical dimensions
+are not the positive Frobenius--Perron dimensions.
 
 ## First anyon computation: Ising
 
-The following AnyonWiki entry is a braided pivotal Ising category. Its artifact
-uses generic labels, so we identify the charges from the fusion rules:
+The default constructor uses $\mathbb Q(\sqrt2)$, which contains the
+associator and pivotal coefficients needed below but not the phases of a
+braided realization. The [Ising catalogue entry](../F-symbols/TambaraYamagami.md)
+describes the coefficient-field choices. The package labels its three simple
+objects $(\mathbb 1,\chi,X)$; in the example we rename these as the conventional
+charges $(\mathbb 1,\psi,\sigma)$:
 
 ```@example physics
 using TensorCategories, Oscar
-C = anyonwiki(3,1,0,1,1,1,1)
-objects = simples(C)
-U, Psi, Sigma = objects
-u, psi, sigma = eachindex(objects)
-@assert U == one(C)
-@assert Psi ⊗ Psi == U
-@assert Psi ⊗ Sigma == Sigma ⊗ Psi == Sigma
-@assert Sigma ⊗ Sigma == U ⊕ Psi
-@assert dim(Sigma)^2 == 2
+C = ising_category()
+vacuum, psi, sigma = simples(C)
+@assert vacuum == one(C)
+@assert psi ⊗ psi == vacuum
+@assert psi ⊗ sigma == sigma ⊗ psi == sigma
+@assert sigma ⊗ sigma == vacuum ⊕ psi
+@assert dim(sigma)^2 == 2
 @assert dim(C) == 4
-(simples_names(C), dim.(objects))
-show(stdout, MIME"text/plain"(),
-    (simples_names(C), dim.(objects))); println() # hide
+dim.(simples(C))
 ```
 
-Thus the three stored labels represent $(\mathbb 1,\psi,\sigma)$, and the
-package's global dimension is
+Thus the package's global dimension is
 
 ```math
 \dim(\mathcal C)=\sum_a d_a^2=4.
 ```
 
 Physicists usually call $\mathcal D=2$ the total quantum dimension. The method
-`dim(C)` returns $\mathcal D^2$, not $\mathcal D$.
-
-The database can be searched before loading a model. The optional attributes
-select entries marked by the pinned dataset:
-
-```@example physics
-keys = anyonwiki_keys(3,"unitary","modular")
-@assert (3,1,0,1,1,1,1) in keys
-first(keys,5)
-show(stdout, MIME"text/plain"(), first(keys,5)); println() # hide
-```
-
-The seven indices and the meaning of these dataset flags are described under
-[AnyonWiki](../F-symbols/AnyonWiki.md).
+`dim(C)` returns $\mathcal D^2$, whereas `dim(sigma)` returns the quantum
+dimension $d_\sigma$.
 
 ## Fusion spaces are not object dimensions
 
@@ -103,45 +88,47 @@ has dimension two. Its usual fusion-tree basis is indexed by the intermediate
 charges $\mathbb 1$ and $\psi$:
 
 ```@example physics
-H = Hom((Sigma ⊗ Sigma) ⊗ Sigma, Sigma)
+H = Hom((sigma ⊗ sigma) ⊗ sigma, sigma)
 @assert int_dim(H) == 2
-@assert size(matrix(id(Sigma))) == (1,1)
+@assert size(matrix(id(sigma))) == (1,1)
 int_dim(H)
 ```
 
-The $1\times1$ matrix representing `id(Sigma)` does not say that
-$d_\sigma=1$. The matrix belongs to the package's split semisimple coordinate
-realization; quantum dimension is categorical trace data. See
-[Matrices and fiber functors](@ref matrix-realizations).
+The $1\times1$ matrix representing `id(sigma)` does not say that
+$d_\sigma=1$. This matrix records the multiplicity coordinates of the identity
+morphism in the package's split semisimple realization; quantum dimension is
+categorical trace data. The distinction is developed under
+[Fiber functors and semisimple coordinates](@ref fiber-functors).
 
-## F- and R-symbols
+## $F$- and $R$-symbols
 
-Always specify `convention=:bonderson` when dictionary keys should name the
-physical fusion paths directly:
+An $F$-matrix represents the associator between two fusion-tree bases. In the
+package's projection convention, an $R$-matrix represents the pullback by the
+braiding
 
-```@example physics
-F = F_symbols(C; convention=:bonderson)
-R = R_symbols(C; convention=:bonderson)
-A = C.ass[sigma,sigma,sigma,sigma]
-@assert F[[sigma,sigma,sigma,sigma,u,u]] == A[1,1]
-@assert R[[sigma,sigma,u]] == C.braiding[sigma,sigma,u][1,1]
-(A, [R[[sigma,sigma,c]] for c in (u,psi)])
-show(stdout, MIME"text/plain"(),
-    (A, [R[[sigma,sigma,c]] for c in (u,psi)])); println() # hide
+```math
+c_{a,b}^{*}:V_{ba}^{c}\longrightarrow V_{ab}^{c},
+\qquad p\longmapsto p\circ c_{a,b}.
 ```
 
-The integer keys are positions in `simples(C)`: in this entry the positions of
-$(\mathbb 1,\psi,\sigma)$ are $(1,2,3)$. The row and column channels of $A$
-are $(\mathbb 1,\psi)$. The precise
-projection and splitting bases, matrix direction, multiplicity indices, and
-braiding direction are fixed on the [F- and R-symbol convention page](@ref f-conventions).
-Raw F- and R-symbol entries depend on fusion bases. Fusion rules, dimensions,
-twists, and modular data are more useful when comparing gauges.
+Equivalently, the braiding itself maps the composition-dual splitting space
+$\operatorname{Hom}(c,a\otimes b)$ to
+$\operatorname{Hom}(c,b\otimes a)$. Consequently, the entries of $F$- and
+$R$-matrices depend on the chosen projection and splitting bases, on the
+direction of the structural maps, and on the ordering of multiplicity indices.
+They are not determined by the fusion rules alone.
 
-## S, T, topological spins, and CFT conventions
+TensorCategories.jl first introduces the underlying
+[skeletal fusion model](@ref skeletal-fusion), and only then fixes the
+[precise symbol conventions](@ref f-conventions). That order is
+essential when translating formulas or data from the physics literature.
 
-For a braided spherical category, `smatrix(C)` returns the unnormalized trace
-of double braiding. The package defines
+## $S$, $T$, topological spins, and CFT conventions
+
+The formal hypotheses and definitions appear under
+[Premodular and modular categories](@ref premodular-categories). In those
+hypotheses, `smatrix(C)` returns the unnormalized pivotal trace of double
+braiding, while the package uses
 
 ```math
 S^{\mathrm{norm}}=\frac{1}{\sqrt{\dim(\mathcal C)}}S,
@@ -149,18 +136,8 @@ S^{\mathrm{norm}}=\frac{1}{\sqrt{\dim(\mathcal C)}}S,
 T^{\mathrm{cat}}=\operatorname{diag}(\theta_a).
 ```
 
-The corresponding computations are:
-
-```@example physics
-theta = twists(C)
-S = smatrix(C)
-S_normalized = normalized_smatrix(C)
-T = tmatrix(C)
-@assert T == diagonal_matrix(theta)
-@assert S_normalized == inv(sqrt(dim(C)))*S
-@assert is_modular(C)
-nothing # hide
-```
+These are the categorical twist and $S$-matrix conventions of
+[EGNO; §§8.10 and 8.13, especially Eq. (8.46)](@citet).
 
 The square root in `normalized_smatrix(C)` is a choice over a general
 coefficient field. In a unitary realization one chooses the positive total
@@ -175,51 +152,44 @@ T^{\mathrm{RCFT}}_{aa}
 \qquad \theta_a=e^{2\pi i h_a}.
 ```
 
-Consequently, `tmatrix(C)` is the categorical twist matrix
-$T^{\mathrm{cat}}$, without the overall central-charge phase. The categorical
-data determine the conformal weights only modulo integers, and do not by
-themselves provide the value of $c$ needed to restore that phase. The relation
-between the fusing and braiding data of RCFT and categorical modular data goes
-back to [moore1989classical](@cite).
+Thus `tmatrix(C)` is the categorical twist matrix, without the overall
+central-charge phase. A unitary modular category constrains the topological
+central charge through its modular data, but it does not determine a full RCFT
+central charge or conformal weights beyond their categorical phase data. The
+relation between RCFT fusing and braiding data and categorical modular data is
+described by [moore1989classical](@citet).
 
 ## Exact and numerical use
 
-The same model can be evaluated over complex balls at a chosen working
-precision:
-
-```@example physics
-C_numeric = anyonwiki(AcbField(128),3,1,0,1,1,1,1)
-@assert pentagon_axiom(C_numeric)
-@assert hexagon_axiom(C_numeric)
-@assert is_unitary(C_numeric)
-@assert is_modular(C_numeric)
-S_numeric = normalized_smatrix(C_numeric)
-T_numeric = tmatrix(C_numeric)
-nothing # hide
-```
-
-This is arbitrary-precision ball arithmetic, not exact algebraic equality. The
-[numerical computations page](@ref numerical-computations) explains which
-conclusions are rigorous and why a residual ball containing zero does not prove
-an exact equation.
+Fusion data may be stored exactly over a number field or evaluated over complex
+balls at a chosen working precision. Exact coefficients can have several
+complex embeddings, and different embeddings can change unitarity or phases.
+The [coefficient-field chapter](@ref base-fields) explains these choices. The
+[numerical-computation chapter](@ref numerical-computations) explains ball
+arithmetic, and the later
+[numerical fusion-category chapter](@ref numerical-fusion-categories) applies
+it to coherence, unitarity, and modularity. Numerical center computations are
+introduced in the [Drinfeld-center chapter](@ref numerical-centers), after
+half-braidings have been defined.
 
 ## Scope and current limitations
 
 A modular tensor category records topological and chiral categorical data; it
 is not by itself a complete two-dimensional CFT. TensorCategories.jl does not
-construct characters, position-dependent conformal blocks, OPE coefficients,
+construct characters, position-dependent conformal blocks,
+operator-product-expansion (OPE) coefficients,
 or modular-invariant partition functions. Full RCFT constructions require
-additional data; for example, the approach of [fuchs2002tft](@cite) uses a
-symmetric special Frobenius algebra in the modular tensor category.
+additional data; for example, [fuchs2002tft](@citet) use a symmetric special
+Frobenius algebra in a modular tensor category.
 
-The package supplies associators, braidings, and local F- and R-symbols, from
+The package supplies associators, braidings, and local $F$- and $R$-symbols, from
 which braid actions can be assembled. It currently has no public high-level API
 that accepts a braid word and returns its matrix in a chosen multi-anyon
 fusion-tree basis. The ordinary `braiding(X,Y)` method is a categorical
 structural map, not such a braid-word interface.
 
-Continue with [Working with categories](@ref interface-philosophy). Readers
-interested primarily in fusion data can instead go directly to
-[precise F- and R-symbol conventions](@ref f-conventions),
-[numerical computations](@ref numerical-computations), or the
-[category catalogue](@ref category-catalogue).
+Continue with [Models and the category interface](@ref interface-philosophy).
+Readers interested primarily in fusion data can later follow
+[skeletal fusion categories](@ref skeletal-fusion),
+[precise symbol conventions](@ref f-conventions), and
+[numerical fusion categories](@ref numerical-fusion-categories), in that order.

@@ -1,22 +1,17 @@
-# Rings, serialization, and utilities
+# Rings, numerical conversion, and persistence
 
-These exported docstrings are grouped by their source files. For explanatory
-material, return to the [manual and API index](../API.md).
+These utilities support the main categorical workflows. The list is selective;
+use Julia's help mode and method table for exact signatures.
 
-The [Grothendieck-ring chapter](@ref grothendieck-rings) explains the
-decategorified structures, multiplication conventions, and ring constructors.
+| Role | Principal public names | Manual |
+|:---|:---|:---|
+| Grothendieck and based rings | `split_grothendieck_ring`, `ZPlusRing`, `multiplication_table`, `print_multiplication_table`, `fpdim` | [Grothendieck rings](../Interface/GrothendieckRings.md), [computing with fusion rings](../Interface/FusionRings.md) |
+| Complex and numerical realization | `complex_embedding`, `complex_embeddings`, `numeric` | [Coefficient fields](../Basics/BaseFields.md), [numerical computations](../Basics/Numerical.md), [numerical fusion categories](../F-symbols/Numerical.md) |
+| Exact fusion-category archives | `save_fusion_category`, `load_fusion_category` | [Data exchange](../F-symbols/Data.md) |
+| Numerical symbol tables | `numeric_symbols_to_csv`, `numeric_symbols_from_csv`, `load_numeric_fusion_category` | [Data exchange](../F-symbols/Data.md) |
+| Native object persistence | `save`, `load` | [Data exchange](../F-symbols/Data.md) |
 
-```@autodocs
-Modules = [TensorCategories]
-Private = false
-Pages = [
-    "AliasMacro.jl",
-    "DecategorifiedFramework/GrothendieckRing.jl",
-    "DecategorifiedFramework/ZPlusRings.jl",
-    "DecategorifiedFramework/multiplication_table.jl",
-    "Serialization/symbols_to_csv.jl",
-    "TensorCategories.jl",
-    "Utility/QuantumIntegers.jl",
-    "Utility/Serialization.jl",
-]
-```
+Symbol archives and CSV tables carry convention choices that cannot be inferred
+from a bare array. Read the [precise symbol conventions](../F-symbols/Conventions.md)
+and the serialization section of the data-exchange chapter before moving data
+between programs.

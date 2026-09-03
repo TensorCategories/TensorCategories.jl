@@ -2,8 +2,8 @@
 
 We continue the [Ising example](Introduction.md), now paying attention to the
 field of definition. The expected simple objects and splitting phenomenon are
-described in [maurer2024computing](@cite), §6.1, and
-[maeurer2026thesis](@cite), Theorem 2.5.6 and Appendix B.1.
+described in [maurer2024computing; §6.1](@citet) and
+[maeurer2026thesis; Theorem 2.5.6 and Appendix B.1](@citet).
 
 ## Over $\mathbb Q(\sqrt2)$
 
@@ -48,8 +48,8 @@ int_dim(End(T))
 
 The component is a matrix over $K$ even though its eigenvalues are not in $K$.
 A nonzero noninvertible endomorphism cannot already exist in the division
-algebra $\operatorname{End}(T)$. After scalar extension that algebra can acquire idempotents;
-their images split the extended object.
+algebra $\operatorname{End}(T)$. After scalar extension that algebra can acquire
+idempotents; their images split the extended object.
 
 ## Over $\mathbb Q(\zeta_{16})$
 
@@ -71,12 +71,13 @@ squared_dimensions = sort([QQ(dim(T)^2) for T in SL])
 squared_dimensions
 ```
 
-The squared dimensions are four $1$s, four $2$s, and one $4$.
-Their sum is $16=\dim(\mathcal C)^2$. This is the familiar rank-nine center of a split
-Ising category. Over a field supporting a nondegenerate Ising braiding, the
-general equivalence
+The squared dimensions comprise four entries equal to $1$, four equal to $2$,
+and one equal to $4$.
+Their sum is $16=\dim(\mathcal C)^2$. This is the familiar rank-nine center of
+a split Ising category. Over a field supporting a nondegenerate Ising
+braiding, the general equivalence
 $\mathcal Z(\mathcal C)\simeq\mathcal C\boxtimes\mathcal C^{\mathrm{rev}}$
-explains the nine simples [EGNO](@cite), §8.20.
+explains the nine simples [EGNO; §8.20](@cite).
 This argument concerns a braided realization after extension; it does not
 supply a braiding over the original field $K$.
 
@@ -86,20 +87,25 @@ simple endomorphism algebras; it does not handle arbitrary noncommutative
 division algebras. Here the explicit field $\mathbb Q(\zeta_{16})$ and
 embedding suffice.
 
-## From half-braidings to F- and R-symbols
+## From half-braidings to $F$- and $R$-symbols
 
 ```@example isingcenter
 D = six_j_category(ZL)
 @assert length(simples(D)) == 9
 @assert is_braided(D)
+@assert pentagon_axiom(D)
+@assert hexagon_axiom(D)
 F, R = F_symbols(D), R_symbols(D)
 (length(F), length(R))
 ```
 
-The F- and R-symbols use the decomposition bases chosen during
+The $F$- and $R$-symbols use the decomposition bases chosen during
 skeletonization, with the [matrix conventions](@ref f-conventions) and
 [dictionary layout](@ref symbol-data) described earlier.
 
 Ordinary `SixJCategory` coordinates require split simples. Trying to extract
-such coordinates from the five-simple category over $K$ would discard its
-nontrivial division algebras; scalar extension must come first.
+such coordinates from the category with five simple objects over $K$ would
+discard its nontrivial division algebras; scalar extension must come first.
+
+Continue with [Relative centers](@ref centralizer), which retain
+half-braidings only against a specified tensor subcategory.
