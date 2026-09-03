@@ -23,6 +23,7 @@ The opposite category reverses every arrow. Reversing a braiding is a different
 operation: `reverse_braiding(C)` leaves the category and tensor product in
 place and replaces
 ```math
+\label{eq:reverse-braiding}
 c_{X,Y}\quad\text{by}\quad c^{\mathrm{rev}}_{X,Y}=c_{Y,X}^{-1}.
 ```
 The current `reverse_braiding` method supports `SixJCategory` models and
@@ -42,6 +43,7 @@ category.
 Mathematically, one first forms the coefficient extension
 $\mathcal C\otimes_k L$, with the same objects as $\mathcal C$ and
 ```math
+\label{eq:scalar-extension-hom}
 \operatorname{Hom}_{\mathcal C\otimes_k L}(X,Y)
 =\operatorname{Hom}_{\mathcal C}(X,Y)\otimes_k L.
 ```
@@ -49,6 +51,7 @@ New idempotents need not have images in this category, so it need not remain
 abelian. For a semisimple category, scalar extension means the Karoubi
 completion
 ```math
+\label{eq:scalar-extension-karoubi-envelope}
 \mathcal C\boxtimes_k L=\operatorname{Kar}(\mathcal C\otimes_k L).
 ```
 For a weak fusion category this agrees with the Deligne product

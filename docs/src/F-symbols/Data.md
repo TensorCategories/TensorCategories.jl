@@ -55,6 +55,7 @@ is the coefficient $\mathcal F^{abc}_d[e,f]$ defined on the
 and the value is
 
 ```math
+\label{eq:bonderson-F-dictionary-entry}
 A^{abc}_d[(e,\mu,\nu),(f,\rho,\sigma)].
 ```
 
@@ -81,16 +82,17 @@ For a multiplicity-free associator block $A=A^{abc}_d$, the key is
 `[a,b,c,d,f,e]`. Let
 
 ```math
+\label{eq:admissible-intermediate-lists}
 E=(e_1,\ldots,e_q),\qquad T=(f_1,\ldots,f_q)
 ```
 
 be the increasing lists of admissible left and right intermediate simples.
 If `D = F_symbols(C)`, then
 
-\begin{equation}
+```math
 \label{eq:column-major-F-packing}
 \mathsf D[a,b,c,d,f_s,e_r]=A_{s,r}.
-\end{equation}
+```
 
 The suffix $(f_s,e_r)$ therefore does not directly name the row and column of
 $A$. Swapping the final two key positions is not a general conversion because
@@ -107,6 +109,7 @@ $(e,f,\nu,\mu,\rho,\sigma)$ while consuming the entries of $A$ in Julia's
 column-major order. Here
 
 ```math
+\label{eq:fusion-multiplicity-index-ranges}
 1\leq\mu\leq N_{ab}^{e},\quad
 1\leq\nu\leq N_{ec}^{d},\quad
 1\leq\rho\leq N_{bc}^{f},\quad
@@ -124,18 +127,18 @@ fusion path. Fix $a,b,c,d$, and sort the keys in that block as follows:
 Write the resulting list as $k_1,\ldots,k_{q^2}$, where $q$ is the common
 number of left and right paths. Then
 
-\begin{equation}
+```math
 \label{eq:column-major-F-reconstruction}
 A_{r,s}=\mathsf D[k_{r+q(s-1)}].
-\end{equation}
+```
 
 The $R$-symbol dictionary uses `[a,b,d]` in the multiplicity-free case. With
 multiplicities it uses `[a,b,d,mu,nu]` and stores
 
-\begin{equation}
+```math
 \label{eq:column-major-R-packing}
 \mathsf R[a,b,d,\mu,\nu]=B^{ab}_d[\nu,\mu].
-\end{equation}
+```
 
 Thus the two multiplicity indices are transposed relative to the direct
 mathematical convention. This is not an inverse braiding or a change of gauge.

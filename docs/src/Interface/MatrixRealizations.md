@@ -9,6 +9,7 @@ available only when the concrete category model provides such coordinates.
 In many implemented models these coordinates come from a faithful $k$-linear
 functor
 ```math
+\label{eq:matrix-realization-functor}
 U:\mathcal C\longrightarrow\operatorname{Vec}_k
 ```
 that is implicit in the representation. Each object has a vector space and a
@@ -25,6 +26,7 @@ $f:X\to Y$ has one matrix row per source basis vector and one column per target
 basis vector. Consequently, for $f:X\to Y$ and $g:Y\to Z$,
 
 ```math
+\label{eq:row-coordinate-composition}
 M_{g\circ f}=M_fM_g.
 ```
 

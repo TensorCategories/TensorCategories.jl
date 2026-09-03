@@ -19,6 +19,7 @@ $6j$-symbols.
 An object
 
 ```math
+\label{eq:skeletal-object-decomposition}
 X=\bigoplus_{i=1}^r S_i^{\oplus m_i}
 ```
 
@@ -40,12 +41,14 @@ them.
 If
 
 ```math
+\label{eq:skeletal-target-decomposition}
 Y=\bigoplus_{i=1}^r S_i^{\oplus n_i},
 ```
 
 then
 
 ```math
+\label{eq:skeletal-homspace}
 \operatorname{Hom}_{\mathcal C}(X,Y)
 \cong\bigoplus_{i=1}^r\operatorname{Mat}_{m_i\times n_i}(k).
 ```
@@ -73,6 +76,7 @@ The fusion multiplicities are the structure constants of the
 [Grothendieck ring](@ref grothendieck-rings) in its simple-object basis:
 
 ```math
+\label{eq:skeletal-fusion-rule}
 S_i\otimes S_j\cong
 \bigoplus_l S_l^{\oplus N_{ij}^{\,l}},
 \qquad
@@ -84,12 +88,14 @@ The integer array `C.tensor_product[i,j,l]` stores $N_{ij}^{\,l}$. By
 bilinearity,
 
 ```math
+\label{eq:skeletal-tensor-multiplicity}
 [X\otimes Y:S_l]=\sum_{i,j}m_i n_jN_{ij}^{\,l}.
 ```
 
 The simple unit has a distinguished index $u$ and satisfies
 
 ```math
+\label{eq:skeletal-unit-fusion}
 N_{ui}^{\,j}=N_{iu}^{\,j}=\delta_{ij}.
 ```
 
@@ -105,6 +111,7 @@ $\operatorname{Hom}_{\mathcal C}(S_i\otimes S_j,S_l)$.
 Associativity of the fusion rules gives
 
 ```math
+\label{eq:skeletal-associativity-dimensions}
 \sum_eN_{ab}^{\,e}N_{ec}^{\,d}
 =\sum_fN_{bc}^{\,f}N_{af}^{\,d}.
 ```
@@ -113,6 +120,7 @@ The two bracketings of a triple tensor product therefore have the same
 multiplicity vector. Their identification by the associator
 
 ```math
+\label{eq:skeletal-associator-map}
 \alpha_{a,b,c}:(a\otimes b)\otimes c
 \longrightarrow a\otimes(b\otimes c)
 ```

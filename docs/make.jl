@@ -39,7 +39,7 @@ try
             mathengine = MathJax3(Dict(
                 :tex => Dict(
                     "inlineMath" => [["\$","\$"], ["\\(","\\)"]],
-                    "tags" => "ams",
+                    "tags" => "all",
                     "packages" => ["base", "ams", "autoload"],
                 ),
             )),

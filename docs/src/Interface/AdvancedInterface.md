@@ -44,6 +44,7 @@ A natural transformation $\eta:F\Rightarrow G$ has components
 $\eta_X:F(X)\to G(X)$ satisfying
 
 ```math
+\label{eq:natural-transformation-naturality}
 G(f)\circ\eta_X=\eta_Y\circ F(f)
 \qquad(f:X\to Y).
 ```
@@ -58,6 +59,7 @@ formal requirement of this solver.
 A component on a non-split simple $S$ must satisfy naturality with respect to
 its whole endomorphism algebra:
 ```math
+\label{eq:natural-transformation-simple-test}
 G(d)\circ\eta_S=\eta_S\circ F(d)
 \qquad\bigl(d\in\operatorname{End}(S)\bigr).
 ```
@@ -68,6 +70,7 @@ that the component commutes with the induced endomorphisms.
 
 A monoidal functor has tensorators
 ```math
+\label{eq:monoidal-functor-tensorator}
 J_{X,Y}:F(X)\otimes F(Y)\longrightarrow F(X\otimes Y),
 ```
 satisfying the associator compatibility [EGNO; §2.4](@cite).

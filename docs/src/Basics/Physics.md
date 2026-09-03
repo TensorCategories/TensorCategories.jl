@@ -68,6 +68,7 @@ dim.(simples(C))
 Thus the package's global dimension is
 
 ```math
+\label{eq:physics-ising-global-dimension}
 \dim(\mathcal C)=\sum_a d_a^2=4.
 ```
 
@@ -80,6 +81,7 @@ dimension $d_\sigma$.
 For three Ising anyons with total charge $\sigma$,
 
 ```math
+\label{eq:physics-ising-four-anyon-space}
 \mathcal H^{\sigma}_{\sigma\sigma\sigma}
 =\operatorname{Hom}((\sigma\otimes\sigma)\otimes\sigma,\sigma)
 ```
@@ -107,6 +109,7 @@ package's projection convention, an $R$-matrix represents the pullback by the
 braiding
 
 ```math
+\label{eq:physics-braiding-pullback}
 c_{a,b}^{*}:V_{ba}^{c}\longrightarrow V_{ab}^{c},
 \qquad p\longmapsto p\circ c_{a,b}.
 ```
@@ -131,6 +134,7 @@ hypotheses, `smatrix(C)` returns the unnormalized pivotal trace of double
 braiding, while the package uses
 
 ```math
+\label{eq:physics-modular-data-normalization}
 S^{\mathrm{norm}}=\frac{1}{\sqrt{\dim(\mathcal C)}}S,
 \qquad
 T^{\mathrm{cat}}=\operatorname{diag}(\theta_a).
@@ -146,6 +150,7 @@ quantum dimension.
 For RCFT characters, a common convention is
 
 ```math
+\label{eq:physics-rcft-t-matrix}
 T^{\mathrm{RCFT}}_{aa}
 =\exp\!\left(2\pi i\left(h_a-\frac{c}{24}\right)\right)
 =e^{-2\pi i c/24}\theta_a,

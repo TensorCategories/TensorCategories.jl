@@ -13,6 +13,7 @@ recoupling coefficients. It has infinitely many simple labels and is therefore
 not a fusion category. Under the usual generic semisimplicity assumptions its
 simple labels are $V_0,V_1,\ldots$, with
 ```math
+\label{eq:uqsl2-generic-fusion}
 V_i\otimes V_j=\bigoplus_{r=0}^{\min(i,j)}V_{i+j-2r}.
 ```
 This is the quantum Clebsch–Gordan rule of
@@ -49,6 +50,7 @@ external labels $i,j,k$, output label $w$, ascending left channel $m$, and
 ascending right channel $n$, the stored entry in the row indexed by $m$ and
 column indexed by $n$ is
 ```math
+\label{eq:uqsl2-kauffman-lins-symbol}
 \left\{\begin{matrix}j&i&n\\w&k&m\end{matrix}\right\}_{\!\mathrm{KL}}.
 ```
 This is exactly the recoupling coefficient defined in
@@ -83,6 +85,7 @@ The default field is $\mathbb Q(\zeta_{4m+8})$ and the implementation first
 chooses a root $z$ of order $2m+4$. Julia `C[1]` is $X_0$ here.
 The fusion rule is
 ```math
+\label{eq:uqsl2-level-fusion}
 X_a\otimes X_b=
 \bigoplus_{\substack{c=|a-b|\\c\equiv a+b\;(\mathrm{mod}\,2)}}^{
 \min(a+b,\,2m-a-b)} X_c.
@@ -98,11 +101,13 @@ For these default values, let $A$ be the bracket parameter of
 [kauffman1994temperley; Chapters 6–8, pp. 45–92](@citet). The parameters are
 related by
 ```math
+\label{eq:uqsl2-kauffman-lins-parameters}
 r=m+2,\qquad z=A^2,\qquad w=\sqrt z=A,
 \qquad [n]=\frac{z^n-z^{-n}}{z-z^{-1}}.
 ```
 The stored coefficients use the Temperley–Lieb recoupling coefficient
 ```math
+\label{eq:uqsl2-kauffman-lins-formula}
 \left\{\begin{matrix}a&b&i\\c&d&j\end{matrix}\right\}_{\!\mathrm{KL}}
 =\frac{\operatorname{Tet}[a,b,i;c,d,j] \, (-1)^i[i+1]}
 {\Theta(a,d,i)\Theta(b,c,i)}
@@ -116,6 +121,7 @@ Consequently, for external labels $a,b,c$, output label $d$, ascending left
 channel $e$, and ascending right channel $f$, the entry in row $e$ and column
 $f$ of the stored associator block is
 ```math
+\label{eq:uqsl2-package-symbol-permutation}
 \left\{\begin{matrix}b&a&f\\d&c&e\end{matrix}\right\}_{\!\mathrm{KL}}.
 ```
 For general $l$, the quantum integers are instead generated from
@@ -124,6 +130,7 @@ $l=1$; the other $l$-values are additional parameter choices whose literature
 normalization is unspecified. For the usual semisimple level-$m$ model one
 must have
 ```math
+\label{eq:uqsl2-coprimality}
 \gcd(l,m+2)=1.
 ```
 Equivalently, the quantum integers $[1],\ldots,[m+1]$ are then all nonzero.
@@ -132,6 +139,7 @@ The constructor does not enforce the condition.
 
 The braiding is supplied when the field contains a square root $w$ of $z$:
 ```math
+\label{eq:uqsl2-r-symbol}
 R^{ab}_c=(-1)^{(a+b-c)/2}(w^t)^{(a(a+2)+b(b+2)-c(c+2))/2}.
 ```
 For $t=1$ this is the local braiding of

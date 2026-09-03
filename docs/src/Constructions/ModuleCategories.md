@@ -5,12 +5,14 @@ construction and the algorithms implemented here are developed in
 [maeurer2026thesis; Chapter 3](@citet).
 An algebra object has maps $m:A\otimes A\to A$ and $u:\mathbb 1\to A$, satisfying
 ```math
+\label{eq:algebra-associativity}
 m\circ(m\otimes\mathrm{id}_A)
 =m\circ(\mathrm{id}_A\otimes m)\circ a_{A,A,A}.
 ```
 With the normalized unit constraints used by the package, the unit equations
 are
 ```math
+\label{eq:algebra-unit}
 m\circ(u\otimes\mathrm{id}_A)=\mathrm{id}_A
 =m\circ(\mathrm{id}_A\otimes u).
 ```
@@ -24,11 +26,13 @@ with exactly the indicated sources and targets.
 A right action $r:M\otimes A\to M$ and a left action
 $\ell:A\otimes M\to M$ satisfy
 ```math
+\label{eq:right-module-associativity}
 r\circ(r\otimes\mathrm{id}_A)
 =r\circ(\mathrm{id}_M\otimes m)\circ a_{M,A,A},
 ```
 and
 ```math
+\label{eq:left-module-associativity}
 \ell\circ(m\otimes\mathrm{id}_M)
 =\ell\circ(\mathrm{id}_A\otimes\ell)\circ a_{A,A,M},
 ```
@@ -47,6 +51,7 @@ structure maps.
 For an $(A,B)$-bimodule, the compatibility between the left action $\ell$ and
 right action $r$ is
 ```math
+\label{eq:bimodule-compatibility}
 r\circ(\ell\otimes\mathrm{id}_B)
 =\ell\circ(\mathrm{id}_A\otimes r)\circ a_{A,M,B}.
 ```

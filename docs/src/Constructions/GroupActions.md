@@ -3,10 +3,12 @@
 An action of a finite group consists of tensor autoequivalences $T_g$ and
 coherent monoidal natural isomorphisms
 ```math
+\label{eq:action-compositor}
 \sigma_{g,h}:T_g\circ T_h\longrightarrow T_{gh}.
 ```
 They obey
 ```math
+\label{eq:action-compositor-coherence}
 \sigma_{gh,k}\circ(\sigma_{g,h}\ast\mathrm{id}_{T_k})
 =\sigma_{g,hk}\circ(\mathrm{id}_{T_g}\ast\sigma_{h,k}),
 ```
@@ -42,6 +44,7 @@ it does not enumerate all tensor actions.
 With this direction of $\sigma$, an equivariant object has isomorphisms
 $u_g:T_g(X)\to X$ with $u_e=\mathrm{id}_X$ and
 ```math
+\label{eq:equivariant-object-coherence}
 u_g\circ T_g(u_h)=u_{gh}\circ(\sigma_{g,h})_X.
 ```
 This is the direction of the structure maps in
@@ -66,6 +69,7 @@ separate semisimplicity determination in this case.
 For a `SixJCategory` with a supplied action `T`, call
 `gcrossed_product(C,T)` or `C ⋊ T`. The resulting skeletal category uses
 ```math
+\label{eq:crossed-product-tensor}
 (X,g)\otimes(Y,h)=(X\otimes T_g(Y),gh).
 ```
 This is [EGNO; Definition 4.15.5 and Eq. (4.22)](@citet).

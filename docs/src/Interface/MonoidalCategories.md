@@ -9,12 +9,14 @@ The calls `tensor_product(X,Y)` and `X ⊗ Y` return $X\otimes Y$. Tensor produc
 also acts on morphisms: for $f:X\to X'$ and $g:Y\to Y'$,
 
 ```math
+\label{eq:tensor-product-morphism}
 f\otimes g:X\otimes Y\longrightarrow X'\otimes Y'.
 ```
 
 It must satisfy the interchange law
 
 ```math
+\label{eq:tensor-bifunctoriality}
 (f'\circ f)\otimes(g'\circ g)
 =(f'\otimes g')\circ(f\otimes g).
 ```
@@ -34,6 +36,7 @@ This is the convention used by [maurer2024computing; §2, pp. 4--5](@citet).
 The associator has direction
 
 ```math
+\label{eq:monoidal-associator}
 a_{X,Y,Z}:(X\otimes Y)\otimes Z\longrightarrow X\otimes(Y\otimes Z).
 ```
 
@@ -60,6 +63,7 @@ it is not an exhaustive substitute for the complete check.
 and coevaluation
 
 ```math
+\label{eq:right-duality}
 \operatorname{ev}_X:X^*\otimes X\longrightarrow\mathbb 1,
 \qquad
 \operatorname{coev}_X:\mathbb 1\longrightarrow X\otimes X^*.
@@ -76,6 +80,7 @@ The dual object alone does not determine these maps. A rigid category also has
 chosen right duality data
 
 ```math
+\label{eq:left-duality}
 \widetilde{\operatorname{ev}}_X:
 X\otimes{}^*X\longrightarrow\mathbb 1,
 \qquad
@@ -132,6 +137,7 @@ with non-scalar unit needs a category-specific scalar convention.
 With that hypothesis, the package conventions are
 
 ```math
+\label{eq:squared-norm}
 \dim(X)=\dim_L(X),
 \qquad
 |X|^2=\dim(X)\dim(X^*).
@@ -150,6 +156,7 @@ For a [multifusion category](@ref tensor-conventions) with simple
 representatives $S_i$, the generic category dimension is
 
 ```math
+\label{eq:fusion-category-dimension}
 \dim(\mathcal C)=\sum_i |S_i|^2,
 ```
 
@@ -164,6 +171,7 @@ which depends only on the [Grothendieck ring](@ref grothendieck-rings).
 `braiding(X,Y)` returns
 
 ```math
+\label{eq:braiding}
 c_{X,Y}:X\otimes Y\longrightarrow Y\otimes X.
 ```
 

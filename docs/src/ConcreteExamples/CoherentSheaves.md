@@ -23,6 +23,7 @@ on stalks. For one chosen representative $x$ of each orbit, this gives an
 equivalence of tensor categories
 
 ```math
+\label{eq:equivariant-sheaves-orbit-decomposition}
 \operatorname{Coh}_G(X)\simeq
 \prod_{[x]\in X/G}\operatorname{Rep}_K(G_x).
 ```
@@ -72,6 +73,7 @@ to be split semisimple.
 
 `convolution_category(K,X)` for a `GSet` models sheaves on $X\times X$ with product
 ```math
+\label{eq:convolution-stalk}
 (A\star B)_{x,z}=\bigoplus_{y\in X} A_{x,y}\otimes B_{y,z}.
 ```
 Equivalently, it is

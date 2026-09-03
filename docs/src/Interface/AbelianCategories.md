@@ -16,6 +16,7 @@ If the summands are $X_1,\ldots,X_n$, the entries of $i$ are inclusions
 $i_s:X_s\to D$, and those of $p$ are projections $p_r:D\to X_r$. They satisfy
 
 ```math
+\label{eq:biproduct-identities}
 p_r\circ i_s=
 \begin{cases}
 \operatorname{id}_{X_s},&r=s,\\

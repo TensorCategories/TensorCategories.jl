@@ -93,6 +93,7 @@ with values in $K^\times$, `graded_vector_spaces(K,G,chi)` retains the trivial
 associator and uses the braiding
 
 ```math
+\label{eq:graded-vector-space-braiding}
 c_{V,W}(v_g\otimes w_h)=\chi(g,h)\,w_h\otimes v_g
 ```
 
@@ -148,6 +149,7 @@ normalization equations.
 For a cyclic group of order $n$, `cyclic_group_3cocycle(G,K,xi)` uses the group
 element returned by `G[1]` and the formula
 ```math
+\label{eq:cyclic-three-cocycle}
 \omega(g^i,g^j,g^l)=\xi^{i\lfloor(j+l)/n\rfloor}
 ```
 for exponents between $0$ and $n-1$. Supply an $n$-th root of unity $\xi$ in
@@ -218,6 +220,7 @@ HAP. If $n=1$, it returns the trivial cocycle without consulting $i$. To
 convert a coefficient $b\in B$ when $n>1$, the code chooses an $n$-th root of
 unity $\rho\in K$ and uses
 ```math
+\label{eq:character-root-identification}
 b\longmapsto
 \rho^{\operatorname{Position}(\operatorname{Elements}(B),b)-1}.
 ```

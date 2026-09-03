@@ -12,6 +12,7 @@ For an abelian category of finite-length objects, the Grothendieck group
 $\operatorname{Gr}(\mathcal C)$ has a generator $[X]$ for each isomorphism
 class, with relations
 ```math
+\label{eq:grothendieck-relation}
 [Y]=[X]+[Z]
 \quad\text{for every exact sequence }0\longrightarrow X\longrightarrow Y
 \longrightarrow Z\longrightarrow0.
@@ -41,6 +42,7 @@ sequences.
 
 Write $b_i=[S_i]$. In the semisimple case the fusion rules are
 ```math
+\label{eq:fusion-ring-product}
 b_i b_j=\sum_l N_{ij}^{\,l}b_l,\qquad
 N_{ij}^{\,l}=[S_i\otimes S_j:S_l]\in\mathbb Z_{\geq0}.
 ```
@@ -61,6 +63,7 @@ $b_i^*=[S_i^*]$ and an anti-involution $(xy)^*=y^*x^*$. Let $I_0$ be the
 indices occurring in the unit and set
 $\tau(\sum_i a_ib_i)=\sum_{i\in I_0}a_i$. Then
 ```math
+\label{eq:based-ring-trace}
 \tau(b_i b_j)=\delta_{i,j^*}.
 ```
 These are the **based-ring** conditions. A based ring of finite rank is a
@@ -78,6 +81,7 @@ a braiding.
 
 For fixed $i$, the slice `N[i,:,:]` has entries
 ```math
+\label{eq:fusion-matrix}
 (M_i)_{j,l}=N_{ij}^{\,l}.
 ```
 It is the matrix of left multiplication by $b_i$ in row coordinates:
@@ -89,6 +93,7 @@ homomorphism to $\mathbb R$ taking strictly positive values on the distinguished
 basis [EGNO; Definition 3.3.3 and Proposition 3.3.6, pp. 53--54](@cite).
 Consequently,
 ```math
+\label{eq:fpdim-multiplicativity}
 \operatorname{FPdim}(X\otimes Y)
 =\operatorname{FPdim}(X)\operatorname{FPdim}(Y).
 ```
@@ -99,6 +104,7 @@ category's base field and do not require a pivotal structure. In contrast,
 The package computes `fpdim(r)` from the integer multiplication matrices
 and returns an exact algebraic number. For a fusion ring $R$,
 ```math
+\label{eq:based-ring-fpdim}
 \operatorname{FPdim}(R)=\sum_i\operatorname{FPdim}(b_i)^2,
 ```
 which is also `fpdim(C)` for a split fusion category with Grothendieck ring $R$.
@@ -108,6 +114,7 @@ which is also `fpdim(C)` for a split fusion category with Grothendieck ring $R$.
 If $D_l=\operatorname{End}(S_l)$ is larger than the base field $k$, the
 multiplicity is
 ```math
+\label{eq:nonsplit-fusion-multiplicity}
 N_{ij}^{\,l}
 =\frac{\dim_k\operatorname{Hom}(S_l,S_i\otimes S_j)}
        {\dim_k D_l}.
@@ -118,6 +125,7 @@ This is the division used by `multiplication_table(C)` and
 Let $u$ denote the simple unit and put
 $D_u=\operatorname{End}(\mathbb 1)$. Rigidity gives
 ```math
+\label{eq:nonsplit-unit-coefficient}
 N_{ij}^{\,u}=\frac{\dim_kD_i}{\dim_kD_u}\,\delta_{i,j^*}.
 ```
 Thus the coefficient of the unit in $[S_i][S_i^*]$ can exceed one.
@@ -127,6 +135,7 @@ The resulting ring is a **weak fusion ring**
 
 For such a category the package uses
 ```math
+\label{eq:nonsplit-category-fpdim}
 \operatorname{FPdim}(\mathcal C)
 =\sum_i
  \frac{\dim_kD_u}{\dim_kD_i}\operatorname{FPdim}(S_i)^2.

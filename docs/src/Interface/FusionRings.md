@@ -97,6 +97,7 @@ trivial representation and a two-dimensional representation $V$ with
 endomorphism field $\mathbb F_4$. The category is semisimple, and
 
 ```math
+\label{eq:rank-two-fusion-rule}
 [V]^2=2[\mathbb 1]+[V].
 ```
 

@@ -17,6 +17,7 @@ for the analogous structure in which the tensor unit need not be simple.
 An object $S$ is **scalar** if the canonical map
 
 ```math
+\label{eq:simple-endomorphism-field-map}
 k\longrightarrow\operatorname{End}_{\mathcal C}(S)
 ```
 
@@ -68,6 +69,7 @@ $D_S=\operatorname{End}_{\mathcal C}(S)$ a finite-dimensional division algebra
 over $k$. If $X$ is semisimple, its multiplicity of $S$ is
 
 ```math
+\label{eq:nonsplit-simple-multiplicity}
 [X:S]=\dim_{D_S}\operatorname{Hom}(S,X)
      =\frac{\dim_k\operatorname{Hom}(S,X)}{\dim_k D_S}.
 ```
@@ -117,6 +119,7 @@ $X_1,\ldots,X_r$ of its simple objects, the implementation uses the
 unnormalized entries
 
 ```math
+\label{eq:categorical-s-matrix}
 S_{ij}=\operatorname{Tr}\!\left(
 c_{X_i,X_j}\circ c_{X_j,X_i}
 \right).

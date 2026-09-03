@@ -8,6 +8,7 @@ All matrices use the [conventions of the preceding page](@ref f-conventions).
 
 The Ising fusion rules, with simples $(\mathbb 1,\chi,X)$ in this order, are
 ```math
+\label{eq:ising-fusion-ring}
 \chi^2=\mathbb 1,\qquad \chi X=X\chi=X,\qquad
 X^2=\mathbb 1+\chi.
 ```
@@ -15,6 +16,7 @@ Over $K=\mathbb Q(\sqrt 2)$, choose $s\in K$ with $s^2=2$. The nonidentity
 associator blocks are
 $A^{\chi X\chi}_X=[-1]$, $A^{X\chi X}_{\chi}=[-1]$, and
 ```math
+\label{eq:ising-associator}
 A^{XXX}_X=\frac1s
 \begin{pmatrix}1&1\\1&-1\end{pmatrix}.
 ```
@@ -63,6 +65,7 @@ simples $\mathbb 1,t$. We construct these projections explicitly and apply
 the defining equation
 
 ```math
+\label{eq:associator-row-coordinate}
 R_v\circ\alpha_{t,t,t}=\sum_u A_{u,v}L_u.
 ```
 

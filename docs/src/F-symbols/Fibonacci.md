@@ -15,6 +15,7 @@ also requires a field embedding.
 
 The only nonidentity associator block is
 ```math
+\label{eq:fibonacci-package-associator}
 A_{\tau,\tau,\tau}^{\tau}=
 \begin{pmatrix}b&b\\1&-b\end{pmatrix},\qquad b^2+b=1.
 ```
@@ -46,6 +47,7 @@ that embedding.
 
 For the positive root $b$, put $D=\operatorname{diag}(1,1/\sqrt b)$. Then
 ```math
+\label{eq:fibonacci-symmetric-associator}
 D^{-1}A_{\tau,\tau,\tau}^{\tau}D
 =\begin{pmatrix}b&\sqrt b\\ \sqrt b&-b\end{pmatrix}.
 ```

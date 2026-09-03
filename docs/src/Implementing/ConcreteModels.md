@@ -9,6 +9,7 @@ In both models, forgetting the additional structure gives a faithful linear
 realization
 
 ```math
+\label{eq:underlying-vector-space-functor}
 U:\mathcal C\longrightarrow\operatorname{Vec}_k,
 ```
 
@@ -72,6 +73,7 @@ generators of $G$ on each representation. A matrix $M$ from $X$ to $Y$ is a
 morphism when
 
 ```math
+\label{eq:representation-intertwiner}
 \rho_X(g)M=M\rho_Y(g)
 ```
 

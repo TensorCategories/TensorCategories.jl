@@ -42,6 +42,7 @@ index zero, so these two loaders supply no $R$-symbols. Their common fusion
 ring can be written
 
 ```math
+\label{eq:haagerup-fusion-rules}
 \alpha^3=\mathbb 1,\qquad
 \alpha\rho=\rho\alpha^{-1},\qquad
 \rho^2=\mathbb 1+\rho+\alpha\rho+\alpha^2\rho.
@@ -99,6 +100,7 @@ $R$-, and pivotal data. It displays its simples as underlying $H_3$ objects
 equipped with half-braiding labels. In its stored order, these correspond to
 
 ```math
+\label{eq:haagerup-center-simple-order}
 (\mathbb 1,\pi_1,\pi_2,\sigma_0,\sigma_1,\sigma_2,
 \mu_1,\ldots,\mu_6).
 ```
@@ -115,6 +117,7 @@ The coefficient field is $K_Z=\mathbb Q[t]/(p_Z(t))$, where the artifact
 records
 
 ```math
+\label{eq:haagerup-center-polynomial}
 \begin{aligned}
 p_Z(t)={}&t^{48}-t^{47}+2t^{46}-2t^{45}+2t^{44}-t^{43}-t^{42}
  +4t^{41}-8t^{40}+12t^{39}\\
@@ -132,6 +135,7 @@ p_Z(t)={}&t^{48}-t^{47}+2t^{46}-2t^{45}+2t^{44}-t^{43}-t^{42}
 If
 
 ```math
+\label{eq:haagerup-number-field}
 K_H=\mathbb Q[u]/(u^4-u^3-u^2-u+1)
 ```
 
@@ -160,6 +164,7 @@ certifying balls. The files use the historical `:column_major_packing` layout.
 In the thesis notation, their ten index columns are
 
 ```math
+\label{eq:haagerup-dictionary-index-order}
 (i,j,k,l,n,\delta,\gamma,m,\alpha,\beta),
 ```
 
@@ -244,6 +249,7 @@ The extended-Haagerup helper `TensorCategories.extended_haagerup(K)` supplies
 the six labels
 
 ```math
+\label{eq:haagerup-izumi-simple-order}
 (\mathbb 1,f^{(2)},f^{(4)},f^{(6)},P',Q')
 ```
 

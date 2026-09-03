@@ -12,6 +12,7 @@ fiber functor.
 Choose split simple representatives $S_1,\ldots,S_r$. The functor
 
 ```math
+\label{eq:canonical-vector-space-realization}
 U(X)=\bigoplus_{i=1}^r\operatorname{Hom}_{\mathcal C}(S_i,X)
 ```
 
@@ -54,6 +55,7 @@ $k$-linear functor $F:\mathcal C\to\operatorname{Vec}_k$ equipped with a
 compatible unit isomorphism and coherent tensor isomorphisms
 
 ```math
+\label{eq:fiber-functor-tensorator}
 J_{X,Y}:F(X)\otimes F(Y)\xrightarrow{\sim}F(X\otimes Y).
 ```
 

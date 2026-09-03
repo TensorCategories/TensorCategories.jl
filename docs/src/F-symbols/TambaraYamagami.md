@@ -13,6 +13,7 @@ $\chi:A\times A\to k^\times$ a nondegenerate symmetric bicharacter. The simple
 objects are the elements of $A$ and one object $m$,
 with
 ```math
+\label{eq:tambara-yamagami-fusion-rules}
 a\otimes b=ab,\quad a\otimes m=m=m\otimes a,\quad
 m\otimes m=\bigoplus_{a\in A}a.
 ```
@@ -27,6 +28,7 @@ In the cited paper the parameter satisfies $\tau^2=|A|^{-1}$.
 The translation is $\tau=1/s$. With the package's row-coordinate convention, the
 nontrivial blocks are
 ```math
+\label{eq:tambara-yamagami-associator}
 a_{a,m,b}=\chi(a,b)\mathrm{id}_m,\qquad
 a_{m,a,m}|_b=\chi(a,b)\mathrm{id}_b,\qquad
 (a_{m,m,m})_{a,b}=\frac{1}{s\chi(a,b)}.
@@ -105,6 +107,7 @@ $\xi=\varepsilon\zeta_4$, where `root_of_unity(K,4)` supplies $\zeta_4$, and cho
 $\alpha$ with $\alpha^2=(1+\xi)/s$. The implementation
 uses
 ```math
+\label{eq:ising-braiding}
 c_{\chi,\chi}=-1,\qquad c_{\chi,X}=c_{X,\chi}=\xi,\qquad
 c_{X,X}=\alpha\,\mathrm{id}_{\mathbb 1}\oplus
 \alpha\xi^{-1}\,\mathrm{id}_{\chi}.

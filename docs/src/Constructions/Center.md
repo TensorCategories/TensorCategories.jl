@@ -13,11 +13,13 @@ developed in
 A central object in the package is a pair $(Z,\gamma)$, with natural
 isomorphisms
 ```math
+\label{eq:center-half-braiding-component}
 \gamma_X:Z\otimes X\longrightarrow X\otimes Z.
 ```
 With $a_{X,Y,Z}:(X\otimes Y)\otimes Z\to X\otimes(Y\otimes Z)$, the
 compatibility is
 ```math
+\label{eq:center-half-braiding-hexagon}
 \gamma_{X\otimes Y}
 =a^{-1}_{X,Y,Z}\circ(\mathrm{id}_X\otimes\gamma_Y)
  \circ a_{X,Z,Y}\circ(\gamma_X\otimes\mathrm{id}_Y)
@@ -31,6 +33,7 @@ package's normalized unit identifications. This is the convention of
 first in the source. By contrast, [EGNO; Definition 7.13.1](@citet) put the
 ambient object first and write
 ```math
+\label{eq:egno-half-braiding-component}
 \widetilde\gamma_X:X\otimes Z\longrightarrow Z\otimes X.
 ```
 The conventions are related by
@@ -44,6 +47,7 @@ inverse half-braidings, the two conventions give reverse braided structures.
 
 A morphism $f:(Z,\gamma)\to(Z',\gamma')$ is a morphism $f:Z\to Z'$ satisfying
 ```math
+\label{eq:center-morphism-condition}
 (\mathrm{id}_X\otimes f)\circ\gamma_X
  =\gamma'_X\circ(f\otimes\mathrm{id}_X).
 ```
@@ -57,6 +61,7 @@ stronger induction algorithm and decomposes endomorphism algebras. For input
 $X$, central induction has underlying object
 
 ```math
+\label{eq:center-induction-object}
 \bigoplus_{S\in\operatorname{Irr}(\mathcal C)}
 (S\otimes X)\otimes S^*.
 ```
@@ -209,6 +214,7 @@ for the complete test when final validation is feasible.
 For a pivotal fusion category with $\dim(\mathcal C)\ne0$, the center satisfies
 
 ```math
+\label{eq:center-global-dimension}
 \dim\mathcal Z(\mathcal C)=(\dim\mathcal C)^2.
 ```
 

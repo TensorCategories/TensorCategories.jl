@@ -14,6 +14,7 @@ channel ordering to a published $F$-symbol convention are not supplied.
 
 `cat_fr_8122(n)` has the fusion ring
 ```math
+\label{eq:vercleyen-slingerland-rank-eight-label}
 FR^{8,1,2}_2=
 \left[\mathbb Z_3\mathrel{\trianglelefteq}D_3\right]^{\mathrm{Id}}_{1\mid0},
 ```
@@ -30,6 +31,7 @@ The argument must satisfy $1\leq n\leq96$.
 
 `cat_fr_9143()` has the fusion ring
 ```math
+\label{eq:vercleyen-slingerland-rank-nine-label}
 FR^{9,1,4}_3=
 \left[\mathbb Z_2\mathrel{\trianglelefteq}\mathbb Z_6\right]^\alpha_{1\mid0},
 \qquad \alpha(g)=g^{-1},

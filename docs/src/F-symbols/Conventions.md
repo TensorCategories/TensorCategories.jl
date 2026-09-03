@@ -17,6 +17,7 @@ Let $\mathcal C$ be a split fusion category over a field $k$, and fix an
 ordered set of simple representatives
 
 ```math
+\label{eq:ordered-simple-representatives}
 (S_1,\ldots,S_r).
 ```
 
@@ -24,6 +25,7 @@ The implementation uses the order returned by `simples(C)`. For simple objects
 $a,b,e$, put
 
 ```math
+\label{eq:binary-fusion-space}
 V_{ab}^{e}=\operatorname{Hom}_{\mathcal C}(a\otimes b,e),
 \qquad
 N_{ab}^{e}=\dim_k V_{ab}^{e},
@@ -32,6 +34,7 @@ N_{ab}^{e}=\dim_k V_{ab}^{e},
 and choose an ordered projection basis
 
 ```math
+\label{eq:binary-projection-basis}
 p^{ab}_{e,\mu}:a\otimes b\longrightarrow e,
 \qquad 1\leq \mu\leq N_{ab}^{e}.
 ```
@@ -39,12 +42,14 @@ p^{ab}_{e,\mu}:a\otimes b\longrightarrow e,
 Let
 
 ```math
+\label{eq:binary-splitting-basis}
 s_{ab}^{e,\mu}:e\longrightarrow a\otimes b
 ```
 
 be the composition-dual splitting basis. Thus
 
 ```math
+\label{eq:composition-dual-bases}
 p^{ab}_{e,\mu}\circ s_{ab}^{e,\nu}
 =\delta_{\mu,\nu}\operatorname{id}_e,
 \qquad
@@ -56,6 +61,7 @@ These binary bases determine bases for the two projection spaces of a triple
 tensor product. For a fixed output simple $d$, define
 
 ```math
+\label{eq:left-triple-projection}
 L_{e,\mu,\nu}
 =p^{ec}_{d,\nu}\circ
   \bigl(p^{ab}_{e,\mu}\otimes\operatorname{id}_c\bigr)
@@ -65,6 +71,7 @@ L_{e,\mu,\nu}
 and
 
 ```math
+\label{eq:right-triple-projection}
 R_{f,\rho,\sigma}
 =p^{af}_{d,\sigma}\circ
   \bigl(\operatorname{id}_a\otimes p^{bc}_{f,\rho}\bigr)
@@ -81,6 +88,7 @@ $\sigma$ varying fastest. Intermediate simples follow the order of
 Let
 
 ```math
+\label{eq:associator-map}
 \alpha_{a,b,c}:(a\otimes b)\otimes c
    \longrightarrow a\otimes(b\otimes c)
 ```
@@ -88,18 +96,19 @@ Let
 be the associator. Its block with output $d$ is the matrix $A=A^{abc}_d$
 defined by
 
-\begin{equation}
+```math
 \label{eq:associator-projection-bases}
 R_{f,\rho,\sigma}\circ\alpha_{a,b,c}
 =\sum_{e,\mu,\nu}
  A^{abc}_d[(e,\mu,\nu),(f,\rho,\sigma)]
  L_{e,\mu,\nu}.
-\end{equation}
+```
 
 Thus rows are left paths and columns are right paths. In the documentation's
 index notation, the stored block is `C.ass[a,b,c,d]`. Its size is
 
 ```math
+\label{eq:associator-block-size}
 \left(\sum_e N_{ab}^{e}N_{ec}^{d}\right)
 \times
 \left(\sum_f N_{bc}^{f}N_{af}^{d}\right).
@@ -111,21 +120,21 @@ Let $L^{e,\mu,\nu}$ and $R^{f,\rho,\sigma}$ be the triple-product splittings
 induced by the composition-dual binary bases. Equation
 $\eqref{eq:associator-projection-bases}$ is equivalent to
 
-\begin{equation}
+```math
 \label{eq:associator-splitting-bases}
 \alpha_{a,b,c}\circ L^{e,\mu,\nu}
 =\sum_{f,\rho,\sigma}
  A^{abc}_d[(e,\mu,\nu),(f,\rho,\sigma)]
  R^{f,\rho,\sigma}.
-\end{equation}
+```
 
 The entries of $A^{abc}_d$ are the **$F$-symbols** in this manual. Explicitly,
 
-\begin{equation}
+```math
 \label{eq:F-symbol-definition}
 \left[F^{abc}_d\right]_{(e,\mu,\nu),(f,\rho,\sigma)}
 :=A^{abc}_d[(e,\mu,\nu),(f,\rho,\sigma)].
-\end{equation}
+```
 
 Equation $\eqref{eq:associator-splitting-bases}$ replaces a left-associated
 splitting tree by a linear
@@ -154,27 +163,27 @@ composition-dual bases need not be Hermitian-adjoint bases.
 
 For simple objects $a,b,d$, let $B=B^{ab}_d$ be defined by
 
-\begin{equation}
+```math
 \label{eq:braiding-projection-bases}
 p^{ba}_{d,\nu}\circ c_{a,b}
 =\sum_{\mu}
  B^{ab}_d[\mu,\nu]p^{ab}_{d,\mu}.
-\end{equation}
+```
 
 In composition-dual splitting bases this is
 
-\begin{equation}
+```math
 \label{eq:braiding-splitting-bases}
 c_{a,b}\circ s_{ab}^{d,\mu}
 =\sum_{\nu}B^{ab}_d[\mu,\nu]s_{ba}^{d,\nu}.
-\end{equation}
+```
 
 The entries of $B^{ab}_d$ are the **$R$-symbols**:
 
-\begin{equation}
+```math
 \label{eq:R-symbol-definition}
 \left[R^{ab}_d\right]_{\mu,\nu}:=B^{ab}_d[\mu,\nu].
-\end{equation}
+```
 
 Equation $\eqref{eq:braiding-splitting-bases}$ is the **$R$-move** induced by
 the braiding. The row index $\mu$ labels the input basis of
@@ -193,16 +202,17 @@ $B^{ba}_d$.
 A pivotal structure is a monoidal natural isomorphism
 
 ```math
+\label{eq:pivotal-structure-map}
 j:\operatorname{id}_{\mathcal C}\Longrightarrow(-)^{**}
 ```
 
 [EGNO; Definition 4.7.7](@cite). In the skeletal model the chosen duality has
 $S_i^{**}=S_i$. Since $S_i$ is split simple, the component of $j$ is a scalar:
 
-\begin{equation}
+```math
 \label{eq:P-symbol-definition}
 j_{S_i}=P_i\operatorname{id}_{S_i},\qquad P_i\in k^\times.
-\end{equation}
+```
 
 TensorCategories.jl calls the scalars $P_i$ **$P$-symbols**. They are stored as
 `C.pivotal[i]`, and `P_symbols(C)` returns the dictionary
@@ -214,16 +224,17 @@ The coefficients $P_i$ are additional structure: they are not determined by
 the $F$- or $R$-symbols. They must make $j$ monoidal. If
 
 ```math
+\label{eq:double-dual-tensorator}
 \phi_{X,Y}:(X\otimes Y)^{**}\longrightarrow X^{**}\otimes Y^{**}
 ```
 
 is the package's monoidal structure of the double-dual functor, the required
 identity is
 
-\begin{equation}
+```math
 \label{eq:pivotal-monoidality}
 j_X\otimes j_Y=\phi_{X,Y}\circ j_{X\otimes Y}.
-\end{equation}
+```
 
 The initializer `six_j_category` installs provisional all-one components, and
 `set_pivotal!` stores supplied components without checking
@@ -252,20 +263,20 @@ $\eqref{eq:associator-splitting-bases}$, and write $\mathcal R^{ab}_d$ for the
 coefficient in $\eqref{eq:braiding-splitting-bases}$. With inadmissible fusion paths
 interpreted as zero, the pentagon equation is
 
-\begin{equation}
+```math
 \label{eq:pentagon-multiplicity-free}
 \mathcal F^{fcd}_e[g,l]\,\mathcal F^{abl}_e[f,k]
 =\sum_h
   \mathcal F^{abc}_g[f,h]\,
   \mathcal F^{ahd}_e[g,k]\,
   \mathcal F^{bcd}_k[h,l].
-\end{equation}
+```
 
 This is the multiplicity-free specialization of the standard indexed pentagon
 equation in [barkeshli2019symmetry; Eq. (12)](@citet). The two hexagon
 equations, in the same convention, are
 
-\begin{equation}
+```math
 \label{eq:hexagon-positive-multiplicity-free}
 \mathcal R^{ca}_e\,
 \mathcal F^{acb}_d[e,g]\,
@@ -274,11 +285,11 @@ equations, in the same convention, are
 \mathcal F^{cab}_d[e,f]\,
 \mathcal R^{cf}_d\,
 \mathcal F^{abc}_d[f,g]
-\end{equation}
+```
 
 and
 
-\begin{equation}
+```math
 \label{eq:hexagon-negative-multiplicity-free}
 (\mathcal R^{ac}_e)^{-1}\,
 \mathcal F^{acb}_d[e,g]\,
@@ -287,7 +298,7 @@ and
 \mathcal F^{cab}_d[e,f]\,
 (\mathcal R^{fc}_d)^{-1}\,
 \mathcal F^{abc}_d[f,g].
-\end{equation}
+```
 
 These agree with [bonderson2007thesis; Eqs. (2.57)--(2.58)](@citet), with the label
 order and $R$-symbol superscripts used here.
@@ -313,6 +324,7 @@ A gauge transformation changes the basis of every binary fusion space
 $V_{ab}^{e}$. It consequently changes both triple-product bases. If
 
 ```math
+\label{eq:gauge-basis-change}
 L'_u=\sum_s L_sU_{s,u},
 \qquad
 R'_v=\sum_t R_tV_{t,v},
@@ -321,6 +333,7 @@ R'_v=\sum_t R_tV_{t,v},
 then the associator block in the new bases is
 
 ```math
+\label{eq:associator-gauge-change}
 A'=U^{-1}AV.
 ```
 
@@ -350,10 +363,12 @@ In [maeurer2026thesis; Eqs. (1.58)--(1.59), (1.65), and Algorithm 6](@citet),
 the $F$- and $R$-matrices are defined on projection trees by
 
 ```math
+\label{eq:thesis-F-projection-matrix}
 L_u\circ\alpha^{-1}=\sum_vM^{F}_{u,v}R_v.
 ```
 
 ```math
+\label{eq:thesis-R-projection-matrix}
 p^{ab}_{d,\mu}\circ c_{a,b}^{-1}
 =\sum_\nu M^{R}_{\mu,\nu}p^{ba}_{d,\nu}.
 ```
@@ -369,12 +384,12 @@ are related to the structural matrices in
 $\eqref{eq:associator-projection-bases}$ and
 $\eqref{eq:braiding-projection-bases}$ by
 
-\begin{equation}
+```math
 \label{eq:projection-inverse-conversion}
 M^{F}=(A^{-1})^{\mathsf T},
 \qquad
 M^{R}=(B^{-1})^{\mathsf T}.
-\end{equation}
+```
 
 Thus, in the package's row-coordinate realization, the associator block
 corresponding to the thesis matrix $M^F$ is
