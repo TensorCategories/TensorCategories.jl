@@ -122,8 +122,8 @@ direction of the structural maps, and on the ordering of multiplicity indices.
 They are not determined by the fusion rules alone.
 
 TensorCategories.jl first introduces the underlying
-[skeletal fusion model](@ref skeletal-fusion), and only then fixes the
-[precise symbol conventions](@ref f-conventions). That order is
+[skeletal fusion model](@ref skeletal-fusion), where the abstract model is
+followed by the [precise symbol conventions](@ref f-conventions). This order is
 essential when translating formulas or data from the physics literature.
 
 ## $S$, $T$, topological spins, and CFT conventions

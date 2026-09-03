@@ -29,6 +29,14 @@ so the distinction between weak fusion and fusion disappears. The adjective
 “weak” concerns splitting over the coefficient field; it does not weaken
 associativity, semisimplicity, or rigidity.
 
+The non-split setting is needed even when one starts with a split fusion
+category: its Drinfeld center need not be split over the same coefficient
+field. When the global dimension is nonzero, the center is nevertheless a
+weak fusion category, and passing to a splitting field produces a split fusion
+category [maurer2024computing; Theorem 2.1 and §5](@cite). Thus non-split
+categories arise naturally during categorical constructions, even when the
+input category is split over its field of definition.
+
 There is a separate issue over an imperfect field. Some treatments require a
 (multi)fusion category to be separable. For finite semisimple categories this
 condition is automatic over a perfect field, including every finite field, but
@@ -87,6 +95,73 @@ the role of [`karoubian_envelope`](BasicConstructions.md).
 These multiplicities are the structure constants of the
 [Grothendieck ring](@ref grothendieck-rings). Over a non-splitting field they
 give a weak fusion ring.
+
+## [Scalar extension and algorithmic splitting](@id algorithmic-splitting)
+
+Let $k\hookrightarrow K$ be a field extension. Extending the coefficients of
+a finite $k$-linear category first gives a category $\mathcal C\otimes_k K$
+with the same objects and
+
+```math
+\label{eq:categorical-scalar-extension-hom}
+\operatorname{Hom}_{\mathcal C\otimes_k K}(X,Y)
+=\operatorname{Hom}_{\mathcal C}(X,Y)\otimes_k K.
+```
+
+This operation can create idempotent endomorphisms whose images were not
+objects of the original category. The scalar extension relevant here is
+therefore the idempotent completion
+
+```math
+\label{eq:categorical-scalar-extension-karoubi}
+\mathcal C\boxtimes_k K
+=\operatorname{Kar}(\mathcal C\otimes_k K).
+```
+
+An object of the completion may be represented by a pair $(X,e)$ with
+$e\in\operatorname{End}_{\mathcal C\otimes_k K}(X)$ idempotent; it represents
+the image of $e$. A field $K$ is a **splitting field** for $\mathcal C$ when
+every simple object of $\mathcal C\boxtimes_k K$ has endomorphism ring $K$.
+This construction, including its agreement with a Deligne scalar extension,
+is developed in [maurer2024computing; §5.1](@cite).
+
+The decomposition problem is reduced to finite-dimensional algebra. If
+
+```math
+X\cong\bigoplus_i S_i^{\oplus m_i},
+\qquad D_i=\operatorname{End}_{\mathcal C}(S_i),
+```
+
+then
+
+```math
+\label{eq:endomorphism-algebra-decomposition}
+\operatorname{End}_{\mathcal C}(X)
+\cong\prod_i\operatorname{Mat}_{m_i}(D_i).
+```
+
+Direct-sum decompositions of $X$ correspond to systems of orthogonal
+idempotents in this algebra. Algorithmically, one computes
+$\operatorname{End}(X)$, decomposes it, and realizes suitable primitive
+idempotents as images in the category. Over a splitting field, the semisimple
+algebras $D_i\otimes_k K$ are products of full matrix algebras over $K$;
+images of primitive idempotents then give split simple summands.
+
+Thus the basic splitting procedure for a finite semisimple category is:
+
+1. compute representatives $S_i$ of its simple objects and their algebras
+   $D_i=\operatorname{End}(S_i)$;
+2. choose one extension $k\hookrightarrow K$ that splits all the $D_i$;
+3. extend objects, morphisms, and structural maps from $k$ to $K$; and
+4. decompose each $D_i\otimes_k K$ and take the images of primitive
+   idempotents, retaining one representative of every resulting simple.
+
+The procedure is not specific to any particular construction of a category.
+Its implementation does depend on the chosen model: the model must support
+scalar extension, computation and decomposition of endomorphism algebras, and
+images of idempotents. The currently available operations and their precise
+scope are listed under
+[Products, scalar extension, and related constructions](BasicConstructions.md).
 
 ## [Dagger structures and unitarity](@id unitary-categories)
 

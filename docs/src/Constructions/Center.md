@@ -86,6 +86,23 @@ when $\dim(\mathcal C)\ne0$; if the center is split, it is modular
 [maurer2024computing; Theorem 2.1](@cite). Thus semisimplicity of the input alone
 does not imply semisimplicity of its center, and the center need not be split
 even when the input is split.
+
+Once the simple objects of $\mathcal Z(\mathcal C)$ over $k$ have been
+computed, one chooses a common splitting field for their endomorphism algebras.
+After scalar extension, primitive idempotents in these algebras give the split
+simple central summands. This is an application of the general
+[algorithmic splitting procedure](@ref algorithmic-splitting), and is
+Algorithm 4 of [maurer2024computing; §5.2](@citet). It is a separate stage from
+computing the center over $k$: a center can be fully computed while some of
+its simple objects remain non-split over that field.
+
+For supported `CenterCategory` models, `split(Z)` searches for a common
+splitting field and returns the extended center together with the field
+embedding; the field found need not be minimal. If a target field $K$ and an
+embedding have already been chosen, `extension_of_scalars(Z,K;
+embedding=...)` extends the center and decomposes the known non-split simple
+central objects.
+
 [Numerical center computations](@ref numerical-centers) use the same
 public interface, with structural equations interpreted in the working ball
 field.

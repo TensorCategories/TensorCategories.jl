@@ -155,7 +155,7 @@ used as mathematical evidence. A typical workflow is:
 
 Raw $F$- and $R$-symbol entries depend on simple labels and fusion bases. They need
 not agree entry by entry after a computation chooses a different gauge. The
-[convention page](@ref f-conventions) specifies the matrix directions, while
+[conventions section](@ref f-conventions) specifies the matrix directions, while
 the [data exchange page](@ref symbol-data) specifies the dictionary layouts and
 file metadata.
 

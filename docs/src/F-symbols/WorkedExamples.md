@@ -2,7 +2,7 @@
 
 We now construct a category from its fusion rules and associators, read $F$-
 and $R$-symbols as coefficients of morphisms, and extract them from a concrete model.
-All matrices use the [conventions of the preceding page](@ref f-conventions).
+All matrices use the [conventions fixed in the preceding chapter](@ref f-conventions).
 
 ## Building Ising explicitly
 

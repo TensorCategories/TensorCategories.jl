@@ -172,7 +172,11 @@ The Ising category above is split, but its center need not split over the same
 field. This is a result about that field, not an incomplete center calculation.
 The [center tutorial](@ref ising-center) follows scalar extension and splitting.
 The terminology used by the package is summarized under
-[Fusion categories and splitting](@ref tensor-conventions) and follows
+[Fusion categories and splitting](@ref tensor-conventions). Its section on
+[scalar extension and algorithmic splitting](@ref algorithmic-splitting)
+explains how the package passes to a common splitting field and obtains the
+new simple objects from idempotents in the extended endomorphism algebras.
+The terminology follows
 [maurer2024computing; §2.1](@citet). The center algorithm and the subsequent
 splitting of central objects are developed in
 [maurer2024computing; §§4--5](@cite).

@@ -24,7 +24,7 @@ distinctions are detailed below.
 ## Inspecting structural data
 
 In the index notation used throughout the documentation, `C.ass[a,b,c,d]` is
-the associator block defined on the [conventions page](@ref f-conventions).
+the associator block defined in the [conventions section](@ref f-conventions).
 Some constructors compute these blocks lazily;
 `TensorCategories.six_j_symbol(C,a,b,c,d)` obtains a block without assuming
 that it has already been materialized. The analogous accessor for a braiding
@@ -46,7 +46,7 @@ F_symbols(C; convention=:bonderson)[[a,b,c,d,e,f]]
 ```
 
 is the coefficient $\mathcal F^{abc}_d[e,f]$ defined on the
-[conventions page](@ref f-conventions). With fusion multiplicities, the key is
+[conventions section](@ref f-conventions). With fusion multiplicities, the key is
 
 ```julia
 [a,b,c,d,e,mu,nu,f,rho,sigma]
@@ -158,7 +158,7 @@ nothing # hide
 
 For pentagon and hexagon formulas, use the direct coefficients returned by
 `convention=:bonderson`; the equations are stated on the
-[conventions page](@ref f-conventions).
+[conventions section](@ref f-conventions).
 
 ## Exact symbol archives
 
@@ -330,7 +330,8 @@ into an `AcbField` creates new ball values from those decimals, but does not
 recover the original enclosures. Do not use a CSV round trip to preserve a
 rigorous link to the original exact or ball-valued data.
 
-$F$- and $R$-symbol files also do not determine a pivotal or spherical structure.
+Files containing $F$- and $R$-symbols also do not determine a pivotal or
+spherical structure.
 `load_numeric_fusion_category` reconstructs the fusion rules, unit, associator,
 and optional braiding. The fusion paths must determine a unique simple tensor
 unit. The optional `unit` value is a simple-object index and must agree with

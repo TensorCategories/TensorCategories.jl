@@ -72,8 +72,7 @@ try
                 "Graded spaces and representations" => "Implementing/ConcreteModels.md",
             ],
             "Fusion categories and F-symbols" => [
-                "Skeletal models" => "F-symbols/SkeletalFusion.md",
-                "Precise conventions" => "F-symbols/Conventions.md",
+                "Skeletal models and conventions" => "F-symbols/SkeletalFusion.md",
                 "Working with fusion data" => "F-symbols/WorkedExamples.md",
                 "Numerical fusion categories" => "F-symbols/Numerical.md",
                 "Data exchange" => "F-symbols/Data.md",

@@ -14,7 +14,7 @@ data, or coherence tests.
 | Fusion-category data and predicates | `fusion_coefficient`, `fpdim`, `is_ring`, `is_tensor`, `is_fusion`, `is_multifusion`, `is_unitary`, `is_modular` | [Fusion and splitting](../Interface/TensorCategories.md), [numerical fusion categories](../F-symbols/Numerical.md) |
 | Coherence checks | `pentagon_axiom`, `randomized_pentagon_axiom`, `hexagon_axiom`, `monoidal_functor_axiom` | [Tensor products and duality](../Interface/MonoidalCategories.md), [skeletal models](../F-symbols/SkeletalFusion.md) |
 | Skeletal model and structure setters | `SixJCategory`, `six_j_category`, `skeletonize`, `set_tensor_product!`, `set_one!`, `set_associator!`, `set_braiding!`, `set_pivotal!` | [Skeletal models](../F-symbols/SkeletalFusion.md), [working with fusion data](../F-symbols/WorkedExamples.md) |
-| Symbol-dictionary extraction | `F_symbols`, `R_symbols`, `P_symbols` | [Precise conventions](../F-symbols/Conventions.md), [data exchange](../F-symbols/Data.md) |
+| Symbol-dictionary extraction | `F_symbols`, `R_symbols`, `P_symbols` | [Precise conventions](../F-symbols/SkeletalFusion.md#f-conventions), [data exchange](../F-symbols/Data.md) |
 | Associator-block generation | `six_j_symbols` | [Skeletal models](../F-symbols/SkeletalFusion.md), [matrix coordinates](../Interface/MatrixRealizations.md) |
 | Numerical conversion and symbols | `numeric`, `numeric_F_symbols`, `numeric_R_symbols`, `numeric_P_symbols`, `numeric_smatrix`, `numeric_twists` | [Numerical fusion categories](../F-symbols/Numerical.md), [numerical computations](../Basics/Numerical.md) |
 | Tensor powers and generated additive closures | `tensor_power`, `tensor_power_category` | [Products and related constructions](../Interface/BasicConstructions.md) |

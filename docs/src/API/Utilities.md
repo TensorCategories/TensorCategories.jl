@@ -12,6 +12,6 @@ use Julia's help mode and method table for exact signatures.
 | Native object persistence | `save`, `load` | [Data exchange](../F-symbols/Data.md) |
 
 Symbol archives and CSV tables carry convention choices that cannot be inferred
-from a bare array. Read the [precise symbol conventions](../F-symbols/Conventions.md)
+from a bare array. Read the [precise symbol conventions](../F-symbols/SkeletalFusion.md#f-conventions)
 and the serialization section of the data-exchange chapter before moving data
 between programs.
