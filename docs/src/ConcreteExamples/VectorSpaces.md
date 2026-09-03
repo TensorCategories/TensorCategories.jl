@@ -212,7 +212,7 @@ by [ellis2008hap](@citet); the contract for `CohomologyModule`, including
 representative cocycles in degree three, is in
 [hapmanual2026; command entry 11.1-2](@citet).
 
-The experimental helper `twisted_graded_vector_spaces(K,G,i)` first sets
+The helper `twisted_graded_vector_spaces(K,G,i)` first sets
 $n=\exp H_3(G,\mathbb Z)$ and lets $B\cong C_n$ be a trivial $G$-module. It
 asks GAP/HAP for the $i$-th element in its enumeration of $H^3(G,B)$ and passes
 a representative cocycle to `graded_vector_spaces`. It may install and load
@@ -243,6 +243,6 @@ The class index defaults to $i=2$, although an explicit index is preferable:
 it is not a canonical label for an element of $H^3(G,K^\times)$. Use the
 field-explicit argument order shown here; the group-only convenience overload
 is currently unavailable. A trailing positional argument named `j` is accepted
-by the legacy methods but has no effect. For a reproducible presentation,
+by the compatibility overloads but has no effect. For a reproducible presentation,
 construct the `Cocycle` explicitly and call
 `graded_vector_spaces(K,G,omega)`.

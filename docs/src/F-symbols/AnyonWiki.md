@@ -36,8 +36,8 @@ descriptive names from the source. A key identifies a stored solution with
 particular labels and bases, rather than a category up to tensor equivalence.
 The constructor reproduces the $F$- and pivotal coefficients from the record
 with this key in the pinned TensorCategoriesDatabase artifact, together with
-the $R$-coefficients when the braiding index is nonzero. Its
-historical dictionaries use `:column_major_packing`; the decoder transposes
+the $R$-coefficients when the braiding index is nonzero. Its stored
+dictionaries use `:column_major_packing`; the decoder transposes
 the packed arrays into the package's row-coordinate structural matrices. This
 reconstructs the pinned artifact record exactly after the stated coordinate
 conversion. The pinned artifact fixes the gauge of each entry; individual

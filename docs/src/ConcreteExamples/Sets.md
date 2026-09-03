@@ -23,7 +23,7 @@ the package's monoidal interface: tensor product, tensor unit, associator, and
 braiding are unavailable.
 
 !!! warning "Current scope"
-    This legacy model is suitable for experimenting with products and
+    This model is suitable for experimenting with products and
     coproducts. Its equality and invertibility methods do not yet enforce the
     usual set-theoretic conditions, and a dictionary input need not define a
     total map. Verify maps independently before using composition or `inv`.

@@ -162,7 +162,7 @@ file metadata.
 Numerical CSV files are coefficient-interchange files, not lossless
 serializations of ball data: they store decimal real and imaginary parts and do
 not preserve the input ball radii. A nondefault convention is recorded in a
-header, while the historical default output is headerless and therefore carries
+header, while the default output is headerless and therefore carries
 no explicit convention metadata. Their format and loader options are documented
 under [Structural data and data exchange](@ref symbol-data).
 

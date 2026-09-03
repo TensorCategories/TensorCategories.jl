@@ -59,7 +59,7 @@ ok
 
 In additive models, the generic `product(X,Y)` returns the product object and
 its projections, while the generic `coproduct(X,Y)` returns the coproduct and
-its injections. The legacy [finite-set model](@ref finite-sets) returns only the
+its injections. The [finite-set model](@ref finite-sets) returns only the
 object unless its optional third argument is `true`. In additive categories use
 [direct sums](AbelianCategories.md) when both families of maps are needed.
 

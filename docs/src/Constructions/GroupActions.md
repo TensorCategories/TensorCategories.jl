@@ -19,10 +19,9 @@ A categorical action therefore contains more data than an action on simple
 labels; see
 [EGNO; Definitions 2.7.1 and 4.15.1](@cite).
 
-!!! warning "Current scope"
-    The implementation of group actions is experimental. Searches for
-    autoequivalences and coherence data return candidates rather than complete
-    classifications.
+!!! note "Search scope"
+    Searches for autoequivalences and coherence data range over their
+    implemented ansatz and do not claim a classification of all tensor actions.
 
 `gtensor_action(C,elems,images,monoidal_structure)` stores an ordered list of
 group elements, their functors, and a dictionary of structure transformations
@@ -32,10 +31,10 @@ use $T_e=\mathrm{Id}_{\mathcal C}$ and
 $\sigma_{e,g}=\sigma_{g,e}=\mathrm{id}_{T_g}$.
 `is_tensor_action` checks the displayed associativity equation for the stored
 transformations. Supply `elems` as the complete group-element list, one tensor
-autoequivalence in `images` for each entry, and a structure transformation for
-every pair. The method does not verify naturality, monoidality, invertibility,
-the functor endpoints, identity normalization, or the autoequivalence property;
-it checks only the displayed action associativity equation.
+autoequivalence in `images` for each entry, and a natural monoidal isomorphism
+for every pair, with compatible endpoints and normalized identity data. These
+properties are input requirements; `is_tensor_action` evaluates the action
+associativity equation.
 `action_by_inner_autoequivalences` constructs candidates from invertible objects;
 it does not enumerate all tensor actions.
 
@@ -54,9 +53,8 @@ The action is an argument; `equivariantization(C)` alone is not the documented
 constructor. `equivariant_induction` uses the underlying direct sum
 $\bigoplus_{g\in G}T_g(X)$ with its coherent equivariant structure.
 An equivariant object stores one structure map for each entry of `T.elements`.
-The low-level constructor does not test that these maps are invertible or that
-$u_e$ is the identity. `is_equivariant` checks the displayed pairwise
-compatibility equation, but it does not add these omitted conditions.
+The low-level constructor expects isomorphisms with $u_e=\mathrm{id}_X$;
+`is_equivariant` checks their displayed pairwise compatibility equation.
 Both `is_tensor_action` and `is_equivariant` use represented equality and are
 currently intended for exact coefficient fields.
 

@@ -72,10 +72,10 @@ These functions return ordinary Julia dictionaries. A dictionary does not
 carry its convention, so code that passes dictionaries independently of a
 category must retain the convention separately.
 
-## The historical column-major packing
+## The default column-major packing
 
-The default is `convention=:column_major_packing`. This is the historical
-dictionary format used by TensorCategories data files. It is a serialization
+The default is `convention=:column_major_packing`. This is the dictionary
+format used by TensorCategories data files. It is a serialization
 layout, not another mathematical $F$-move.
 
 For a multiplicity-free associator block $A=A^{abc}_d$, the key is
@@ -317,7 +317,7 @@ dictionary from `numeric_F_symbols` or `numeric_R_symbols` with the same keyword
 as in the example above. Mislabeling a dictionary changes the interpretation of
 its keys when it is loaded.
 
-The numerical loader also retains a legacy keyword `transpose=true`, which
+The numerical loader also accepts the compatibility keyword `transpose=true`, which
 transposes every structural matrix after the dictionary has been decoded. This
 is a separate mathematical operation, not a dictionary convention. Leave it at
 the default `false` unless the external matrices are known to require that
@@ -336,7 +336,8 @@ and optional braiding. The fusion paths must determine a unique simple tensor
 unit. The optional `unit` value is a simple-object index and must agree with
 that reconstructed unit. Supply one nonzero component per simple through
 `pivotal=...` when pivotal data are part of the intended input; otherwise the
-constructor's all-one components remain unchecked.
+default coefficients $P_i=1$ remain in place and should be checked before they
+are used as a pivotal structure.
 
 `load_numeric_fusion_category(...; check=true)` checks dictionary completeness,
 block dimensions, and normalization of the stored associators involving the

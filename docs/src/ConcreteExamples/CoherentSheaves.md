@@ -105,8 +105,7 @@ length(T)
 
 The pointwise symmetric braiding does not give a braiding for convolution.
 The displayed pullback–tensor–pushforward formula and diagonal unit are those of
-[ostrik2014multifusion; Example 2.7(iii), p. 125](@cite). The transport between
-chosen orbit representatives, associator, and duality have no documented
-identification with specified stabilizer conjugations in that model. The
-constructor is therefore experimental and should not be treated as a verified
-rigid or spherical realization of the convolution category.
+[ostrik2014multifusion; Example 2.7(iii), p. 125](@cite). A basis-level
+comparison of the implemented transport between orbit representatives,
+associator, and duality with specified stabilizer conjugations is not recorded.
+Claims using rigidity or sphericality therefore require an independent check.

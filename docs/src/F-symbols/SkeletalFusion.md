@@ -10,9 +10,9 @@ categories in [EGNO; Chapters 1, 2, and 4](@citet). The reconstruction in
 terms of multiplicity vectors, matrix blocks, and fusion rules is described in
 [maeurer2026thesis; §1.7](@citet).
 
-The type name `SixJCategory` is historical. The model allows arbitrary fusion
-multiplicities, and its associator entries need not be literal Wigner
-$6j$-symbols.
+The name `SixJCategory` refers to this general skeletal data model. It allows
+arbitrary fusion multiplicities, and its associator entries need not be literal
+Wigner $6j$-symbols.
 
 ## Objects and morphisms
 

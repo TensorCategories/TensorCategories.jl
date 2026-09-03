@@ -147,6 +147,28 @@ anyon models and orthonormal splitting bases. The same coefficient convention
 makes sense for the composition-dual bases used here over an arbitrary
 splitting field.
 
+The function `F_symbols(C; convention=...)` returns all admissible
+coefficients, including zeros, as a Julia dictionary. The two accepted
+dictionary conventions are:
+
+| `convention` | Keys |
+|:---|:---|
+| `:bonderson` | `[a,b,c,d,e,f]` without multiplicities and `[a,b,c,d,e,mu,nu,f,rho,sigma]` in general |
+| `:column_major_packing` | `[a,b,c,d,f,e]` without multiplicities and `[a,b,c,d,f,sigma,rho,e,mu,nu]` in general |
+
+With `convention=:bonderson`, the value is precisely the entry in
+$\eqref{eq:F-symbol-definition}$ named by the two fusion paths in the key. The
+default is `convention=:column_major_packing`, the layout used by
+TensorCategories data files. In that layout the suffix records the order used
+to pack the entries of $A$ in Julia column-major order: for fixed $a,b,c,d$,
+the keys are traversed in the nested order
+$(e,f,\nu,\mu,\rho,\sigma)$ and matched with successive entries of `vec(A)`.
+The key suffix is therefore not a pair of direct fusion-path indices. The
+[data exchange page](@ref symbol-data) gives the equivalent entry-by-entry
+reconstruction rule. Changing `convention` changes the dictionary keys and
+their interpretation, not the matrix $A$, the chosen bases, or the gauge.
+`numeric_F_symbols` uses the same keyword.
+
 The package stores matrices for row coordinates: whenever the represented
 composition is defined,
 
@@ -193,11 +215,29 @@ $\operatorname{Hom}(b\otimes a,d)$. This is the convention used in
 [barkeshli2019symmetry; Eqs. (27)--(28)](@citet). With the same index notation,
 the structural matrix is `C.braiding[a,b,d]`.
 
+The function `R_symbols(C; convention=...)` returns all admissible
+coefficients, including zeros. In the direct convention,
+
+```julia
+R_symbols(C; convention=:bonderson)[[a,b,d,mu,nu]]
+```
+
+is $B^{ab}_d[\mu,\nu]$; in the multiplicity-free case the key is `[a,b,d]`.
+The default `:column_major_packing` convention uses the same key shapes, but
+stores $B^{ab}_d[\nu,\mu]$ under `[a,b,d,mu,nu]`. Thus the two multiplicity
+indices are transposed in the default dictionary layout. This is a packing
+rule, not an inverse braiding or a change of gauge. `numeric_R_symbols` uses
+the same keyword.
+
+Both functions return an ordinary `Dict`, which does not retain the selected
+convention. Code that stores or passes the dictionary separately from the
+category must therefore retain the convention as accompanying metadata.
+
 The order of $a$ and $b$ matters. The inverse of $B^{ab}_d$ represents the
 inverse map from $b\otimes a$ to $a\otimes b$; it is not generally
 $B^{ba}_d$.
 
-## Pivotal coefficients and `P_symbols`
+## Pivotal coefficients
 
 A pivotal structure is a monoidal natural isomorphism
 
@@ -236,10 +276,10 @@ identity is
 j_X\otimes j_Y=\phi_{X,Y}\circ j_{X\otimes Y}.
 ```
 
-The initializer `six_j_category` installs provisional all-one components, and
-`set_pivotal!` stores supplied components without checking
-$\eqref{eq:pivotal-monoidality}$. Use
-`is_pivotal(C; check=true)` to verify pivotal coherence. Sphericality is the
+The initializer `six_j_category` sets $P_i=1$ for every simple object, and
+`set_pivotal!` replaces these components. Validation is explicit: use
+`is_pivotal(C; check=true)` to check
+$\eqref{eq:pivotal-monoidality}$. Sphericality is the
 additional equality of the left and right pivotal traces and can be checked
 with `is_spherical(C; check=true)`. Since a $P$-symbol dictionary has one
 scalar per simple object rather than matrix entries indexed by fusion paths,
@@ -250,10 +290,9 @@ scalar per simple object rather than matrix entries indexed by fusion paths,
 `SixJCategory` uses strict unit constraints in its skeletal coordinates. The
 normalized convention requires every associator block with a unit input to be
 an identity matrix, and the public `associator` function treats such inputs as
-strict. Since the setters trust supplied arrays by default, an unchecked array
-can nevertheless contain a conflicting stored block. With `check=true`,
-`set_one!` and `set_associator!` check this normalization. They do not check the
-full pentagon; use `pentagon_axiom(C)` for that.
+strict. The low-level setters accept `check=false` for prevalidated input. With
+`check=true`, `set_one!` and `set_associator!` check unit normalization. The
+full pentagon is checked separately by `pentagon_axiom(C)`.
 
 ## Pentagon and hexagon equations
 
@@ -397,51 +436,14 @@ $A=(M^F)^{-\mathsf T}$, and similarly $B=(M^R)^{-\mathsf T}$ for the
 braiding.
 
 The $F$-symbol convention in [ardonne2010clebsch; Eq. (2)](@citet) has the
-same projection direction as $M^F$. The two `convention` keywords below
-change the association of dictionary keys with entries of $A$ and $B$; they
-do not apply the inverse-transpose operation in
+same projection direction as $M^F$. The dictionary conventions described
+above change the association of keys with entries of $A$ and $B$; they do not
+apply the inverse-transpose operation in
 $\eqref{eq:projection-inverse-conversion}$.
 
-These comparisons concern mathematical matrix conventions. The historical
-dictionary packing used by the database is a separate software format,
+These comparisons concern mathematical matrix conventions. The dictionary
+packing used by the database is a separate software format,
 described on the [data exchange page](@ref symbol-data).
-
-## The two convention keywords
-
-The structural matrices $A$ and $B$ have the mathematical meanings fixed
-above. The `convention` keyword controls only how their entries are assigned to
-dictionary keys.
-
-| Keyword | Meaning |
-|:---|:---|
-| `:bonderson` | Direct mathematical path indices as in $\eqref{eq:F-symbol-definition}$ and $\eqref{eq:R-symbol-definition}$ |
-| `:column_major_packing` | Historical dictionary packing used by existing TensorCategories data files |
-
-With `convention=:bonderson`, the keys of `F_symbols(C; convention=:bonderson)`
-are
-
-```julia
-[a,b,c,d,e,f]                  # multiplicity-free
-[a,b,c,d,e,mu,nu,f,rho,sigma] # general case
-```
-
-and the value is
-$A^{abc}_d[(e,\mu,\nu),(f,\rho,\sigma)]$. The keys of
-`R_symbols(C; convention=:bonderson)` are
-
-```julia
-[a,b,d]       # multiplicity-free
-[a,b,d,mu,nu] # general case
-```
-
-and the value is $B^{ab}_d[\mu,\nu]$. Thus this keyword exposes the path
-indices used in $\eqref{eq:F-symbol-definition}$ and
-$\eqref{eq:R-symbol-definition}$ directly.
-
-The default is `:column_major_packing` for compatibility with existing data.
-Neither keyword changes the structural matrices, the binary bases, or the
-gauge. The return value is an ordinary `Dict` and does not carry its convention;
-the caller must retain that information.
 
 The [worked examples](@ref working-with-fusion-data) apply these equations to
 explicit categories. The exact key packing and serialization metadata are

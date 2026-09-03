@@ -4,8 +4,8 @@ The Haagerup subfactor has the smallest finite-depth index above $4$
 [grossman2012haagerup; Introduction](@citet). Its Morita equivalence class
 contains exactly three fusion categories, denoted $H_1,H_2,H_3$
 [grossman2012haagerup; Theorem 1.4](@cite). The constructors on this page
-include exact database records, a formula model, precomputed centers, and
-legacy or fusion-ring-only entries. For each constructor, the entry states
+include exact database records, a formula model, precomputed centers, additional
+stored tables, and fusion-ring-only entries. For each constructor, the entry states
 which structural data are supplied and which identification with the
 literature is known.
 
@@ -13,7 +13,7 @@ The default constructors load the following stored data:
 
 | Constructor | Rank | Coefficients and data source |
 |:---|:---|:---|
-| `haagerup_H1()` | 4 | The `Haagerup_H1` artifact over $\mathbb Q[t]/(t^4+t^3-t^2+t+1)$; fusion ring identified, exact associator gauge unverified |
+| `haagerup_H1()` | 4 | The `Haagerup_H1` artifact over $\mathbb Q[t]/(t^4+t^3-t^2+t+1)$; fusion ring identified, with no recorded basis change to a published associator gauge |
 | `haagerup_H2()` | 6 | `anyonwiki(6,1,2,8,2,0,1)` over $\mathbb Q[t]/(t^4+t^3-t^2+t+1)$ |
 | `haagerup_H3()` | 6 | `anyonwiki(6,1,2,8,1,0,1)` over $\mathbb Q[t]/(t^4-t^3-t^2-t+1)$ |
 | `haagerup_H3_center()` | 12 | The `center_haagerup` artifact over its stored degree $48$ number field |
@@ -160,7 +160,7 @@ $512$-bit balls; the source computation ended with a rigorous error bound of
 $107$ bits. The distributed CSV records decimal centers rather than the
 original ball radii. The loader parses those decimals into a new `AcbField` at
 the requested precision, so its output does not reproduce the original
-certifying balls. The files use the historical `:column_major_packing` layout.
+certifying balls. The files use the default `:column_major_packing` layout.
 In the thesis notation, their ten index columns are
 
 ```math
@@ -171,14 +171,14 @@ In the thesis notation, their ten index columns are
 whereas [maeurer2026thesis; §5.2.3.1](@citet) prints the mathematical projection
 labels as
 $(i,j,k,l,m,n,\beta,\alpha,\gamma,\delta)$. The default loader reads the
-published files in their actual historical layout. The relation between the
+published files in their stored column-major layout. The relation between the
 thesis's projection-inverse matrices and the package's structural matrices is
 given in [$F$-symbol conventions](@ref f-conventions).
 
-The CSV archive does not contain pivotal components. The loader therefore
-retains the skeletal initializer's unchecked all-one pivotal components;
-verify the pivotal or spherical identities at the chosen working precision
-before using dimensions, twists, or the $S$-matrix.
+The CSV archive does not contain pivotal components. The loader therefore uses
+the skeletal initializer's default coefficients $P_i=1$. Verify the pivotal or
+spherical identities at the chosen working precision before using dimensions,
+twists, or the $S$-matrix.
 
 The numerical loader uses the same compact simple names
 $(\mathbb 1,\pi_1,\pi_2,\sigma_0,\sigma_1,\sigma_2,\mu_1,\ldots,\mu_6)$ as
@@ -204,8 +204,8 @@ unexported formula implementation
 The default coefficient argument constructs the degree $16$ number field
 defined by the polynomial in [osborne2019h3; Theorem 3.1](@citet). A supplied
 field must contain the required square roots. The constructor installs the
-fusion rules, tensor unit, and associators, retains the skeletal initializer's
-unchecked all-one pivotal components, and supplies no braiding.
+fusion rules, tensor unit, and associators, uses the default pivotal
+coefficients $P_i=1$, and supplies no braiding.
 
 With the embedding and radical choices that make the paper's radicals positive
 real, a matrix in the reference must be transposed to obtain the package's
@@ -216,15 +216,16 @@ entrywise with Appendix B after this transpose, including the paper's channel
 order. The intended inputs satisfy $p_1,p_2\in\{\pm1\}$; the constructor does
 not validate this restriction or install the positive-real embedding.
 
-## [Legacy $H_2$ data](@id haagerup-auxiliary-data)
+## [Additional $H_2$ data](@id haagerup-auxiliary-data)
 
 Unitary gauges make the adjoint operation transparent and are particularly
-useful for numerical and anyonic calculations. The following table is a
-legacy package artifact whose precise mathematical gauge is unknown.
+useful for numerical and anyonic calculations. The following package artifact
+contains an additional exact associator table; its source does not record the
+corresponding fusion-basis gauge.
 
-The exported constructor `unitary_haagerup_H2()` loads a separate legacy exact
+The exported constructor `unitary_haagerup_H2()` loads this separate exact
 associator table over the degree $8$ number field defined by
-$1+x^2-x^4+x^6+x^8$. The table is decoded using the historical
+$1+x^2-x^4+x^6+x^8$. The table is decoded using the default
 `:column_major_packing` layout, after which the constructor transposes every
 decoded matrix once more before storing it. The chosen embedding sends $x$ to
 approximately $-0.908677010512+0.417499809062i$. The constructor declares
@@ -235,8 +236,8 @@ Despite its name, neither a source nor an explicit change of fusion bases
 identifies this table, including that extra transpose, with the unitary $H_2$
 presentations in
 [barter2022associators; §V, pp. 13–14](@citet) or
-[huang2020transparent; §5.2.1, p. 16](@citet). Its precise gauge provenance and
-declared pivotal structure therefore remain unverified.
+[huang2020transparent; §5.2.1, p. 16](@citet). No basis-level comparison with
+those presentations or independent pivotal-structure check is recorded.
 
 ## [Extended Haagerup](@id extended-haagerup)
 
