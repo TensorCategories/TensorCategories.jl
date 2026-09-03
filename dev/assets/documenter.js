@@ -50,7 +50,7 @@ window.MathJax = {
       "ams",
       "autoload"
     ],
-    "tags": "ams"
+    "tags": "all"
   }
 };
 
