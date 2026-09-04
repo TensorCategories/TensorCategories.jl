@@ -1976,10 +1976,11 @@ where ``p`` are the fixed projection bases and ``c_{a,b}:a\otimes b\to b\otimes 
 is the braiding. Equivalently, on composition-dual splitting bases,
 ``c_{a,b}\circ s_{ab}^\mu=\sum_\nu B_{\mu\nu}s_{ba}^\nu``.
 Thus the input basis index comes first, as in Bonderson,
-*Non-Abelian Anyons and Interferometry* (2007), Eq. (2.54), p. 25,
-https://thesis.caltech.edu/2447/02/thesis.pdf.
+Shtengel, and Slingerland, *Interferometry of non-Abelian Anyons*,
+Annals of Physics 323 (2008), Eqs. (2.31)--(2.32),
+https://doi.org/10.1016/j.aop.2008.01.012.
 
-The default `:column_major_packing` preserves the historical dictionary:
+The default `:column_major_packing` preserves the package's dictionary packing:
 the same key has value ``B_{\nu\mu}``. This is a transpose of the two
 multiplicity indices, **not** the inverse braiding or a change of gauge.
 As with [`F_symbols`](@ref), the plain dictionary does not record its convention.

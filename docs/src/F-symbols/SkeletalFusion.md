@@ -319,12 +319,33 @@ The entries of $B^{ab}_d$ are the **$R$-symbols**:
 ```
 
 Equation $\eqref{eq:braiding-splitting-bases}$ is the **$R$-move** induced by
-the braiding. The row index $\mu$ labels the input basis of
-$\operatorname{Hom}(a\otimes b,d)$, and the column index $\nu$ labels the output basis of
-$\operatorname{Hom}(b\otimes a,d)$. This is the convention used in
-[bonderson2008interferometry; Eqs. (2.31)--(2.32)](@citet); see also
-[barkeshli2019symmetry; Eqs. (27)--(28)](@citet). With the same index notation,
+the braiding. The row index $\mu$ labels the input splitting vector
+$s_{ab}^{d,\mu}$ and its composition-dual projection $p^{ab}_{d,\mu}$; the
+column index $\nu$ similarly labels the output splitting vector and dual
+projection for $b\otimes a$. This is precisely the convention of
+[bonderson2008interferometry; Eqs. (2.30)--(2.32)](@citet), abbreviated BSS
+below: their operator $R_{ab}$ sends the splitting basis for $a\otimes b$ to
+that for $b\otimes a$, and
+
+```math
+\label{eq:bonderson-R-identification}
+B^{ab}_d[\mu,\nu]
+=\left[R^{ab}_d\right]^{\mathrm{BSS}}_{\mu,\nu}
+```
+
+after identifying the chosen splitting bases. With the same index notation,
 the structural matrix is `C.braiding[a,b,d]`.
+
+The order in the superscript is not uniform in the physics literature.
+[barkeshli2019symmetry; Eqs. (27)--(28)](@citet), abbreviated BBCW below,
+define $R^{ab}_d:V^{ba}_d\to V^{ab}_d$. With matching bases, their notation is
+therefore related to the package's by
+
+```math
+\label{eq:barkeshli-R-identification}
+B^{ab}_d[\mu,\nu]
+=\left[R^{ba}_d\right]^{\mathrm{BBCW}}_{\mu,\nu}.
+```
 
 The function `R_symbols(C; convention=...)` returns all admissible
 coefficients, including zeros. The two accepted dictionary conventions are:
@@ -536,6 +557,30 @@ $A=(M^F)^{-\mathsf T}$. The dictionary conventions described above change
 the association of keys with entries of $A$; they do not apply the
 inverse-transpose operation in
 $\eqref{eq:projection-inverse-conversion}$.
+
+There is an analogous distinction for the braiding. The package follows the
+direct splitting-space $R$-move in
+$\eqref{eq:braiding-splitting-bases}$. If instead one represents the map on
+projection spaces induced by the inverse braiding and defines $M^R$ by
+
+```math
+\label{eq:inverse-braiding-projection-matrix}
+p^{ab}_{d,\mu}\circ c_{a,b}^{-1}
+=\sum_\nu M^R_{\mu,\nu}p^{ba}_{d,\nu},
+```
+
+then solving $\eqref{eq:braiding-projection-bases}$ gives
+
+```math
+\label{eq:projection-inverse-braiding-conversion}
+M^R=(B^{-1})^{\mathsf T}.
+```
+
+The package stores $B$, not $M^R$. This inverse transpose is independent of
+the transpose used by `convention=:column_major_packing`, which only assigns
+the entries of $B$ to dictionary keys. The same published source explicitly
+distinguishes the braiding from its inverse and defines its $R$-symbols using
+the direct move [bonderson2008interferometry; Eqs. (2.30)--(2.32)](@cite).
 
 These comparisons concern mathematical matrix conventions. The dictionary
 packing used by the database is a separate software format,
