@@ -247,7 +247,11 @@ Equation $\eqref{eq:associator-splitting-bases}$ replaces a left-associated
 splitting tree by a linear
 combination of right-associated splitting trees; this change of basis is the
 **$F$-move**. The first multi-index in $\eqref{eq:F-symbol-definition}$ labels
-the input tree and the second labels the output tree. This is the convention used in
+the input tree and the second labels the output tree. At the coordinate-free
+level, this is the associativity isomorphism on the splitting spaces
+$H^e_{ab}=\operatorname{Hom}(e,a\otimes b)$ in
+[EGNO; §4.9, Eqs. (4.12)--(4.13)](@citet). The same direction and coefficient
+convention are used in
 [bonderson2008interferometry; Eq. (2.14)](@citet) and
 [barkeshli2019symmetry; Eq. (10)](@citet). Both references work with unitary
 anyon models and orthonormal splitting bases. The same coefficient convention
@@ -504,47 +508,33 @@ composition-dual bases and matching labels, that matrix is $A^{\mathsf T}$.
 This explains the transpose between the package's structural matrices and the
 convention used for the $H_3$ formulas in that reference.
 
-In [maeurer2026thesis; Eqs. (1.58)--(1.59), (1.65), and Algorithm 6](@citet),
-the $F$- and $R$-matrices are defined on projection trees by
+A different published convention expresses the $F$-move on projection rather
+than splitting trees. The diagrammatic equations in
+[ardonne2010clebsch; Eq. (2)](@citet) and
+[barter2022associators; Eq. (3)](@citet) suppress associators. Restoring the
+parenthesized sources with
+$\alpha:(a\otimes b)\otimes c\to a\otimes(b\otimes c)$ gives
 
 ```math
-\label{eq:thesis-F-projection-matrix}
+\label{eq:inverse-associator-projection-matrix}
 L_u\circ\alpha^{-1}=\sum_vM^{F}_{u,v}R_v.
 ```
 
-```math
-\label{eq:thesis-R-projection-matrix}
-p^{ab}_{d,\mu}\circ c_{a,b}^{-1}
-=\sum_\nu M^{R}_{\mu,\nu}p^{ba}_{d,\nu}.
-```
-
-There is also an index-order translation in the multiplicity case. The thesis
-prints the left projection tree with multi-index $(m,\beta,\alpha)$, whereas
-the corresponding path in this manual is ordered as
-$(e,\mu,\nu)=(m,\alpha,\beta)$. The thesis's right multi-index
-$(n,\gamma,\delta)$ has the same order as
-$(f,\rho,\sigma)$. After applying this relabeling, so that both matrices are
-indexed by the same ordered projection trees, the projection-inverse matrices
-are related to the structural matrices in
-$\eqref{eq:associator-projection-bases}$ and
-$\eqref{eq:braiding-projection-bases}$ by
+Here $u=(e,\mu,\nu)$ and $v=(f,\rho,\sigma)$ have the path order fixed above.
+Solving $\eqref{eq:associator-projection-bases}$ for
+$L_u\circ\alpha^{-1}$ shows that this matrix is related to the package's
+structural matrix by
 
 ```math
 \label{eq:projection-inverse-conversion}
-M^{F}=(A^{-1})^{\mathsf T},
-\qquad
-M^{R}=(B^{-1})^{\mathsf T}.
+M^{F}=(A^{-1})^{\mathsf T}.
 ```
 
 Thus, in the package's row-coordinate realization, the associator block
-corresponding to the thesis matrix $M^F$ is
-$A=(M^F)^{-\mathsf T}$, and similarly $B=(M^R)^{-\mathsf T}$ for the
-braiding.
-
-The $F$-symbol convention in [ardonne2010clebsch; Eq. (2)](@citet) has the
-same projection direction as $M^F$. The dictionary conventions described
-above change the association of keys with entries of $A$ and $B$; they do not
-apply the inverse-transpose operation in
+corresponding to the projection-inverse matrix $M^F$ is
+$A=(M^F)^{-\mathsf T}$. The dictionary conventions described above change
+the association of keys with entries of $A$; they do not apply the
+inverse-transpose operation in
 $\eqref{eq:projection-inverse-conversion}$.
 
 These comparisons concern mathematical matrix conventions. The dictionary
