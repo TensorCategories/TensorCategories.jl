@@ -76,7 +76,10 @@ category must retain the convention separately.
 
 The default is `convention=:column_major_packing`. This is the dictionary
 format used by TensorCategories data files. It is a serialization
-layout, not another mathematical $F$-move.
+layout, not another mathematical $F$-move. Programmatically, it pairs the
+column-major list `vec(A)` with a nested enumeration of the admissible basis
+morphisms. Its keys therefore record that enumeration rather than directly
+naming the row and column fusion paths.
 
 For a multiplicity-free associator block $A=A^{abc}_d$, the key is
 `[a,b,c,d,f,e]`. Let
@@ -86,7 +89,8 @@ For a multiplicity-free associator block $A=A^{abc}_d$, the key is
 E=(e_1,\ldots,e_q),\qquad T=(f_1,\ldots,f_q)
 ```
 
-be the increasing lists of admissible left and right intermediate simples.
+be the increasing lists of simple labels on the internal edges of admissible
+left and right fusion trees.
 If `D = F_symbols(C)`, then
 
 ```math
@@ -95,8 +99,10 @@ If `D = F_symbols(C)`, then
 ```
 
 The suffix $(f_s,e_r)$ therefore does not directly name the row and column of
-$A$. Swapping the final two key positions is not a general conversion because
-the admissible lists $E$ and $T$ need not coincide.
+$A$. The admissible lists $E$ and $T$ depend on $(a,b,c,d)$ and need not
+coincide. Conversion to direct fusion-path indices is consequently
+block-dependent and cannot be expressed by a fixed permutation of the six key
+positions.
 
 With fusion multiplicities, the key is
 

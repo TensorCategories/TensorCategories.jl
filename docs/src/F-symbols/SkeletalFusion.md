@@ -274,10 +274,15 @@ TensorCategories data files. In that layout the suffix records the order used
 to pack the entries of $A$ in Julia column-major order: for fixed $a,b,c,d$,
 the keys are traversed in the nested order
 $(e,f,\nu,\mu,\rho,\sigma)$ and matched with successive entries of `vec(A)`.
-The key suffix is therefore not a pair of direct fusion-path indices. The
-[data exchange page](@ref symbol-data) gives the equivalent entry-by-entry
-reconstruction rule. Changing `convention` changes the dictionary keys and
-their interpretation, not the matrix $A$, the chosen bases, or the gauge.
+Programmatically, this pairs the column-major list of matrix entries with a
+nested enumeration of the admissible basis morphisms. The keys record that
+enumeration rather than a pair of direct fusion-path indices. Since the
+admissible path lists depend on $(a,b,c,d)$ and need not coincide, conversion
+to direct path indices is block-dependent and cannot be given by a fixed
+permutation of the key positions. The [data exchange page](@ref symbol-data)
+gives the equivalent entry-by-entry reconstruction rule. Changing
+`convention` changes the dictionary keys and their interpretation, not the
+matrix $A$, the chosen bases, or the gauge.
 `numeric_F_symbols` uses the same keyword.
 
 The package stores matrices for row coordinates: whenever the represented
