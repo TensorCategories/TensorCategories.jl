@@ -82,10 +82,12 @@ $\mathcal C=\operatorname{Rep}_k(G)$ in characteristic $p>0$, finite
 representation type is equivalent to the Sylow $p$-subgroups of $G$ being
 cyclic [higman1954indecomposable](@cite).
 
-The rank computations used to form quotient Hom spaces currently require an
-exact coefficient field. Enumeration of all simple objects additionally
-requires an implementation of `indecomposables(C)` for the input category;
-working with specified objects does not require such an enumeration.
+The functions `is_negligible`, `trace_pairing`, and
+`quotient_hom_dimension`, as well as the construction of quotient Hom spaces,
+currently require exact coefficients and finite Hom spaces with computable
+bases. Enumeration of all simple objects additionally requires an
+implementation of `indecomposables(C)` for the input category; working with
+specified objects does not require such an enumeration.
 
 ## Example: the category $\operatorname{Ver}_5$
 
