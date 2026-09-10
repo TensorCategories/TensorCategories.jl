@@ -38,6 +38,7 @@ end
     # Previously these two queries called each other indefinitely.
     @test !is_additive(C) && !is_abelian(C) && !is_linear(C) && !is_monoidal(C)
     @test !is_finite(C) && !is_locally_finite(C)
+    @test !is_finite_representation_type(C)
 
     # EGNO (2015), Section 8.13 requires a braided spherical fusion category:
     # an arbitrary nonsingular matrix does not establish modularity.
@@ -113,6 +114,7 @@ end
     @test is_fusion(F) && is_multifusion(F)
     @test is_weak_fusion(F) && is_weak_multifusion(F)
     @test is_split_semisimple(F)
+    @test is_finite_representation_type(F)
 
     V = vector_spaces(QQ)
     @test is_braided(V) && is_spherical(V)
@@ -779,7 +781,14 @@ end
     M = representation_category(GF(5),cyclic_group(5))
     @test is_finite_representation_type(M)
     @test splitting_field(M) == GF(5)
-    @test_throws ArgumentError indecomposables(M)
+    @test sort(int_dim.(indecomposables(M))) == collect(1:5)
+
+    N = representation_category(GF(2),cyclic_group(6))
+    ind = indecomposables(N)
+    @test sort(int_dim.(ind)) == [1,2,2,4]
+    @test all(is_indecomposable,ind)
+    @test all(!is_isomorphic(ind[i],ind[j])[1]
+              for i in eachindex(ind) for j in 1:i-1)
 
     I = representation_category(GF(2),symmetric_group(4))
     @test !is_finite_representation_type(I)

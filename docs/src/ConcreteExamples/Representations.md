@@ -163,9 +163,20 @@ that the representation type is finite exactly when a Sylow $p$-subgroup of
 $G$ is cyclic [higman1954indecomposable](@cite).
 
 When the category is semisimple, `indecomposables(C)` is the same list as
-`simples(C)`. The installed GAP and Hecke backends do not provide a general
-enumeration of every indecomposable module in the modular finite-type case, so
-the predicate is available there but enumeration is not.
+`simples(C)`. If $G=C_n$ and $k$ is finite, TensorCategories.jl also enumerates
+the indecomposables in modular characteristic. Factoring
+
+```math
+x^n-1=\prod_i f_i(x)^{e_i}
+```
+
+over $k$, their underlying $k[x]/(x^n-1)$-modules are
+$k[x]/(f_i^r)$ for $1\leq r\leq e_i$. The generator acts through the companion
+matrix of $f_i^r$; compare [webb2016representations; §6.1](@cite). This
+construction is independent of the `backend` keyword. GAP's MeatAxe decomposes
+a supplied module, but does not enumerate all indecomposable modules of a group.
+For other modular groups of finite representation type, complete enumeration is
+not yet implemented.
 
 ```@example representations
 @assert is_finite_representation_type(
@@ -173,6 +184,14 @@ the predicate is available there but enumeration is not.
 @assert !is_finite_representation_type(
     representation_category(GF(2), symmetric_group(4)))
 nothing # hide
+```
+
+For instance, the indecomposable representations of $C_5$ over $\mathbb F_5$
+have dimensions $1,\ldots,5$:
+
+```@example representations
+C5 = representation_category(GF(5), cyclic_group(5))
+int_dim.(indecomposables(C5))
 ```
 
 Semisimplicity, splitting, and the distinction between simple and absolutely

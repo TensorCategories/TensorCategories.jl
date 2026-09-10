@@ -284,6 +284,7 @@ export is_multifusion
 export is_multifusion 
 export is_multiring 
 export is_multitensor 
+export is_negligible
 export is_pivotal
 export is_relative_braiding
 export is_right_module

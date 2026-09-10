@@ -59,6 +59,15 @@ is_linear(::TensorPowerCategory) = true
 is_monoidal(::TensorPowerCategory) = true
 is_braided(C::TensorPowerCategory) = is_braided(category(C))
 
+# A tensor-power category is the additive closure of summands computed inside
+# its ambient category. Its trace pairing and duality are inherited there, so
+# Etingof--Ostrik's hypotheses follow from the locally finite spherical ambient
+# multitensor category even though the generated subcategory need not itself be
+# abelian.
+_check_semisimplification_input(C::TensorPowerCategory) =
+    _check_semisimplification_input(category(C))
+_semisimplification_structure_source(C::TensorPowerCategory) = category(C)
+
 object(X::TensorPowerObject) = X.object
 morphism(f::TensorPowerMorphism) = f.morphism
 category(C::TensorPowerCategory) = C.category

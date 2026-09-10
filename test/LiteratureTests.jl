@@ -400,6 +400,47 @@ end
     @test_throws ArgumentError composition_power(id(K),-1)
 end
 
+# Etingof--Ostrik, On semisimplification of tensor categories, Example 2.7,
+# identifies semisimplified Rep_Fp(Cp) with Ver_p. Etingof--Ostrik--Venkatesh,
+# Computations in symmetric fusion categories in characteristic p, Section 2.1,
+# gives the simple labels and the truncated sl_2 tensor-product rule tested here.
+@testset "Semisimplification hypotheses and Verlinde fusion rules" begin
+    @test_throws ArgumentError Semisimplification(Sets())
+
+    for p in (3,5)
+        F = GF(p)
+        R = representation_category(F,cyclic_group(p))
+        Q = Semisimplification(R)
+        J = [literature_jordan_representation(R,n) for n in 1:p]
+        L = [semisimplify(J[n],Q) for n in 1:p-1]
+
+        @test is_linear(Q) && is_abelian(Q) && is_locally_finite(Q)
+        @test is_krull_schmidt(Q) && is_semisimple(Q)
+        @test is_multitensor(Q) && is_tensor(Q)
+        @test is_braided(Q) && is_pivotal(Q) && is_spherical(Q)
+        # Higman's criterion proves that the input has finite representation
+        # type, hence the semisimplification has finitely many simples.
+        @test is_finite(Q) && is_weak_multifusion(Q) && is_weak_fusion(Q)
+        @test length(simples(Q)) == p-1
+        @test is_fusion(Q)
+        @test all(X -> !is_negligible(X),L)
+        @test is_negligible(J[p])
+
+        if p > 2
+            N = matrix(J[2](only(gens(base_group(R))))) -
+                identity_matrix(F,2)
+            @test is_negligible(morphism(J[2],J[2],N))
+        end
+
+        for a in 1:p-1, b in 1:p-1, c in 1:p-1
+            lower = abs(a-b)+1
+            upper = min(a+b-1,2p-a-b-1)
+            expected = lower <= c <= upper && iseven(c-lower) ? 1 : 0
+            @test int_dim(Hom(L[a]⊗L[b],L[c])) == expected
+        end
+    end
+end
+
 # Etingof--Ostrik's negligible ideal tests traces against every opposite
 # morphism, not only tr(id). For End(W)=F4 over F2 the field-trace pairing is
 # nondegenerate, although dim(W)=0 in F2; compare the standard finite-field
@@ -415,6 +456,7 @@ end
 
     Qraw = Semisimplification(R)
     Wq = semisimplify(W,Qraw)
+    @test !is_negligible(W)
     @test F(id(Wq)) == F(1)
     @test TensorCategories._quotient_inverse(id(Wq)) == id(Wq)
     @test !is_invertible(zero_morphism(Wq,Wq))

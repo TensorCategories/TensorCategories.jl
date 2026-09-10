@@ -16,7 +16,7 @@ a new model.
 | Direct-sum decompositions | `decompose`, `indecomposables`, `is_indecomposable`, `Oscar.is_isomorphic` | [Idempotents and Krull--Schmidt categories](../Interface/KaroubianCategories.md), [finite and semisimple categories](../Interface/SemisimpleCategories.md) |
 | Kernels, cokernels, and images | `kernel`, `cokernel`, `image`, `is_monomorphism`, `is_epimorphism`, `is_subobject` | [Linear, additive, and abelian categories](../Interface/LinearCategories.md) |
 | Structural predicates | `is_linear`, `is_additive`, `is_abelian`, `is_locally_finite`, `is_finite`, `is_krull_schmidt`, `is_semisimple`, `is_split_semisimple` | [Linear categories](../Interface/LinearCategories.md), [simple objects and finite-length categories](../Interface/SimpleObjects.md), [finite and semisimple categories](../Interface/SemisimpleCategories.md), [splitting](../Interface/SplittingFields.md) |
-| Standard category constructions | `opposite_category`, `product_category`, `extension_of_scalars`, `split`, `semisimplify`, `karoubian_envelope` | [Products and scalar extension](../Interface/BasicConstructions.md), [coefficient fields](../Basics/BaseFields.md) |
+| Standard category constructions | `opposite_category`, `product_category`, `extension_of_scalars`, `split`, `semisimplify`, `karoubian_envelope` | [Products and scalar extension](../Interface/BasicConstructions.md), [semisimplification](../Constructions/Semisimplification.md), [coefficient fields](../Basics/BaseFields.md) |
 
 These lists identify the generic functions to look up; they do not assert that
 every row applies to every category. In Julia, `methods(name)` gives the
