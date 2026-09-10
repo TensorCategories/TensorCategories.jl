@@ -86,6 +86,7 @@ try
             ],
             "Further constructions" => [
                 "Products and scalar extension" => "Interface/BasicConstructions.md",
+                "Semisimplification" => "Constructions/Semisimplification.md",
                 "Algebras and internal modules" => "Constructions/ModuleCategories.md",
                 "Group actions" => "Constructions/GroupActions.md",
                 "Interface checklist" => "Interface/Generic.md",

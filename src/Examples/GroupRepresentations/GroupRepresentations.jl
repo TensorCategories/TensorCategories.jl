@@ -32,6 +32,10 @@ is_finite(C::GroupRepresentationCategory) = is_finite(base_group(C))
 # The ordinary flip is equivariant for the diagonal action in every
 # characteristic, so Rep(G) is symmetric monoidal.
 is_braided(::GroupRepresentationCategory) = true
+# The ordinary vector-space duality and double-dual identification give the
+# standard spherical structure on Rep_k(G), in every characteristic.
+is_pivotal(::GroupRepresentationCategory; check::Bool=false) = true
+is_spherical(::GroupRepresentationCategory; check::Bool=false) = true
 is_weak_fusion(C::GroupRepresentationCategory) = is_semisimple(C)
 is_weak_multifusion(C::GroupRepresentationCategory) = is_weak_fusion(C)
 function is_fusion(C::GroupRepresentationCategory)
@@ -73,6 +77,7 @@ criterion: a Sylow subgroup for the characteristic is cyclic.
 """
 function is_finite_representation_type(C::GroupRepresentationCategory)
     is_semisimple(C) && return true
+    Oscar.is_cyclic(base_group(C)) && return true
     p = Int(characteristic(base_ring(C)))
     Oscar.is_cyclic(Oscar.sylow_subgroup(base_group(C), p)[1])
 end
@@ -686,16 +691,44 @@ end
     indecomposables(C::GroupRepresentationCategory; backend=:auto)
 
 Enumerate all indecomposable representations when supported. In a semisimple
-category these are the simple representations. The finite-representation-type
-predicate is available in modular characteristic, but the installed backends
-do not provide a general enumeration there.
+category these are the simple representations. For a cyclic group over a finite
+field, use the classification of modules over `k[x]/(x^n-1)`. The installed
+backends do not provide a general enumeration for other modular groups of finite
+representation type.
 """
 function indecomposables(C::GroupRepresentationCategory; backend::Symbol=:auto)
+    backend in (:auto, :gap, :hecke) || throw(ArgumentError(
+        "backend must be :auto, :gap, or :hecke"))
     is_semisimple(C) && return simples(C; backend)
+    if is_finite(base_ring(C)) && Oscar.is_cyclic(base_group(C))
+        return _indecomposables_of_cyclic_group(C)
+    end
     is_finite_representation_type(C) || throw(ArgumentError(
         "the representation category has infinite representation type"))
     throw(ArgumentError(
         "enumeration of all indecomposable modular representations is not implemented"))
+end
+
+# If G=<g> has order n, then kG=k[x]/(x^n-1). If
+# x^n-1=prod_i f_i^e_i is the factorization over k, the indecomposable modules
+# are k[x]/(f_i^r), 1<=r<=e_i. A companion matrix of f_i^r gives the action of
+# g. See P. Webb, A Course in Finite Group Representation Theory, Section 6.1.
+function _indecomposables_of_cyclic_group(C::GroupRepresentationCategory)
+    get_attribute!(C, :indecomposables) do
+        F = base_ring(C)
+        G = base_group(C)
+        n = Int(order(G))
+        generator = only(Oscar.small_generating_set(G))
+        powers = Dict(generator^i => i for i in 0:n-1)
+        Fx, x = polynomial_ring(F, "x"; cached=false)
+        result = GroupRepresentation[]
+        for (f, e) in factor(x^n - one(Fx)), r in 1:Int(e)
+            A = Oscar.companion_matrix(f^r)
+            images = [A^powers[g] for g in gens(G)]
+            push!(result, Representation(C, gens(G), images))
+        end
+        result
+    end
 end
 
 

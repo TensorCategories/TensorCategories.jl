@@ -38,7 +38,7 @@ category.
 | `split(Z::CenterCategory; absolute=true)` | Search for a splitting extension of a supported Drinfeld center |
 | `split(X; max_degree=64, check=false)`, `split(objects; max_degree=64, check=false)` | Over a finite field, split the indecomposable summands of a specified finite family over one finite extension |
 | `karoubian_envelope(Z)` | Add images of idempotents in supported center and relative-center models |
-| `semisimplify(C)` | Quotient negligible morphisms in supported pivotal models |
+| `semisimplify(C)` | Form the [semisimplification](@ref semisimplification) by negligible morphisms |
 
 Mathematically, one first forms the Hom-space extension
 $\mathcal C\otimes_k^{\mathrm{Hom}} L$, with the same objects as $\mathcal C$
@@ -101,12 +101,8 @@ endomorphism algebras afterward.
 Idempotent completion and semisimplification solve different problems. The
 first adds images of idempotents; the second takes a quotient by negligible
 morphisms. Neither operation by itself chooses a splitting field.
-The current `semisimplify(C)` call constructs a wrapper. Its Hom spaces and
-morphism equality use the radical of the categorical trace pairing, so they
-require finite Hom bases and scalar-valued traces. Decomposition and simple
-enumeration additionally require the corresponding operations from the input
-model. The constructor itself does not verify these hypotheses or independently
-prove that the resulting wrapper is semisimple.
+The [semisimplification chapter](@ref semisimplification) gives its hypotheses,
+trace-pairing convention, and interface.
 
 ## Generated subcategories and skeletal coordinates
 

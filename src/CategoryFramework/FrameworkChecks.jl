@@ -35,6 +35,18 @@ Return whether `C` is known to be a finite abelian category.
 is_finite(C::Category) = is_weak_multifusion(C) || _declared_structure(C, :finite)
 
 """
+    is_finite_representation_type(C::Category)
+
+Return whether `C` is known to have only finitely many isomorphism classes of
+indecomposable objects. Every finite semisimple category has finite
+representation type; nonsemisimple categories require category-specific
+information.
+"""
+is_finite_representation_type(C::Category) =
+    (is_finite(C) && is_semisimple(C)) ||
+    _declared_structure(C, :finite_representation_type)
+
+"""
     is_locally_finite(C::Category)
 
 Return whether `C` is known to be a locally finite linear abelian category.

@@ -1,0 +1,130 @@
+# [Semisimplification](@id semisimplification)
+
+Let $\mathcal C$ be a spherical $k$-linear tensor category. A morphism
+$f\colon X\to Y$ is **negligible** if
+
+```math
+\label{eq:negligible-morphism}
+\operatorname{tr}(g\circ f)=0
+\qquad\text{for every }g\colon Y\to X.
+```
+
+The negligible morphisms form a tensor ideal $\mathcal N$. The
+**semisimplification** has the same objects as $\mathcal C$ and quotient Hom
+spaces
+
+```math
+\label{eq:semisimplification-hom}
+\operatorname{Hom}_{\overline{\mathcal C}}(X,Y)
+=\operatorname{Hom}_{\mathcal C}(X,Y)/\mathcal N(X,Y).
+```
+
+Under the hypotheses of [EGNO; Exercise 8.18.9](@citet) and
+[etingof2022semisimplification; Proposition 2.4 and Theorem 2.6](@citet), this
+quotient is a semisimple tensor category. In particular, these hypotheses hold
+for a locally finite spherical multitensor category. The constructor in
+TensorCategories.jl currently accepts this case over an exact coefficient
+field. It also accepts a `TensorPowerCategory` whose ambient category satisfies
+these conditions.
+
+An object $X$ becomes zero precisely when $\operatorname{id}_X$ is negligible.
+This condition is determined by the complete trace pairing
+
+```math
+\label{eq:semisimplification-trace-pairing}
+\operatorname{Hom}_{\mathcal C}(X,Y)\times
+\operatorname{Hom}_{\mathcal C}(Y,X)\longrightarrow k,
+\qquad (f,g)\longmapsto\operatorname{tr}(g\circ f).
+```
+
+Consequently, $\dim(X)=0$ alone does not imply that $X$ vanishes. This
+distinction is essential over nonsplitting fields, where a simple object can
+have a nontrivial division algebra of endomorphisms. The implementation takes
+the radical of the full pairing in equation
+\eqref{eq:semisimplification-trace-pairing}. Over an algebraically closed field,
+the simple objects of $\overline{\mathcal C}$ are precisely the images of the
+indecomposable objects of nonzero categorical dimension. Over a general field,
+the full trace pairing is the appropriate criterion; the surviving simple
+objects can have division algebras of endomorphisms larger than $k$.
+
+## The interface
+
+| Operation | Meaning |
+|:---|:---|
+| `semisimplify(C)` | construct $\overline{\mathcal C}$ |
+| `semisimplify(X,Q)` | regard $X$ as an object of the chosen quotient `Q` |
+| `semisimplify(f,Q)` | take the class of $f$ in the chosen quotient `Q` |
+| `is_negligible(f)` | test equation \eqref{eq:negligible-morphism} |
+| `is_negligible(X)` | test whether $\operatorname{id}_X$ is negligible |
+| `trace_pairing(X,Y)` | matrix of equation \eqref{eq:semisimplification-trace-pairing} in the implemented Hom bases |
+| `quotient_hom_dimension(X,Y)` | rank of that matrix, hence $\dim_k\operatorname{Hom}_{\overline{\mathcal C}}(X,Y)$ |
+| `is_finite_representation_type(C)` | test whether $\mathcal C$ is known to have only finitely many indecomposable isomorphism classes |
+
+Two `SemisimplifiedMorphism` values are equal when their representatives differ
+by a negligible morphism. Kernels, cokernels, inverses, and coordinates are
+therefore computed in the quotient Hom spaces rather than from the matrices of
+the representatives alone.
+
+The quotient inherits the tensor product, duality, pivotal structure, braiding,
+and spherical structure of the input. It is locally finite and semisimple, but
+it need not have only finitely many simple objects. Thus semisimplification does
+not by itself produce a fusion category. If the input is already fusion, the
+quotient reports `is_fusion(Q) == true`. More generally, the fusion and
+multifusion predicates become available once the implementation has established
+a finite complete list of quotient simples and checked that their endomorphism
+algebras are the coefficient field.
+
+If $\mathcal C$ has finite representation type, then
+$\overline{\mathcal C}$ has only finitely many simple objects. It is therefore
+weak fusion when its unit is simple, and it is fusion when it is moreover split.
+The distinction disappears over an algebraically closed field. For
+$\mathcal C=\operatorname{Rep}_k(G)$ in characteristic $p>0$, finite
+representation type is equivalent to the Sylow $p$-subgroups of $G$ being
+cyclic [higman1954indecomposable](@cite).
+
+The functions `is_negligible`, `trace_pairing`, and
+`quotient_hom_dimension`, as well as the construction of quotient Hom spaces,
+currently require exact coefficients and finite Hom spaces with computable
+bases. Enumeration of all simple objects additionally requires an
+implementation of `indecomposables(C)` for the input category; working with
+specified objects does not require such an enumeration.
+
+## Example: the category $\operatorname{Ver}_5$
+
+Let $J_n$ denote the $n$-dimensional indecomposable representation of $C_5$ in
+characteristic $5$, on which a generator acts by one unipotent Jordan block.
+The projective object $J_5$ is negligible, whereas $J_1,\ldots,J_4$ survive.
+
+```@example semisimplification_ver5
+using TensorCategories, Oscar
+F = GF(5)
+C = rep(F, cyclic_group(5))
+
+function jordan_block(C, n)
+    A = identity_matrix(base_ring(C), n)
+    for i in 1:n-1
+        A[i, i+1] = 1
+    end
+    Representation(C, gens(base_group(C)), [A])
+end
+
+J = [jordan_block(C, n) for n in 1:5]
+Q = semisimplify(C)
+(is_negligible(J[2]), is_negligible(J[5]), quotient_hom_dimension(J[2]))
+```
+
+The surviving objects $L_n=[J_n]$ satisfy the truncated
+$\mathfrak{sl}_2$ tensor-product rule
+[etingof2017computations; §2.1](@cite). For example, tensoring by $L_2$ has
+the adjacency matrix of the Dynkin diagram $A_4$:
+
+```@example semisimplification_ver5
+L = [semisimplify(J[n], Q) for n in 1:4]
+[int_dim(Hom(L[2] ⊗ L[j], L[k])) for j in 1:4, k in 1:4]
+```
+
+This quotient is $\operatorname{Ver}_5$ [etingof2022semisimplification;
+Example 2.7](@cite). A dedicated constructor and finite-sector computations are
+separate from the general semisimplification interface described here.
+
+Continue with [algebra objects and internal modules](ModuleCategories.md).

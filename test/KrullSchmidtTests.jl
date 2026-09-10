@@ -43,6 +43,7 @@
     set_one!(C,[1])
     Q = Semisimplification(C)
     U = one(Q)
+    @test is_fusion(Q)
     # End(U⊕U)=Mat_2(F5) is a simple algebra, but U⊕U is not simple.
     @test is_simple(U) && !is_simple(U ⊕ U)
 end

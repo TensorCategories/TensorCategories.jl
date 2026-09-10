@@ -1,14 +1,28 @@
 #=----------------------------------------------------------
-    Construct a semisimplification of any
-    tensor category.
-    Reference: https://doi.org/10.48550/arXiv.1801.04409 
+    Semisimplification by negligible morphisms.
+
+    P. Etingof and V. Ostrik, On semisimplification of tensor
+    categories, https://doi.org/10.1007/978-3-030-82007-7_1,
+    Section 2.
 ----------------------------------------------------------=#
+
+"""
+    Semisimplification(C::Category)
+    semisimplify(C::Category)
+
+Construct the quotient of `C` by its negligible morphisms. The current
+implementation requires an exact locally finite spherical multitensor category.
+It also supports a `TensorPowerCategory` inside such a category.
+"""
 
 mutable struct Semisimplification <: Category
     category::Category
     simples::Vector{Object}
 
-    Semisimplification(C::Category) = new(C)
+    function Semisimplification(C::Category)
+        _check_semisimplification_input(C)
+        new(C)
+    end
 end
 
 struct SemisimplifiedObject <: Object
@@ -57,12 +71,55 @@ function Semisimplification(f::Morphism)
     Semisimplification(f,C)
 end
 
-is_abelian(C::Semisimplification) = is_abelian(category(C))
+function _check_semisimplification_input(C::Category)
+    is_locally_finite(C) || throw(ArgumentError(
+        "semisimplification requires a locally finite input category"))
+    is_multitensor(C) || throw(ArgumentError(
+        "semisimplification requires a rigid monoidal input category"))
+    Oscar.is_exact_type(base_ring(C)) || throw(ArgumentError(
+        "semisimplification currently requires an exact coefficient field"))
+    is_spherical(C) || throw(ArgumentError(
+        "semisimplification requires a spherical pivotal structure"))
+    return nothing
+end
+
+_semisimplification_structure_source(C::Category) = C
+
+is_linear(::Semisimplification) = true
+is_abelian(::Semisimplification) = true
+is_locally_finite(::Semisimplification) = true
 is_semisimple(C::Semisimplification) = true
-is_multiring(C::Semisimplification) = is_monoidal(category(C))
-is_multifusion(C::Semisimplification) = is_multiring(category(C)) && is_rigid(category(C))
-is_ring(C::Semisimplification) = is_multiring(C) && int_dim(End(one(C))) == 1
-is_braided(C::Semisimplification) = is_braided(category(C))
+is_finite(C::Semisimplification) = isdefined(C, :simples) || begin
+    D = _semisimplification_structure_source(category(C))
+    is_finite_representation_type(category(C)) ||
+        is_finite_representation_type(D)
+end
+is_multiring(C::Semisimplification) =
+    is_multiring(_semisimplification_structure_source(category(C)))
+is_multitensor(C::Semisimplification) =
+    is_multitensor(_semisimplification_structure_source(category(C)))
+is_ring(C::Semisimplification) =
+    is_ring(_semisimplification_structure_source(category(C)))
+is_tensor(C::Semisimplification) =
+    is_tensor(_semisimplification_structure_source(category(C)))
+is_pivotal(::Semisimplification; check::Bool=false) = true
+is_spherical(::Semisimplification; check::Bool=false) = true
+is_braided(C::Semisimplification) =
+    is_braided(_semisimplification_structure_source(category(C)))
+is_weak_multifusion(C::Semisimplification) = is_finite(C) && is_multitensor(C)
+is_weak_fusion(C::Semisimplification) = is_weak_multifusion(C) && is_tensor(C)
+
+function _is_split_semisimplification(C::Semisimplification)
+    D = _semisimplification_structure_source(category(C))
+    is_multifusion(D) && return true
+    isdefined(C, :simples) || return false
+    all(X -> int_dim(End(X)) == 1, C.simples)
+end
+
+is_multifusion(C::Semisimplification) =
+    is_weak_multifusion(C) && _is_split_semisimplification(C)
+is_fusion(C::Semisimplification) =
+    is_weak_fusion(C) && _is_split_semisimplification(C)
 
 dim(X::SemisimplifiedObject) = dim(object(X))
 
@@ -118,10 +175,20 @@ function associator(X::SemisimplifiedObject, Y::SemisimplifiedObject, Z::Semisim
     SemisimplifiedMorphism(dom,cod, a)
 end
 
+"""
+    is_negligible(f::Morphism)
+    is_negligible(X::Object)
+
+Return whether a morphism is negligible for the categorical trace pairing, or
+whether an object's identity morphism is negligible. A morphism
+`f : X -> Y` is negligible when `tr(g ∘ f) == 0` for every `g : Y -> X`.
+"""
 function is_negligible(f::Morphism)
     K = base_ring(f)
-    return all(g -> iszero(K(tr(f ∘ g))), Hom(codomain(f), domain(f)))
+    return all(g -> iszero(K(tr(g ∘ f))), Hom(codomain(f), domain(f)))
 end
+
+is_negligible(X::Object) = is_negligible(id(X))
 
 """
     trace_pairing(H::AbstractHomSpace, K=Hom(codomain(H),domain(H)))
