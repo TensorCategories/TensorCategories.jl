@@ -71,9 +71,9 @@ decompose(C[1]⊗C[1])
 Use `simples(C,n)` for the first $n$ simple objects. Algorithms that require a
 finite set of simples do not apply to this category.
 
-## [Verlinde categories](@id verlinde-models)
+## [Verlinde modular categories](@id verlinde-models)
 
-The $\mathrm{SU}(2)$ Verlinde categories are root-of-unity semisimplifications
+The $\mathrm{SU}(2)$ Verlinde modular categories are root-of-unity semisimplifications
 that occur in Wess–Zumino–Witten conformal field theory and in
 $\mathrm{SU}(2)$ Chern–Simons anyon models. This constructor directly installs
 the resulting skeletal fusion rules and Temperley–Lieb recoupling coefficients;

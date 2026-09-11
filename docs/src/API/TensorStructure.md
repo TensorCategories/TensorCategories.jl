@@ -19,7 +19,7 @@ data, or coherence tests.
 | Associator-block generation | `six_j_symbols` | [Skeletal models](../F-symbols/SkeletalFusion.md), [matrix coordinates](../Interface/LinearCategories.md#matrix-realizations) |
 | Numerical conversion and symbols | `numeric`, `numeric_F_symbols`, `numeric_R_symbols`, `numeric_P_symbols`, `numeric_smatrix`, `numeric_twists` | [Numerical fusion categories](../F-symbols/Numerical.md), [numerical computations](../Basics/BaseFields.md#numerical-computations) |
 | Tensor powers and generated additive closures | `tensor_power`, `tensor_power_category` | [Products and related constructions](../Interface/BasicConstructions.md) |
-| Skeletal fusion subcategories | `fusion_subcategory`, `simple_fusion_subcategories` | [Products and related constructions](../Interface/BasicConstructions.md), [skeletal models](../F-symbols/SkeletalFusion.md) |
+| Fusion subcategories | `FusionSubcategory`, `fusion_subcategory`, `simple_fusion_subcategories` | [Products and related constructions](../Interface/BasicConstructions.md), [skeletal models](../F-symbols/SkeletalFusion.md) |
 
 The structure setters describe a skeletal presentation; a collection of arrays
 becomes valid fusion-category data only when the relevant axioms and

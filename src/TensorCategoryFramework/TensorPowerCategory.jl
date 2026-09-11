@@ -316,3 +316,53 @@ function Hom(X::TensorPowerObject, Y::TensorPowerObject)
     B = [TensorPowerMorphism(X,Y,f) for f ∈ basis(H)]
     HomSpace(X,Y,B)
 end
+
+"""
+    semisimplified_piece(T::TensorPowerCategory, depth::Integer;
+                         quotient=Semisimplification(T))
+    semisimplified_piece(generators::Vector{<:Object}, depth::Integer)
+
+Enumerate the indecomposable summands of tensor words of length at most
+`depth`, including the unit at depth zero, and inspect their images in the
+quotient by negligible morphisms. The returned named tuple contains the
+upstairs `indecomposables`, the nonzero `survivors`, all corresponding quotient
+`images`, one object from each quotient isomorphism class in `representatives`,
+and the dimensions of the quotient endomorphism spaces in
+`endomorphism_dimensions`.
+
+`all_images_split_simple` records whether every surviving image has
+one-dimensional endomorphism space. `tensor_closure_complete` is true only
+when enumeration of the tensor subcategory generated upstairs has terminated;
+it never asserts completeness of the ambient category. No call to
+`simples(quotient)` is made.
+"""
+function semisimplified_piece(T::TensorPowerCategory, depth::Integer;
+                             quotient::Semisimplification=Semisimplification(T))
+    depth >= 0 || throw(ArgumentError("depth must be nonnegative"))
+    category(quotient) === T || throw(ArgumentError(
+        "quotient must be the semisimplification of the supplied tensor-power category"))
+
+    indecs = indecomposables(T, depth)
+    survivors = TensorPowerObject[]
+    images = SemisimplifiedObject[]
+    representatives = SemisimplifiedObject[]
+    endomorphism_dimensions = Int[]
+    for X in indecs
+        Y = semisimplify(X, quotient)
+        d = int_dim(End(Y))
+        d == 0 && continue
+        push!(survivors, X)
+        push!(images, Y)
+        push!(endomorphism_dimensions, d)
+        all(Z -> int_dim(Hom(Y, Z)) == 0, representatives) &&
+            push!(representatives, Y)
+    end
+
+    (; category=T, quotient, depth, indecomposables=indecs, survivors, images,
+       representatives, endomorphism_dimensions,
+       all_images_split_simple=all(==(1), endomorphism_dimensions),
+       tensor_closure_complete=T.complete && depth >= maximum(T.degrees; init=0))
+end
+
+semisimplified_piece(generators::Vector{<:Object}, depth::Integer) =
+    semisimplified_piece(tensor_power_category(generators), depth)
