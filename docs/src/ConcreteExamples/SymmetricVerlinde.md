@@ -63,8 +63,8 @@ dim.(simples(V))
 
 Pass a finite field instead of an integer to choose a larger coefficient
 field of characteristic $p$. The value of $p$ is the characteristic, not the
-order of the field. Set `skeletal=false` to retain the
-`Semisimplification` of the generated representation category. Set
+order of the field. Set `skeletal=false` to retain the semisimplified quotient
+of the generated representation category. Set
 `check=true` to verify pentagon, hexagon, pivotal, and spherical identities
 while constructing the skeleton.
 
@@ -139,7 +139,7 @@ depth, and inspect their images modulo negligible morphisms:
 
 ```julia
 T = tensor_power_category(seeds)
-Q = Semisimplification(T)
+Q = semisimplification(T)
 piece = semisimplified_piece(T, 3; quotient=Q)
 piece.representatives
 ```

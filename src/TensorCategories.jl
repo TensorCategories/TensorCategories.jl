@@ -437,6 +437,7 @@ export save_fusion_category
 export Semisimplification
 export SemisimplifiedObject
 export SemisimplifiedMorphism
+export semisimplification
 export semisimplify
 export six_j_category
 export SixJCategory 

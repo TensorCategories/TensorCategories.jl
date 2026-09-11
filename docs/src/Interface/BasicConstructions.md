@@ -38,7 +38,7 @@ category.
 | `split(Z::CenterCategory; absolute=true)` | Search for a splitting extension of a supported Drinfeld center |
 | `split(X; max_degree=64, check=false)`, `split(objects; max_degree=64, check=false)` | Over a finite field, split the indecomposable summands of a specified finite family over one finite extension |
 | `karoubian_envelope(Z)` | Add images of idempotents in supported center and relative-center models |
-| `semisimplify(C)` | Form the [semisimplification](@ref semisimplification) by negligible morphisms |
+| `semisimplification(C)` | Form the [semisimplification](@ref semisimplification) by negligible morphisms |
 
 Mathematically, one first forms the Hom-space extension
 $\mathcal C\otimes_k^{\mathrm{Hom}} L$, with the same objects as $\mathcal C$

@@ -405,7 +405,7 @@ end
 # Computations in symmetric fusion categories in characteristic p, Section 2.1,
 # gives the simple labels and the truncated sl_2 tensor-product rule tested here.
 @testset "Semisimplification hypotheses and Verlinde fusion rules" begin
-    @test_throws ArgumentError Semisimplification(Sets())
+    @test_throws ArgumentError semisimplification(Sets())
 
     for p in (3,5)
         F = GF(p)

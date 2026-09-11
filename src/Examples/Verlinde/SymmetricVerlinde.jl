@@ -40,7 +40,7 @@ function symmetric_verlinde_category(F::Field; plus::Bool=false,
     generator = Representation(R, gens(base_group(R)), [jordan_block])
 
     T = tensor_power_category(generator)
-    Q = Semisimplification(T)
+    Q = semisimplification(T)
     S = simples(Q)
     sort!(S; by=X -> int_dim(object(object(X))))
     labels = [int_dim(object(object(X))) for X in S]

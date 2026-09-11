@@ -89,7 +89,7 @@ end
     A = cokernel(only(basis(Hom(unit, P[1]))))[1]
     B = kernel(only(basis(Hom(P[1], unit))))[1]
     T = tensor_power_category([S; A; B])
-    Q = Semisimplification(T)
+    Q = semisimplification(T)
     piece = semisimplified_piece(T, 4; quotient=Q)
     @test piece.tensor_closure_complete
     @test length(piece.indecomposables) == 10
@@ -98,7 +98,7 @@ end
 
     # The generic Hom functor reads the self-braiding on the one-dimensional
     # quotient endomorphism space. GO, Theorem 4.16(2), gives the sign -1.
-    QZ = Semisimplification(Z)
+    QZ = semisimplification(Z)
     qA = semisimplify(A, QZ)
     qbraid = semisimplify(braiding(A, A), QZ)
     H = Hom(qA ⊗ qA, :)

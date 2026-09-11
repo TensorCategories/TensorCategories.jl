@@ -51,7 +51,7 @@ objects can have division algebras of endomorphisms larger than $k$.
 
 | Operation | Meaning |
 |:---|:---|
-| `semisimplify(C)` | construct $\overline{\mathcal C}$ |
+| `semisimplification(C)` | construct $\overline{\mathcal C}$ |
 | `semisimplify(X,Q)` | regard $X$ as an object of the chosen quotient `Q` |
 | `semisimplify(f,Q)` | take the class of $f$ in the chosen quotient `Q` |
 | `is_negligible(f)` | test equation \eqref{eq:negligible-morphism} |
@@ -112,7 +112,7 @@ function jordan_block(C, n)
 end
 
 J = [jordan_block(C, n) for n in 1:5]
-Q = semisimplify(C)
+Q = semisimplification(C)
 (is_negligible(J[2]), is_negligible(J[5]), quotient_hom_dimension(J[2]))
 ```
 
