@@ -1794,7 +1794,11 @@ end
     subcategories
 ----------------------------------------------------------=#    
 
-function fusion_subcategory(X::SixJObject)
+function fusion_subcategory(X::SixJObject; simples=nothing, kwargs...)
+    simples === nothing ||
+        return fusion_subcategory(Object[X];simples,kwargs...)
+    isempty(kwargs) || throw(ArgumentError(
+        "additional keywords require an explicit simple list"))
     C = parent(X)
     R = split_grothendieck_ring(C)
     basis = _topologize(R(ZZ.(X.components)))

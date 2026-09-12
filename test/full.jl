@@ -31,6 +31,7 @@ include("InterfaceTests.jl")
 include("TensorPowerTests.jl")
 include("SerializationTests/OscarSerializationTests.jl")
 include("LiteratureTests.jl")
+include("VerlindeTests/PositiveCharacteristic.jl")
 
 @testset "Test Module Categories" begin
     include("ModuleCategoryTests/ModulesTest.jl")

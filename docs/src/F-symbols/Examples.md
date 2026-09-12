@@ -59,10 +59,11 @@ database.
 | [Additional Haagerup $H_2$ data](@ref haagerup-auxiliary-data) | `unitary_haagerup_H2()` | Exact table whose source does not record a basis change to a published gauge |
 | [Ising](@ref ising-data) | `ising_category(K,s,q)` | Tambara–Yamagami for $A=C_2$; optional braiding |
 | [$\mathrm{SU}(3)_3$ subcategory](@ref su3-subcategory) | `TensorCategories.su_3_3_subcategory(K)` | Rank 4, multiplicity 2; not exported |
+| [Symmetric Verlinde categories](@ref symmetric-verlinde) | `symmetric_verlinde_category(p; plus=false)` | Semisimplification of $\operatorname{Rep}_{\mathbf F_p}(C_p)$; optionally restrict to $\operatorname{Ver}_p^+$ |
 | [Tambara–Yamagami](@ref tambara-yamagami-data) | `tambara_yamagami(K,A,s,χ)` | Explicit bicharacter formulas |
 | [Trivial fusion category](@ref trivial-fusion-data) | `trivial_fusion_category(K)` | Intended rank-one constructor; currently unavailable |
 | [Vercleyen–Slingerland data](@ref vercleyen-slingerland-data) | `cat_fr_8122(n)`, `cat_fr_9143()` | Fusion rings and ancillary sources identified; the imports lack the basis metadata needed for an entrywise comparison |
-| [Verlinde](@ref verlinde-models) | `verlinde_category(K,m,l,t)` | Default $l=t=1$ in Kauffman–Lins conventions; other parameters use package-specific normalizations |
+| [Verlinde modular](@ref verlinde-models) | `verlinde_category(K,m,l,t)` | Default $l=t=1$ in Kauffman–Lins conventions; other parameters use package-specific normalizations |
 
 ## General constructions
 

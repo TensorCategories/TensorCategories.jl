@@ -14,7 +14,9 @@ table.
 | Group-graded vector spaces | `graded_vector_spaces`, `twisted_graded_vector_spaces`, `GradedVectorSpaces`, `GVSObject`, `GVSMorphism`, `GVSHomSpace`, `Cocycle`, `cyclic_group_3cocycle`, `unitary_cocycle` | [Vector spaces and gradings](../ConcreteExamples/VectorSpaces.md) |
 | Finite-group representations | `representation_category`, `rep`, `GroupRepresentationCategory`, `GroupRepresentation`, `GroupRepresentationMorphism`, `GRHomSpace`, `Representation` | [Group representations](../ConcreteExamples/Representations.md) |
 | Equivariant coherent sheaves | `coherent_sheaves`, `convolution_category` | [Equivariant sheaves and convolution](../ConcreteExamples/CoherentSheaves.md) |
-| Generic quantum $\mathfrak{sl}_2$ model | `sl2_representations` | [$\mathfrak{sl}_2$, Verlinde, and dihedral models](../ConcreteExamples/UqSl2.md) |
+| Generic quantum $\mathfrak{sl}_2$ model | `sl2_representations` | [$\mathfrak{sl}_2$, Verlinde modular, and dihedral models](../ConcreteExamples/UqSl2.md) |
+| Symmetric Verlinde categories in characteristic $p$ | `symmetric_verlinde_category` | [Symmetric Verlinde categories](../ConcreteExamples/SymmetricVerlinde.md) |
+| Generated fusion subcategories | `FusionSubcategory`, `fusion_subcategory` | [Products and related constructions](../Interface/BasicConstructions.md#generated-subcategories-and-skeletal-coordinates) |
 
 The generic quantum $\mathfrak{sl}_2$ entry is the exception: it is a skeletal
 recoupling model with infinitely many simple labels, whose objects are finite

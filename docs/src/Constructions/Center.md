@@ -55,6 +55,9 @@ A morphism $f:(Z,\gamma)\to(Z',\gamma')$ is a morphism $f:Z\to Z'$ satisfying
 `center(C)` constructs the center parent without enumerating its simple
 objects. Explicit `CenterObject`s can therefore be formed whenever the ambient
 category supplies the operations needed for their half-braidings.
+If $\mathcal C$ is braided, `center_embedding(C)` constructs the canonical
+functor $X\mapsto(X,c_{X,-})$ into this center. The keyword `reverse=true`
+constructs the second canonical functor using $c_{-,X}^{-1}$.
 When the input is already modular, `simples(center(C))` uses its braiding to
 construct the center simples directly. Otherwise it invokes the substantially
 stronger induction algorithm and decomposes endomorphism algebras. For input

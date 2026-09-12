@@ -44,6 +44,67 @@ function _decompose_finite_object(X::Object, E=basis(End(X)),
     return result
 end
 
+"""
+    decomposition_isomorphism(X, decomposition=decompose(X);
+                               max_attempts=64, rng=nothing)
+
+Find and verify an isomorphism from the proposed direct sum `decomposition`
+to `X` over a finite field. A decomposition is a vector of pairs `(Y,m)`.
+The result contains the direct sum, the isomorphism and its inverse, and an
+inclusion/projection retract for every copy of every summand.
+
+The search samples morphisms from the complete Hom spaces. Exhausting the
+bounded search raises an error; it does not prove that the proposed
+decomposition is false. Pass an RNG for reproducible sampling.
+"""
+function decomposition_isomorphism(X::Object, decomposition=decompose(X);
+                                    max_attempts::Integer=64, rng=nothing)
+    max_attempts > 0 || throw(ArgumentError("max_attempts must be positive"))
+    C, F = parent(X), base_ring(X)
+    is_finite(F) || throw(ArgumentError(
+        "decomposition isomorphisms currently require a finite field"))
+
+    summands = Object[]
+    for (Y, multiplicity) in decomposition
+        parent(Y) == C || throw(ArgumentError(
+            "summands must have the same parent as X"))
+        multiplicity isa Integer && multiplicity >= 0 || throw(ArgumentError(
+            "multiplicities must be nonnegative integers"))
+        append!(summands, fill(Y, multiplicity))
+    end
+    D, inclusions, projections = isempty(summands) ?
+        (zero(C), Morphism[], Morphism[]) : direct_sum(summands)
+    hom_bases = [basis(Hom(Y, X)) for Y in summands]
+
+    for _ in 1:max_attempts
+        maps = [sum(((rng === nothing ? rand(F) : rand(rng, F)) * h for h in B);
+                    init=zero_morphism(Y, X))
+                for (Y, B) in zip(summands, hom_bases)]
+        f = sum((a ∘ p for (a, p) in zip(maps, projections));
+                init=zero_morphism(D, X))
+        inverse = try
+            inv(f)
+        catch err
+            err isa Union{ArgumentError, ErrorException, DomainError} || rethrow()
+            continue
+        end
+        inverse ∘ f == id(D) && f ∘ inverse == id(X) || continue
+
+        retracts = [(Y, f ∘ i, p ∘ inverse)
+                    for (Y, i, p) in zip(summands, inclusions, projections)]
+        for (j, (Y, _, p)) in enumerate(retracts),
+            (k, (Z, i, _)) in enumerate(retracts)
+            p ∘ i == (j == k ? id(Y) : zero_morphism(Z, Y)) ||
+                error("invalid summand retracts")
+        end
+        sum((i ∘ p for (_, i, p) in retracts);
+            init=zero_morphism(X, X)) == id(X) ||
+            error("summand retracts do not resolve the identity")
+        return (; direct_sum=D, isomorphism=f, inverse, retracts)
+    end
+    error("bounded search for a decomposition isomorphism exhausted after $max_attempts attempts")
+end
+
 # Solve BOTH inverse identities in categorical Hom coordinates. This works
 # without a faithful matrix realization or a semisimplicity assumption.
 function _inverse_in_hom(f::Morphism,

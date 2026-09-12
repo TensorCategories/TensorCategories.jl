@@ -87,6 +87,9 @@ is_modular(C::CenterCategory) = is_fusion(C) && is_spherical(C)
 is_braided(C::CenterCategory) = true
 is_rigid(C::CenterCategory) = is_rigid(category(C))
 is_ring(C::CenterCategory) = is_ring(category(C))
+is_multiring(C::CenterCategory) = is_multiring(category(C))
+is_tensor(C::CenterCategory) = is_tensor(category(C))
+is_multitensor(C::CenterCategory) = is_multitensor(category(C))
 
 is_weak_fusion(C::CenterCategory) =
     is_weak_multifusion(C) && int_dim(End(one(C))) == 1
@@ -180,6 +183,27 @@ need not be split over the input field.
 function center(C::Category; equivalence = false)
     #@assert is_semisimple(C) "Semisimplicity required"
     return CenterCategory(base_ring(C),C)
+end
+
+"""
+    center_embedding(C::Category; reverse=false, parent_category=center(C))
+
+Return the canonical functor from a braided category `C` to its Drinfeld
+center. With the package's half-braiding convention, an object `X` receives
+the components `braiding(X,Y)`. If `reverse=true`, use
+`inv(braiding(Y,X))` instead.
+"""
+function center_embedding(C::Category; reverse::Bool=false,
+                          parent_category::CenterCategory=center(C))
+    is_braided(C) || throw(ArgumentError("a braided category is required"))
+    category(parent_category) === C || throw(ArgumentError(
+        "the target must be a center of the supplied category"))
+    S = simples(C)
+    object_map = X -> CenterObject(parent_category, X,
+        reverse ? [inv(braiding(Y, X)) for Y in S] :
+                  [braiding(X, Y) for Y in S])
+    morphism_map = f -> morphism(object_map(domain(f)), object_map(codomain(f)), f)
+    functor(C, parent_category, object_map, morphism_map)
 end
 
 function morphism(dom::CenterObject, cod::CenterObject, m::Morphism)

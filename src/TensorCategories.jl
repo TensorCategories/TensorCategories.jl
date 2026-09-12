@@ -120,6 +120,7 @@ export HomSpace
 export Morphism 
 export Object 
 export center 
+export center_embedding
 export center_simples 
 export CenterCategory 
 export CenterCategory 
@@ -149,6 +150,7 @@ export coproduct
 export cyclic_group_3cocycle 
 export dagger
 export decompose 
+export decomposition_isomorphism
 export direct_sum_decomposition
 export DeligneProdMorphism 
 export DeligneProdObject 
@@ -428,12 +430,14 @@ export RightTensorProductFunctor
 export right_trace 
 export RingCatMorphism 
 export RingSubcategory 
+export FusionSubcategory
 export roots 
 export save 
 export save_fusion_category
 export Semisimplification
 export SemisimplifiedObject
 export SemisimplifiedMorphism
+export semisimplification
 export semisimplify
 export six_j_category
 export SixJCategory 
@@ -482,6 +486,7 @@ export tensor_power_category
 export TensorPowerCategory
 export TensorPowerMorphism
 export TensorPowerObject
+export semisimplified_piece
 export tmatrix 
 export trace_pairing
 export tr 
@@ -502,6 +507,7 @@ export VectorSpaceObject
 export vector_spaces
 export VectorSpaces 
 export verlinde_category
+export symmetric_verlinde_category
 export vertical_direct_sum
 export VSHomSpace 
 export VSObject 
@@ -672,6 +678,7 @@ include("DecategorifiedFramework/GrothendieckRing.jl")
 
 include("Examples/Verlinde/I2-fusion.jl")
 include("Examples/Verlinde/Verlinde.jl")
+include("Examples/Verlinde/SymmetricVerlinde.jl")
 include("Examples/UqSL2Representations/RepresentationsSL2.jl")
 include("Examples/TambaraYamagami/TambaraYamagami.jl")
 include("Examples/Fibonacci/FibonacciCategory.jl")

@@ -8,6 +8,7 @@
 
 """
     Semisimplification(C::Category)
+    semisimplification(C::Category)
     semisimplify(C::Category)
 
 Construct the quotient of `C` by its negligible morphisms. The current
@@ -131,7 +132,8 @@ function braiding(X::SemisimplifiedObject, Y::SemisimplifiedObject)
     semisimplify(braiding(object(X), object(Y)), parent(X))
 end
 
-semisimplify(C::Category) = Semisimplification(C)
+semisimplification(C::Category) = Semisimplification(C)
+semisimplify(C::Category) = semisimplification(C)
 semisimplify(X::Object) = SemisimplifiedObject(Semisimplification(parent(X)), X)
 semisimplify(X::Object, C::Semisimplification) = Semisimplification(X, C)
 
