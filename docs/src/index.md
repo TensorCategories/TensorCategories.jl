@@ -13,7 +13,7 @@ Current highlights include:
 
 * Integration of fusion-category data from [AnyonWiki](F-symbols/AnyonWiki.md), providing access to a large collection of fusion categories.
 
-* A generic algorithm for computing [Drinfeld centers](@ref center), producing explicit central objects with half-braidings rather than only abstract equivalence classes [maurer2024computing](@cite).
+* A generic algorithm for computing [Drinfeld centers](@ref center), producing explicit central objects with half-braidings rather than only abstract equivalence classes [maurer2024computing](@cite) (to appear in *Comm. Math. Phys.*).
 
 * Computation of the Drinfeld centers, including $F$-symbols and $R$-symbols, of the 76 monoidal presentations underlying the 279 multiplicity-free AnyonWiki entries of rank at most 5; the results are stored in our [TensorCategoriesDatabase](https://github.com/TensorCategories/TensorCategoriesDatabase). Some of these centers yield new [modular categories](@ref premodular-categories) with high rank and nontrivial fusion multiplicities, for example rank 21 and fusion multiplicity 2 [maurer2024computing](@cite).
 

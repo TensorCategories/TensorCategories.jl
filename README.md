@@ -20,7 +20,7 @@ Current highlights include:
 
 * Integration of fusion-category data from the [AnyonWiki](https://anyonwiki.github.io/), providing access to a large collection of fusion categories.
 
-* A generic algorithm for computing Drinfeld centers of fusion categories, producing explicit central objects with half-braidings rather than only abstract equivalence classes; see [arXiv:2406.13438](https://arxiv.org/abs/2406.13438).
+* A generic algorithm for computing Drinfeld centers of fusion categories, producing explicit central objects with half-braidings rather than only abstract equivalence classes; see [arXiv:2406.13438](https://arxiv.org/abs/2406.13438) (to appear in *Comm. Math. Phys.*).
 
 * Computation of the Drinfeld centers, including F-symbols and R-symbols, for all 279 multiplicity-free fusion categories up to rank 5; the results are stored in our [TensorCategoriesDatabase](https://github.com/TensorCategories/TensorCategoriesDatabase). Some of these centers yield new high-rank and not multiplicity-free examples of modular categories, e.g. rank 21 and multiplicity 2.
 
