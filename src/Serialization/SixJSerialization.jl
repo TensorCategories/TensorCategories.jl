@@ -93,8 +93,8 @@ function load_object(s::DeserializerState, ::Type{SixJCategory})
 
     # C.ass = ass
     C.ass = reshape(
-        load_array_node(s, :ass) do (i,m)
-            m = load_object(s, Matrix{elem_type(base_ring(C))}, base_ring(C))
+        load_array_node(s, :ass) do _
+            local m = load_object(s, Matrix{elem_type(base_ring(C))}, base_ring(C))
             a = size(m,1)
             b = length(size(m)) == 2 ? size(m,2) : 0
             matrix(base_ring(C), a, b, m)
@@ -121,8 +121,8 @@ function load_object(s::DeserializerState, ::Type{SixJCategory})
 
     if haskey(s, :braiding)
         C.braiding = reshape(
-            load_array_node(s, :braiding) do (i,m)
-                m = load_object(s, Matrix{elem_type(base_ring(C))}, base_ring(C))
+            load_array_node(s, :braiding) do _
+                local m = load_object(s, Matrix{elem_type(base_ring(C))}, base_ring(C))
                 a = size(m,1)
                 b = length(size(m)) == 2 ? size(m,2) : 0
                 matrix(base_ring(C), a, b, m)
@@ -171,7 +171,7 @@ end
 function load_object(s::DeserializerState, ::Type{SixJMorphism},C::SixJCategory)
     X = SixJObject(C,load_object(s,Vector{Int},:domain_components))
     Y = SixJObject(C,load_object(s,Vector{Int},:codomain_components))
-    mats = load_array_node(s,:mats) do (i,n)
+    mats = load_array_node(s,:mats) do _
         M = load_object(s,Matrix{elem_type(base_ring(C))},base_ring(C))
         matrix(base_ring(C),size(M)...,M)
     end
