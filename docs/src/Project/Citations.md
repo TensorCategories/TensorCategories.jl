@@ -13,6 +13,8 @@ systematically in *Algorithmic Aspects of Tensor Categories*
 
 ## Research using or citing the package
 
+1. *The SymTFT and Quantum Phases of Matter* [pace2026symtft](@cite)
+
 1. *Haagerup vertex operator algebras at central charge eight*
    [arhancet2026haagerup](@cite)
 
